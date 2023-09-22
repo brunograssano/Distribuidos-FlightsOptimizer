@@ -1,8 +1,9 @@
 package middleware
 
-// TODO separar en productor y consumidor
-type QueueInterface interface {
+type ProducerInterface interface {
 	Send(data []byte)
+}
+
+type ConsumerInterface interface {
 	Pop() []byte
-	BecomeConsumer()
 }

@@ -20,11 +20,17 @@ func NewQueueMiddleware() *QueueMiddleware {
 	}
 }
 
-func (qm *QueueMiddleware) CreateQueue(name string, durable bool) QueueInterface {
-	return NewRabbitMqImplementation(qm.channel, name, durable)
+func (qm *QueueMiddleware) CreateConsumer(name string, durable bool) ConsumerInterface {
+	return NewConsumer(qm.channel, name, durable)
+}
+
+func (qm *QueueMiddleware) CreateProducer(name string, durable bool) ProducerInterface {
+	return NewProducer(qm.channel, name, durable)
 }
 
 func (qm *QueueMiddleware) Close() {
-	qm.channel.Close()
-	qm.conn.Close()
+	err := qm.channel.Close()
+	FailOnError(err, "Error closing QueueMiddleware Channel")
+	err = qm.conn.Close()
+	FailOnError(err, "Error closing QueueMiddleware Connection")
 }
