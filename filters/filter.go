@@ -4,6 +4,7 @@ import (
 	"DistribuidosTP1/data_structures"
 	"errors"
 	"reflect"
+	"strings"
 )
 
 type Filter struct {
@@ -59,7 +60,7 @@ func (filter *Filter) Greater(row data_structures.FlightRow, valueOfCompare any,
 			return false, err
 		}
 		compareCasted := valueOfCompare.(string)
-		return compareCasted < rowData, nil
+		return strings.Compare(compareCasted, rowData) < 0, nil
 	case reflect.Float32:
 		rowData, err := row.GetAsFloat(colName)
 		if err != nil {
@@ -88,7 +89,7 @@ func (filter *Filter) Less(row data_structures.FlightRow, valueOfCompare any, co
 			return false, err
 		}
 		compareCasted := valueOfCompare.(string)
-		return compareCasted > rowData, nil
+		return strings.Compare(compareCasted, rowData) > 0, nil
 	case reflect.Float32:
 		rowData, err := row.GetAsFloat(colName)
 		if err != nil {
