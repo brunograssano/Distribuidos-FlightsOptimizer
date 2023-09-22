@@ -6,7 +6,7 @@ type IOManagerInterface interface {
 
 type InputManagerInterface interface {
 	IOManagerInterface
-	CanRead() (bool, error)
+	CanRead() bool
 	ReadLine() string
 	Err() error
 }
