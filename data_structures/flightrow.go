@@ -43,11 +43,11 @@ func (fr *FlightRow) GetAsFloat(colName string) (float32, error) {
 			}
 			return float32(intValue), nil
 		}
-		intVal, errStr := strconv.Atoi(strValue)
+		floatVal, errStr := strconv.ParseFloat(strValue, 32)
 		if errStr != nil {
 			return 0.0, errStr
 		}
-		return float32(intVal), nil
+		return float32(floatVal), nil
 	}
 	return floatValue, nil
 }
