@@ -10,11 +10,9 @@ type FlightRow struct {
 	cols map[string]interface{}
 }
 
-func NewFlightRow() *FlightRow {
-	columns := make(map[string]interface{})
-	//TODO: Recibir por param los valores de las columnas y crearlas en el map
+func NewFlightRow(dynMap map[string]interface{}) *FlightRow {
 	return &FlightRow{
-		cols: columns,
+		cols: dynMap,
 	}
 }
 

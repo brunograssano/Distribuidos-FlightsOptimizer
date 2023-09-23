@@ -15,7 +15,7 @@ func NewFilter() *Filter {
 	return &Filter{}
 }
 
-func (filter *Filter) Equals(row data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
+func (filter *Filter) Equals(row *data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
 	typeOfData := reflect.TypeOf(valueOfCompare)
 	switch typeOfData.Kind() {
 	case reflect.Int:
@@ -44,7 +44,7 @@ func (filter *Filter) Equals(row data_structures.FlightRow, valueOfCompare any, 
 	}
 }
 
-func (filter *Filter) Greater(row data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
+func (filter *Filter) Greater(row *data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
 	typeOfData := reflect.TypeOf(valueOfCompare)
 	switch typeOfData.Kind() {
 	case reflect.Int:
@@ -73,7 +73,7 @@ func (filter *Filter) Greater(row data_structures.FlightRow, valueOfCompare any,
 	}
 }
 
-func (filter *Filter) Less(row data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
+func (filter *Filter) Less(row *data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
 	typeOfData := reflect.TypeOf(valueOfCompare)
 	switch typeOfData.Kind() {
 	case reflect.Int:
@@ -102,7 +102,7 @@ func (filter *Filter) Less(row data_structures.FlightRow, valueOfCompare any, co
 	}
 }
 
-func (filter *Filter) GreaterOrEquals(row data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
+func (filter *Filter) GreaterOrEquals(row *data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
 	eq, err := filter.Equals(row, valueOfCompare, colName)
 	if err != nil {
 		return false, err
@@ -115,7 +115,7 @@ func (filter *Filter) GreaterOrEquals(row data_structures.FlightRow, valueOfComp
 	return eq || gr, nil
 }
 
-func (filter *Filter) LessOrEquals(row data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
+func (filter *Filter) LessOrEquals(row *data_structures.FlightRow, valueOfCompare any, colName string) (bool, error) {
 	eq, err := filter.Equals(row, valueOfCompare, colName)
 	if err != nil {
 		return false, err
