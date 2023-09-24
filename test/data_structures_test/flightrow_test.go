@@ -1,4 +1,4 @@
-package data_structures
+package data_structures_test
 
 import (
 	"DistribuidosTP1/data_structures"
