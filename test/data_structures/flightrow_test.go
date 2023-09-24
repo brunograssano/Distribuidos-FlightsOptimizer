@@ -182,3 +182,51 @@ func TestGetAsStringAFloatColumn(t *testing.T) {
 		t.Errorf("Thrown error: %v", err)
 	}
 }
+
+func TestShouldReturnANewRowWithOnlyOneColumnWhenReducingTheRow(t *testing.T) {
+	dynMap := make(map[string]interface{})
+	const columnToRemove1 = "col1"
+	const columnToRemove2 = "col2"
+	const columnToKeep = "col3"
+	dynMap[columnToRemove1] = "Some data"
+	dynMap[columnToKeep] = "More data"
+	dynMap[columnToRemove2] = 5
+	row := data_structures.NewFlightRow(dynMap)
+
+	keepCols := []string{columnToKeep}
+	newRow, err := row.ReduceToColumns(keepCols)
+	if err != nil {
+		t.Errorf("Thrown error: %v", err)
+	}
+	val, err := newRow.GetAsString(columnToKeep)
+	if err != nil {
+		t.Errorf("Thrown error: %v", err)
+	}
+	if val != "More data" {
+		t.Errorf("The value saved was different: %v", val)
+	}
+	_, err = newRow.GetAsString(columnToRemove1)
+	if err == nil {
+		t.Errorf("It kept another column: %v", columnToRemove1)
+	}
+	_, err = newRow.GetAsInt(columnToRemove2)
+	if err == nil {
+		t.Errorf("It kept another column: %v", columnToRemove2)
+	}
+}
+
+func TestShouldReturnAnErrorIfAColumnDoesNotExistWhenReducingTheRow(t *testing.T) {
+	dynMap := make(map[string]interface{})
+	const columnToRemove1 = "col1"
+	const columnToRemove2 = "col2"
+	const columnToKeepThatIsNotSaved = "col3"
+	dynMap[columnToRemove1] = "Some data"
+	dynMap[columnToRemove2] = 5
+	row := data_structures.NewFlightRow(dynMap)
+
+	keepCols := []string{columnToKeepThatIsNotSaved}
+	newRow, err := row.ReduceToColumns(keepCols)
+	if err == nil || newRow != nil {
+		t.Errorf("Should have failed if a non existant column was passed: %v", columnToKeepThatIsNotSaved)
+	}
+}
