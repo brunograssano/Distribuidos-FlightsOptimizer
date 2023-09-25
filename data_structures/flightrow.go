@@ -78,7 +78,24 @@ func (fr *FlightRow) GetAsString(colName string) (string, error) {
 func (fr *FlightRow) GetAsAny(colName string) (interface{}, error) {
 	data, exists := fr.cols[colName]
 	if !exists {
-		return nil, errors.New("column does not exist")
+		return nil, fmt.Errorf("column %v does not exist", colName)
 	}
 	return data, nil
+}
+
+// ReduceToColumns
+/*
+	Returns a new flight row with only the columns passed as an argument
+	Returns error if a column does not exist
+*/
+func (fr *FlightRow) ReduceToColumns(columns []string) (*FlightRow, error) {
+	reducedRow := make(map[string]interface{})
+	for _, col := range columns {
+		data, exists := fr.cols[col]
+		if !exists {
+			return nil, fmt.Errorf("column %v does not exist", col)
+		}
+		reducedRow[col] = data
+	}
+	return NewFlightRow(reducedRow), nil
 }
