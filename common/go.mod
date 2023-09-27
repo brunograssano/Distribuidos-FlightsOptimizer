@@ -1,4 +1,4 @@
-module DistribuidosTP1
+module github.com/brunograssano/Distribuidos-TP1/common
 
 go 1.21
 

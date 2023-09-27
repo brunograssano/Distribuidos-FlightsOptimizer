@@ -1,9 +1,9 @@
 package main
 
 import (
-	"DistribuidosTP1/config"
-	"DistribuidosTP1/middleware"
 	"fmt"
+	config "github.com/brunograssano/Distribuidos-TP1/common/config"
+	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"log"
 )
 

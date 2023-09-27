@@ -1,8 +1,8 @@
 package data_structures_test
 
 import (
-	"DistribuidosTP1/data_structures"
 	"encoding/binary"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"math"
 	"testing"
 )
@@ -11,7 +11,7 @@ func TestGetAsAllGetsOfNonExistentColumnShouldThrowError(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	_, err := row.GetAsInt("non_existent")
 	if err == nil {
 		t.Errorf("GetAsInt should have thrown error")
@@ -34,7 +34,7 @@ func TestGetAsIntAnIntColumn(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	val, err := row.GetAsInt("test")
 	if val != 32 {
 		t.Errorf("Value %v is not equal to 32", val)
@@ -48,7 +48,7 @@ func TestGetAsFloatAFloat32Column(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], math.Float32bits(32.0))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	val, err := row.GetAsFloat("test")
 	if val != 32.0 {
 		t.Errorf("Value %v is not equal to 32.0", val)
@@ -61,7 +61,7 @@ func TestGetAsFloatAFloat32Column(t *testing.T) {
 func TestGetAsStringAStringColumn(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = []byte("stringval")
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	val, err := row.GetAsString("test")
 	if val != "stringval" {
 		t.Errorf("Value %v is not equal to stringval", val)
@@ -80,7 +80,7 @@ func TestShouldReturnANewRowWithOnlyOneColumnWhenReducingTheRow(t *testing.T) {
 	dynMap[columnToKeep] = []byte("More data")
 	dynMap[columnToRemove2] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap[columnToRemove2], uint32(5))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 
 	keepCols := []string{columnToKeep}
 	newRow, err := row.ReduceToColumns(keepCols)
@@ -112,7 +112,7 @@ func TestShouldReturnAnErrorIfAColumnDoesNotExistWhenReducingTheRow(t *testing.T
 	dynMap[columnToRemove1] = []byte("Some data")
 	dynMap[columnToRemove2] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap[columnToRemove2], uint32(5))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 
 	keepCols := []string{columnToKeepThatIsNotSaved}
 	newRow, err := row.ReduceToColumns(keepCols)
@@ -123,7 +123,7 @@ func TestShouldReturnAnErrorIfAColumnDoesNotExistWhenReducingTheRow(t *testing.T
 
 func TestGetColumnCountWithZeroColumnsReturnZero(t *testing.T) {
 	dynMap := make(map[string][]byte)
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	colCount := row.GetColumnCount()
 	if colCount != 0 {
 		t.Errorf("Column count should be 0 and returned %v", colCount)
@@ -134,7 +134,7 @@ func TestGetColumnCountWithTwoColumnsShouldReturnTwo(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	dynMap["test_2"] = make([]byte, 4)
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	colCount := row.GetColumnCount()
 	if colCount != 2 {
 		t.Errorf("Column count should be 2 and returned %v", colCount)
@@ -145,7 +145,7 @@ func TestGetColumnCountWithTwoColumnsShouldReturnTwoAndAfterReduceToOneShouldRet
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	dynMap["test_2"] = make([]byte, 4)
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	colCount := row.GetColumnCount()
 	if colCount != 2 {
 		t.Errorf("Column count should be 2 and returned %v", colCount)

@@ -1,9 +1,9 @@
 package filters_test
 
 import (
-	"DistribuidosTP1/data_structures"
-	"DistribuidosTP1/filters"
 	"encoding/binary"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	"math"
 	"testing"
 )
@@ -14,7 +14,7 @@ func TestFilterEqualsShouldThrowErrorWhenColumnNotFound(t *testing.T) {
 	dynMap["test_column"] = []byte("test_string")
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedString+"_shall not pass", "test_column_not_ex")
 	if retVal {
 		t.Errorf("Return value should be false and it was true")
@@ -30,7 +30,7 @@ func TestFilterEqualsWithString(t *testing.T) {
 	dynMap["test_column"] = []byte("test_string")
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedString, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -46,7 +46,7 @@ func TestFilterEqualsIsFalseWithString(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedString+"_shall not pass", "test_column")
 	if retVal {
 		t.Errorf("Return value should be false and it was true")
@@ -62,7 +62,7 @@ func TestFilterGreaterThanWithStringIsTrue(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, "strinf", "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -78,7 +78,7 @@ func TestFilterGreaterThanWithStringIsFalse(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, "string", "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -101,7 +101,7 @@ func TestFilterLessThanWithStringIsTrue(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, "strinh", "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -117,7 +117,7 @@ func TestFilterLessThanWithStringIsFalse(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, "string", "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -140,7 +140,7 @@ func TestFilterLessOrEqualThanWithStringIsTrue(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, "strinh", "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -163,7 +163,7 @@ func TestFilterLessOrEqualThanWithStringIsFalse(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, "strinf", "test_column")
 	if retVal {
 		t.Errorf("Return value lower than should be false and it was true")
@@ -179,7 +179,7 @@ func TestFilterGreaterOrEqualThanWithStringIsTrue(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, "strinf", "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -202,7 +202,7 @@ func TestFilterGreaterOrEqualThanWithStringIsFalse(t *testing.T) {
 	dynMap["test_column"] = []byte(expectedString)
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, "strinh", "test_column")
 	if retVal {
 		t.Errorf("Return value lower than should be false and it was true")
@@ -219,7 +219,7 @@ func TestFilterEqualsWithFloatIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedFloat, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -236,7 +236,7 @@ func TestFilterEqualsWithFloatIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat+1.5432))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedFloat, "test_column")
 	if retVal {
 		t.Errorf("Return value should be false and it was true")
@@ -253,7 +253,7 @@ func TestFilterGreaterThanWithFloatIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, expectedFloat-2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -270,7 +270,7 @@ func TestFilterGreaterThanWithFloatIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, expectedFloat, "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -294,7 +294,7 @@ func TestFilterLessThanWithFloatIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, expectedFloat+2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -311,7 +311,7 @@ func TestFilterLessThanWithFloatIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, expectedFloat, "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -335,7 +335,7 @@ func TestFilterLessOrEqualWithFloatIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, expectedFloat+2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -359,7 +359,7 @@ func TestFilterLessOrEqualWithFloatIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, expectedFloat-2, "test_column")
 	if retVal {
 		t.Errorf("Return value greater than should be false and it was true")
@@ -376,7 +376,7 @@ func TestFilterGreaterOrEqualWithFloatIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, expectedFloat-2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -400,7 +400,7 @@ func TestFilterGreaterOrEqualWithFloatIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], math.Float32bits(expectedFloat))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, expectedFloat+2, "test_column")
 	if retVal {
 		t.Errorf("Return value lower than should be false and it was true")
@@ -417,7 +417,7 @@ func TestFilterEqualsWithIntIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedInt, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -434,7 +434,7 @@ func TestFilterEqualsWithIntIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt+1))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Equals(row, expectedInt, "test_column")
 	if retVal {
 		t.Errorf("Return value should be false and it was true")
@@ -451,7 +451,7 @@ func TestFilterGreaterThanWithIntIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, expectedInt-2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -468,7 +468,7 @@ func TestFilterGreaterThanWithIntIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Greater(row, expectedInt, "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -492,7 +492,7 @@ func TestFilterLessThanWithIntIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, expectedInt+2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -509,7 +509,7 @@ func TestFilterLessThanWithIntIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.Less(row, expectedInt, "test_column")
 	if retVal {
 		t.Errorf("Return value equal should be false and it was true")
@@ -533,7 +533,7 @@ func TestFilterGreaterOrEqualsWithIntIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, expectedInt-2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -557,7 +557,7 @@ func TestFilterGreaterOrEqualsWithIntIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.GreaterOrEquals(row, expectedInt+2, "test_column")
 	if retVal {
 		t.Errorf("Return value lower than should be false and it was true")
@@ -574,7 +574,7 @@ func TestFilterLessOrEqualsWithIntIsTrue(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, expectedInt+2, "test_column")
 	if !retVal {
 		t.Errorf("Return value should be true and it was false")
@@ -598,7 +598,7 @@ func TestFilterLessOrEqualThanWithIntIsFalse(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["test_column"], uint32(expectedInt))
 	dynMap["test_col2"] = []byte("test_not_pass_string")
 	filter := filters.NewFilter()
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 	retVal, err := filter.LessOrEquals(row, expectedInt-2, "test_column")
 	if retVal {
 		t.Errorf("Return value lower than should be false and it was true")

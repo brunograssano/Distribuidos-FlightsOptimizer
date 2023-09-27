@@ -1,8 +1,8 @@
 package communication
 
 import (
-	"DistribuidosTP1/communication"
 	"bytes"
+	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"net"
 	"testing"
 )

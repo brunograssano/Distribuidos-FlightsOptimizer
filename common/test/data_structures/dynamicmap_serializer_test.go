@@ -1,10 +1,10 @@
 package data_structures
 
 import (
-	"DistribuidosTP1/data_structures"
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"strings"
 	"testing"
 )
@@ -13,8 +13,8 @@ func TestSerializeDynMapWithAnIntReturnsTheBytesExpected(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
-	serializer := data_structures.NewDynamicMapSerializer()
+	row := dataStructures.NewDynamicMap(dynMap)
+	serializer := dataStructures.NewDynamicMapSerializer()
 	serializedRow := serializer.Serialize(row)
 
 	var bytesExpected []byte
@@ -47,8 +47,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 	stringCol2 := "un string largo para la prueba que debería de igual forma leerse bien su longitud"
 	dynMap["test_string"] = []byte(stringCol2)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
-	serializer := data_structures.NewDynamicMapSerializer()
+	row := dataStructures.NewDynamicMap(dynMap)
+	serializer := dataStructures.NewDynamicMapSerializer()
 	serializedRow := serializer.Serialize(row)
 
 	var bytesExpected []byte
@@ -85,8 +85,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 }
 
 func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
-	row := data_structures.NewDynamicMap(make(map[string][]byte))
-	serializer := data_structures.NewDynamicMapSerializer()
+	row := dataStructures.NewDynamicMap(make(map[string][]byte))
+	serializer := dataStructures.NewDynamicMapSerializer()
 	serializedRow := serializer.Serialize(row)
 	bytesExpected := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytesExpected, uint32(0))
@@ -129,7 +129,7 @@ func TestDeserializeDynMapWithTwoColumnsReturnsTheExpectedDynMap(t *testing.T) {
 	bytesSer = append(bytesSer, bytesLenValue2...)
 	bytesSer = append(bytesSer, bytesValue2...)
 
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewDynamicMapSerializer()
 	rowReceived := serializer.Deserialize(bytesSer)
 
 	stringCol, errStringCol := rowReceived.GetAsString("test_string")
