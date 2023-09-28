@@ -44,7 +44,7 @@ func initEnv() (*viper.Viper, error) {
 
 func main() {
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
 	env, err := initEnv()
 	if err != nil {

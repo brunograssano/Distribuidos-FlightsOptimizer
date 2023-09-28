@@ -26,7 +26,11 @@ func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Reduc
 
 func (r *Reducer) ReduceDims() {
 	for {
-		msg := r.consumer.Pop()
+		msg, ok := r.consumer.Pop()
+		if !ok {
+			log.Infof("Closing goroutine %v", r.reducerId)
+			return
+		}
 		cols := dataStrutures.Deserialize(msg)
 		reducedData, err := cols.ReduceToColumns(r.c.ColumnsToKeep)
 		if err != nil {
