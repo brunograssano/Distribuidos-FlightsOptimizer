@@ -36,10 +36,10 @@ func initEnv() (*viper.Viper, error) {
 	return v, nil
 }
 
-// initLogger Receives the log level to be set in logrus as a string. This method
+// InitLogger Receives the log level to be set in logrus as a string. This method
 // parses the string and set the level to the logger. If the level string is not
 // valid an error is returned
-func initLogger(logLevel string) error {
+func InitLogger(logLevel string) error {
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func InitConfig() *viper.Viper {
 		log.Fatalf("%s", err)
 	}
 
-	if err := initLogger(v.GetString("log.level")); err != nil {
+	if err := InitLogger(v.GetString("log.level")); err != nil {
 		log.Fatalf("%s", err)
 	}
 

@@ -5,5 +5,5 @@ type ProducerInterface interface {
 }
 
 type ConsumerInterface interface {
-	Pop() []byte
+	Pop() ([]byte, bool)
 }

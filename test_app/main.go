@@ -13,7 +13,7 @@ func main() {
 	if v.GetString("queue.type") == "c" {
 		queue := qMiddleware.CreateConsumer("test", true)
 		for i := 0; i < 50; i++ {
-			data := queue.Pop()
+			data, _ := queue.Pop()
 			log.Printf(string(data))
 		}
 	} else {

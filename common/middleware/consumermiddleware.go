@@ -28,7 +28,7 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 	}
 }
 
-func (queue *Consumer) Pop() []byte {
-	msg := <-queue.messageChannel
-	return msg.Body
+func (queue *Consumer) Pop() ([]byte, bool) {
+	msg, ok := <-queue.messageChannel
+	return msg.Body, ok
 }
