@@ -2,13 +2,7 @@ package data_structures
 
 import "encoding/binary"
 
-type DynamicMapSerializer struct{}
-
-func NewDynamicMapSerializer() *DynamicMapSerializer {
-	return &DynamicMapSerializer{}
-}
-
-func (dynMapSerializer *DynamicMapSerializer) Serialize(dynamicMap *DynamicMap) []byte {
+func Serialize(dynamicMap *DynamicMap) []byte {
 	var rowBytes []byte
 	mapLength := dynamicMap.GetColumnCount()
 	bytesNCols := make([]byte, 4)
@@ -29,7 +23,7 @@ func (dynMapSerializer *DynamicMapSerializer) Serialize(dynamicMap *DynamicMap) 
 	return rowBytes
 }
 
-func (dynMapSerializer *DynamicMapSerializer) Deserialize(dynamicMapBytes []byte) *DynamicMap {
+func Deserialize(dynamicMapBytes []byte) *DynamicMap {
 	nCols := int(binary.BigEndian.Uint32(dynamicMapBytes[0:4]))
 	currOffset := 4
 	mapForDynMap := make(map[string][]byte)
