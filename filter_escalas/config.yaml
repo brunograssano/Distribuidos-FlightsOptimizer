@@ -1,0 +1,8 @@
+id: 0
+log:
+  level: "info"
+filter:
+  goroutines: 6
+  queues:
+    input: "filter_escalas"
+    output: ["saver_3", "dim_reducer_saver_1"]

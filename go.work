@@ -4,4 +4,5 @@ use (
 	./test_app
 	./common
 	./dim_reducer
+	./filter_escalas
 )
