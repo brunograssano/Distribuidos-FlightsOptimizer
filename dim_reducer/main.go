@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -61,9 +62,9 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware()
-
+	serializer := dataStructures.NewDynamicMapSerializer()
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := NewReducer(i, qMiddleware, reducerConfig)
+		r := NewReducer(i, qMiddleware, reducerConfig, serializer)
 		go r.ReduceDims()
 	}
 	<-sigs
