@@ -86,3 +86,7 @@ func (dm *DynamicMap) GetColumnCount() uint32 {
 func (dm *DynamicMap) GetCurrentMap() map[string][]byte {
 	return dm.cols
 }
+
+func (dm *DynamicMap) AddColumn(key string, value []byte) {
+	dm.cols[key] = value
+}

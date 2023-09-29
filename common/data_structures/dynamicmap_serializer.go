@@ -46,3 +46,13 @@ func (dynMapSerializer *DynamicMapSerializer) Deserialize(dynamicMapBytes []byte
 	}
 	return NewDynamicMap(mapForDynMap)
 }
+
+func (dynMapSerializer *DynamicMapSerializer) SerializeUint(value uint32) []byte {
+	byteValue := make([]byte, 4)
+	binary.BigEndian.PutUint32(byteValue, value)
+	return byteValue
+}
+
+func (dynMapSerializer *DynamicMapSerializer) SerializeString(value string) []byte {
+	return []byte(value)
+}
