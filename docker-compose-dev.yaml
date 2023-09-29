@@ -1,0 +1,63 @@
+version: '3.9'
+name: tp1
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    build:
+      context: ./rabbitmq
+      dockerfile: rabbitmq.dockerfile
+    networks:
+      - testing_net
+    ports:
+      - "15672:15672"
+
+  reducer-ex1-1:
+    container_name: dim_reducer_reducer-ex1-1
+    image: dim_reducer:latest
+    environment:
+      - CLI_ID=1
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
+      - CLI_REDUCER_COLUMNS=legId,route,totalFare
+    networks:
+      - testing_net
+    volumes:
+      - ./dim_reducer/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  reducer-ex2-1:
+    container_name: dim_reducer_reducer-ex2-1
+    image: dim_reducer:latest
+    environment:
+      - CLI_ID=2
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
+      - CLI_REDUCER_COLUMNS=legId,route
+    networks:
+      - testing_net
+    volumes:
+      - ./dim_reducer/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+networks:
+  testing_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24
