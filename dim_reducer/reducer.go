@@ -1,7 +1,7 @@
 package main
 
 import (
-	dataStrutures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	log "github.com/sirupsen/logrus"
 )
@@ -11,10 +11,10 @@ type Reducer struct {
 	c          *ReducerConfig
 	consumer   middleware.ConsumerInterface
 	producer   middleware.ProducerInterface
-	serializer *dataStrutures.DynamicMapSerializer
+	serializer *dataStructures.DynamicMapSerializer
 }
 
-func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStrutures.DynamicMapSerializer) *Reducer {
+func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.DynamicMapSerializer) *Reducer {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	producer := qMiddleware.CreateProducer(c.OutputQueueName, true)
 	return &Reducer{
