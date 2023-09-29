@@ -24,8 +24,8 @@ jobs:
     - name: Build
       run: |
         go build -v ./common/...
-        go build -v ./dim_reducer/... -o dim_reducer_service.exe
-        go build -v ./test_app/... -o test_service.exe
+        go build -v -o dim_reducer_service.exe ./dim_reducer/...
+        go build -v -o test_service.exe ./test_app/...
 
     - name: Test
       run: |
