@@ -13,6 +13,7 @@ type ReducerConfig struct {
 	OutputQueueName string
 	ColumnsToKeep   []string
 	GoroutinesCount int
+	RabbitAddress   string
 }
 
 const ValueListSeparator string = ","
@@ -25,12 +26,12 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 		return nil, errors.New("missing id")
 	}
 
-	inputQueueName := env.GetString("reducer.queues.input")
+	inputQueueName := env.GetString("rabbitmq.queue.input")
 	if inputQueueName == "" {
 		return nil, errors.New("missing input queue")
 	}
 
-	outputQueueName := env.GetString("reducer.queues.output")
+	outputQueueName := env.GetString("rabbitmq.queue.output")
 	if outputQueueName == "" {
 		return nil, errors.New("missing output queue")
 	}
@@ -38,6 +39,11 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 	columnsInList := env.GetString("reducer.columns")
 	if columnsInList == "" {
 		return nil, errors.New("missing columns to reduce dim")
+	}
+
+	rabbitAddress := env.GetString("rabbitmq.address")
+	if rabbitAddress == "" {
+		return nil, errors.New("missing rabbitmq address")
 	}
 
 	columnsToKeep := strings.Split(columnsInList, ValueListSeparator)
@@ -48,9 +54,10 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 		goroutinesCount = defaultGoroutines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
+	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
+		rabbitAddress,
 		inputQueueName, outputQueueName, columnsToKeep, goroutinesCount)
 
 	return &ReducerConfig{
@@ -59,5 +66,6 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 		OutputQueueName: outputQueueName,
 		ColumnsToKeep:   columnsToKeep,
 		GoroutinesCount: goroutinesCount,
+		RabbitAddress:   rabbitAddress,
 	}, nil
 }

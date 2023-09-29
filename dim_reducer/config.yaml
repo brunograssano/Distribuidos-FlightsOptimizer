@@ -1,9 +1,7 @@
-id: 0
+
 log:
   level: "info"
 reducer:
-  columns: "legid"
-  goroutines: 6
-  queues:
-    input: "inputQueue"
-    output: "outputQueue"
+  goroutines: 4
+rabbitmq:
+  address: "amqp://guest:guest@rabbitmq:5672/"

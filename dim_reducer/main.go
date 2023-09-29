@@ -27,8 +27,9 @@ func initEnv() (*viper.Viper, error) {
 	// Add env variables supported
 	v.BindEnv("id")
 	v.BindEnv("log", "level")
-	v.BindEnv("reducer", "queues", "input")
-	v.BindEnv("reducer", "queues", "output")
+	v.BindEnv("rabbitmq", "address")
+	v.BindEnv("rabbitmq", "queue", "input")
+	v.BindEnv("rabbitmq", "queue", "output")
 	v.BindEnv("reducer", "columns")
 	v.BindEnv("reducer", "goroutines")
 	// Try to read configuration from config file. If config file
@@ -61,7 +62,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware()
+	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
 	serializer := dataStructures.NewDynamicMapSerializer()
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
 		r := NewReducer(i, qMiddleware, reducerConfig, serializer)
