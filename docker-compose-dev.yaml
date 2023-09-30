@@ -55,18 +55,40 @@ services:
         max_attempts: 15
         window: 10s
 
-  filter_escalas-ex1:
-    container_name: filters-ex1
+  filter_stopovers-1:
+    container_name: filter_stopovers-1
     image: filter_escalas:latest
     environment:
       - CLI_ID=3
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_RABBITMQ_QUEUES_INPUT=filters_escalas
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
       - CLI_RABBITMQ_QUEUES_OUTPUT=saver_3,dim_reducer_saver_1
     networks:
       - testing_net
     volumes:
       - ./filters/filter_escalas/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  data_processor-1:
+    container_name: data_processor-1
+    image: data_processor:latest
+    environment:
+      - CLI_ID=4
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
+      - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
+      - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
+    networks:
+      - testing_net
+    volumes:
+      - ./data_processor/config.yaml:/config.yaml
     depends_on:
       - rabbitmq
     deploy:

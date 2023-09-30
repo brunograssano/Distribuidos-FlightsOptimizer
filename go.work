@@ -5,4 +5,5 @@ use (
 	./dim_reducer
 	./filters
 	filters/filter_escalas
+	./data_processor
 )
