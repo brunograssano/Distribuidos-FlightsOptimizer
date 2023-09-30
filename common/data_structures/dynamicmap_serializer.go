@@ -1,6 +1,11 @@
 package data_structures
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"fmt"
+	"math"
+	"strings"
+)
 
 type DynamicMapSerializer struct{}
 
@@ -55,4 +60,26 @@ func (dynMapSerializer *DynamicMapSerializer) SerializeUint(value uint32) []byte
 
 func (dynMapSerializer *DynamicMapSerializer) SerializeString(value string) []byte {
 	return []byte(value)
+}
+
+func (dynMapSerializer *DynamicMapSerializer) SerializeToString(dynMap *DynamicMap) string {
+	const commaSeparator = ","
+	const newLine = "\n"
+	line := strings.Builder{}
+	currMap := dynMap.GetCurrentMap()
+	for key, value := range currMap {
+		if isFloatColumn(key) {
+			floatValue := math.Float32frombits(binary.BigEndian.Uint32(value))
+			line.WriteString(fmt.Sprintf("%v=%v", key, floatValue))
+		} else {
+			line.WriteString(fmt.Sprintf("%v=%v", key, string(value)))
+		}
+		line.WriteString(commaSeparator)
+	}
+	line.WriteString(newLine)
+	return line.String()
+}
+
+func isFloatColumn(key string) bool {
+	return key == "totalFare"
 }
