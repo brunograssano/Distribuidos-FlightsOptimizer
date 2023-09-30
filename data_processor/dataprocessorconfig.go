@@ -47,7 +47,7 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
-	goroutinesCount := env.GetInt("producer.goroutines")
+	goroutinesCount := env.GetInt("processor.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
 		log.Warnf("Not a valid value '%v' for goroutines count, using default", goroutinesCount)
 		goroutinesCount = defaultGoroutines
