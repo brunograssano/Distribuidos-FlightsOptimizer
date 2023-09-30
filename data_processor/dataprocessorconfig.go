@@ -4,6 +4,7 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 type ProcessorConfig struct {
@@ -15,6 +16,7 @@ type ProcessorConfig struct {
 	RabbitAddress        string
 }
 
+const ValueListSeparator string = ","
 const maxGoroutines int = 32
 const defaultGoroutines int = 4
 
@@ -29,10 +31,11 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 		return nil, errors.New("missing input queue")
 	}
 
-	outputQueueNameEx123 := env.GetStringSlice("rabbitmq.queue.output.ex123")
-	if len(outputQueueNameEx123) <= 0 {
+	outputQueueNameEx123 := env.GetString("rabbitmq.queue.output.ex123")
+	if outputQueueNameEx123 == "" {
 		return nil, errors.New("missing output queues for ex 1, 2, 3")
 	}
+	outputQueueNameEx123Array := strings.Split(outputQueueNameEx123, ValueListSeparator)
 
 	outputQueueNameEx4 := env.GetString("rabbitmq.queue.output.ex4")
 	if outputQueueNameEx4 == "" {
@@ -59,7 +62,7 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 	return &ProcessorConfig{
 		ID:                   id,
 		InputQueueName:       inputQueueName,
-		OutputQueueNameEx123: outputQueueNameEx123,
+		OutputQueueNameEx123: outputQueueNameEx123Array,
 		OutputQueueNameEx4:   outputQueueNameEx4,
 		GoroutinesCount:      goroutinesCount,
 		RabbitAddress:        rabbitAddress,
