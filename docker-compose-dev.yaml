@@ -56,7 +56,7 @@ services:
         window: 10s
 
   filter_escalas-ex1:
-    container_name: filters-ex1
+    container_name: filter_escalas-1
     image: filter_escalas:latest
     environment:
       - CLI_ID=3
@@ -67,6 +67,27 @@ services:
       - testing_net
     volumes:
       - ./filters/filter_escalas/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  filter_distancias-ex1:
+    container_name: filter_distancias-1
+    image: filter_distancias:latest
+    environment:
+      - CLI_ID=4
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_distancias
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
+    networks:
+      - testing_net
+    volumes:
+      - ./filters/filter_distancias/config.yaml:/config.yaml
     depends_on:
       - rabbitmq
     deploy:
