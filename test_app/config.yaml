@@ -1,4 +1,0 @@
-log:
-  level: "info"
-queue:
-  type: "c"

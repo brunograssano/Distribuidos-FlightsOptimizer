@@ -2,6 +2,7 @@ package middleware
 
 import (
 	amqp "github.com/rabbitmq/amqp091-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type QueueMiddleware struct {
@@ -9,11 +10,13 @@ type QueueMiddleware struct {
 	conn    *amqp.Connection
 }
 
-func NewQueueMiddleware() *QueueMiddleware {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+func NewQueueMiddleware(address string) *QueueMiddleware {
+	conn, err := amqp.Dial(address)
 	FailOnError(err, "Failed to connect via Dial to RabbitMQ.")
+	log.Infof("Connected to RabbitMQ")
 	ch, err := conn.Channel()
 	FailOnError(err, "Failed to create RabbitMQ Channel.")
+	log.Infof("Created RabbitMQ Channel")
 	return &QueueMiddleware{
 		channel: ch,
 		conn:    conn,

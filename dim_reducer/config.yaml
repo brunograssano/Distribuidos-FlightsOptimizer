@@ -1,0 +1,7 @@
+
+log:
+  level: "info"
+reducer:
+  goroutines: 4
+rabbitmq:
+  address: "amqp://guest:guest@rabbitmq:5672/"
