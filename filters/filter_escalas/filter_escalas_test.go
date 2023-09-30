@@ -50,7 +50,7 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 	}
 	filterEscalas := &FilterEscalas{
 		filterId:   0,
-		config:     &filters_config.FilterEscalasConfig{},
+		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
 		serializer: data_structures.NewDynamicMapSerializer(),
@@ -70,7 +70,6 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 
 	case <-time.After(2 * time.Second):
 	}
-	close(output)
 }
 
 func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
@@ -88,7 +87,7 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 	}
 	filterEscalas := &FilterEscalas{
 		filterId:   0,
-		config:     &filters_config.FilterEscalasConfig{},
+		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
 		serializer: data_structures.NewDynamicMapSerializer(),
@@ -116,7 +115,6 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		t.Errorf("Timeout! Should have finished by now...")
 	}
-	close(output)
 }
 
 func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T) {
@@ -134,7 +132,7 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 	}
 	filterEscalas := &FilterEscalas{
 		filterId:   0,
-		config:     &filters_config.FilterEscalasConfig{},
+		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
 		serializer: data_structures.NewDynamicMapSerializer(),
@@ -161,7 +159,6 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 	case <-time.After(1 * time.Second):
 		t.Errorf("Timeout! Should have finished by now...")
 	}
-	close(output)
 }
 
 func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.T) {
@@ -179,7 +176,7 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 	}
 	filterEscalas := &FilterEscalas{
 		filterId:   0,
-		config:     &filters_config.FilterEscalasConfig{},
+		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
 		serializer: data_structures.NewDynamicMapSerializer(),
@@ -219,5 +216,4 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 	if rowCountRecvd != 2 {
 		t.Errorf("Expected to receive only 2 rows, but %v were received", rowCountRecvd)
 	}
-	close(output)
 }

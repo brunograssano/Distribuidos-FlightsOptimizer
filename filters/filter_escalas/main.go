@@ -34,13 +34,12 @@ func initEnv() (*viper.Viper, error) {
 
 func main() {
 	sigs := make(chan os.Signal, 1)
-	defer close(sigs)
 	signal.Notify(sigs, syscall.SIGTERM)
 	env, err := initEnv()
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
-	filterEscalasConfig, err := filters_config.GetConfigFilterEscalas(env)
+	filterEscalasConfig, err := filters_config.GetConfigFilters(env)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}

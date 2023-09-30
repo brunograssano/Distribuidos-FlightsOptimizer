@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type FilterEscalasConfig struct {
+type FilterConfig struct {
 	ID               string
 	InputQueueName   string
 	OutputQueueNames []string
@@ -19,7 +19,7 @@ const ValueListSeparator string = ","
 const maxGoroutines int = 32
 const defaultGoroutines int = 4
 
-func GetConfigFilterEscalas(env *viper.Viper) (*FilterEscalasConfig, error) {
+func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")
@@ -55,7 +55,7 @@ func GetConfigFilterEscalas(env *viper.Viper) (*FilterEscalasConfig, error) {
 		goroutinesCount,
 	)
 
-	return &FilterEscalasConfig{
+	return &FilterConfig{
 		ID:               id,
 		InputQueueName:   inputQueueName,
 		OutputQueueNames: outputQueueNamesArray,

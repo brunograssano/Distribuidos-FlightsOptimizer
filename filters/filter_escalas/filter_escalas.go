@@ -10,7 +10,7 @@ import (
 
 type FilterEscalas struct {
 	filterId   int
-	config     *filters_config.FilterEscalasConfig
+	config     *filters_config.FilterConfig
 	consumer   middleware.ConsumerInterface
 	producers  []middleware.ProducerInterface
 	serializer *dataStructures.DynamicMapSerializer
@@ -19,7 +19,7 @@ type FilterEscalas struct {
 
 const MinStopovers = 3
 
-func NewFilterEscalas(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterEscalasConfig) *FilterEscalas {
+func NewFilterEscalas(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterEscalas {
 	inputQueue := qMiddleware.CreateConsumer(conf.InputQueueName, true)
 	outputQueues := make([]middleware.ProducerInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
