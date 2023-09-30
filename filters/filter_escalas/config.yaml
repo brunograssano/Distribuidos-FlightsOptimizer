@@ -1,0 +1,6 @@
+log:
+  level: "info"
+filter:
+  goroutines: 6
+rabbitmq:
+  address: "amqp://guest:guest@rabbitmq:5672/"

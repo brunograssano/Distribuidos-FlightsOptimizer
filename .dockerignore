@@ -1,2 +1,4 @@
 dim_reducer/config.yaml
 dim_reducer/Dockerfile
+filters/config.yaml
+filters/filter_escalas/Dockerfile
