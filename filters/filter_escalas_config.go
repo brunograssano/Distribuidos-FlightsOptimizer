@@ -1,9 +1,10 @@
-package main
+package filters_config
 
 import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 type FilterEscalasConfig struct {
@@ -11,8 +12,10 @@ type FilterEscalasConfig struct {
 	InputQueueName   string
 	OutputQueueNames []string
 	GoroutinesCount  int
+	RabbitAddress    string
 }
 
+const ValueListSeparator string = ","
 const maxGoroutines int = 32
 const defaultGoroutines int = 4
 
@@ -22,14 +25,20 @@ func GetConfigFilterEscalas(env *viper.Viper) (*FilterEscalasConfig, error) {
 		return nil, errors.New("missing id")
 	}
 
-	inputQueueName := env.GetString("filter.queues.input")
+	inputQueueName := env.GetString("rabbitmq.queues.input")
 	if inputQueueName == "" {
 		return nil, errors.New("missing input queue")
 	}
 
-	outputQueueNames := env.GetStringSlice("filter.queues.output")
+	outputQueueNames := env.GetString("rabbitmq.queues.output")
 	if len(outputQueueNames) <= 0 {
 		return nil, errors.New("missing output queue")
+	}
+	outputQueueNamesArray := strings.Split(outputQueueNames, ValueListSeparator)
+
+	rabbitAddress := env.GetString("rabbitmq.address")
+	if rabbitAddress == "" {
+		return nil, errors.New("missing rabbitmq address")
 	}
 
 	goroutinesCount := env.GetInt("filter.goroutines")
@@ -49,7 +58,8 @@ func GetConfigFilterEscalas(env *viper.Viper) (*FilterEscalasConfig, error) {
 	return &FilterEscalasConfig{
 		ID:               id,
 		InputQueueName:   inputQueueName,
-		OutputQueueNames: outputQueueNames,
+		OutputQueueNames: outputQueueNamesArray,
 		GoroutinesCount:  goroutinesCount,
+		RabbitAddress:    rabbitAddress,
 	}, nil
 }

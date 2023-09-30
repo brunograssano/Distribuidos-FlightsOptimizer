@@ -55,6 +55,27 @@ services:
         max_attempts: 15
         window: 10s
 
+  filter_escalas-ex1:
+    container_name: filters-ex1
+    image: filter_escalas:latest
+    environment:
+      - CLI_ID=3
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_escalas
+      - CLI_RABBITMQ_QUEUES_OUTPUT=saver_3,dim_reducer_saver_1
+    networks:
+      - testing_net
+    volumes:
+      - ./filters/filter_escalas/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
 networks:
   testing_net:
     ipam:

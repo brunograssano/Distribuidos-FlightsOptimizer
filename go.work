@@ -3,5 +3,6 @@ go 1.21
 use (
 	./common
 	./dim_reducer
-	./filter_escalas
+	./filters
+	filters/filter_escalas
 )
