@@ -3,3 +3,5 @@ dim_reducer/Dockerfile
 filters/config.yaml
 filters/filter_escalas/Dockerfile
 filters/filter_distancias/Dockerfile
+data_processor/config.yaml
+data_processor/Dockerfile

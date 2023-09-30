@@ -4,6 +4,7 @@ PWD := $(shell pwd)
 
 docker-image:
 	docker build -f ./dim_reducer/Dockerfile -t "dim_reducer:latest" .
+	docker build -f ./data_processor/Dockerfile -t "data_processor:latest" .
 	docker build -f ./filters/filter_escalas/Dockerfile -t "filter_escalas:latest" .
 	docker build -f ./filters/filter_distancias/Dockerfile -t "filter_distancias:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
