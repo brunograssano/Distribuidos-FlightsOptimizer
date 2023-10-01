@@ -18,7 +18,7 @@ func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, ser
 	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer}
 }
 
-func closeFile(file filemanager.OutputManagerInterface) {
+func closeFile(file filemanager.IOManagerInterface) {
 	err := file.Close()
 	if err != nil {
 		log.Errorf("action: closing_file | status: error | %v", err)
