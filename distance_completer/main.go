@@ -46,7 +46,13 @@ func main() {
 		go distCompleter.CompleteDistances()
 	}
 
-	// TODO saver goroutine
+	airportsSaver := controllers.NewAirportSaver(
+		completerConfig,
+		qMiddleware,
+		data_structures.NewDynamicMapSerializer(),
+		startChannels,
+	)
+	go airportsSaver.SaveAirports()
 
 	<-sigs
 	qMiddleware.Close()

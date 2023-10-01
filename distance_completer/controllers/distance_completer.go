@@ -138,6 +138,7 @@ func (dc *DistanceCompleter) loadAirports() {
 
 func (dc *DistanceCompleter) CompleteDistances() {
 	<-dc.fileLoadedSignal
+	log.Infof("[CompleterProcess] Received signal to load file. Loading airports and initializing completer...")
 	dc.loadAirports()
 	for {
 		msg, ok := dc.consumer.Pop()
