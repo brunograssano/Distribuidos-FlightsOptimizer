@@ -7,4 +7,5 @@ use (
 	filters/filter_escalas
 	filters/filter_distancias
 	./data_processor
+	./distance_completer
 )
