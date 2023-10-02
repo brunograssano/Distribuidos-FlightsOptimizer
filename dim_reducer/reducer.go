@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Reducer Structure that reduces the dimensions of a row by removing columns
 type Reducer struct {
 	reducerId  int
 	c          *ReducerConfig
@@ -14,6 +15,7 @@ type Reducer struct {
 	serializer *dataStructures.DynamicMapSerializer
 }
 
+// NewReducer Creates a new reducer
 func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.DynamicMapSerializer) *Reducer {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	producer := qMiddleware.CreateProducer(c.OutputQueueName, true)
@@ -26,6 +28,8 @@ func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Reduc
 	}
 }
 
+// ReduceDims Loop that waits for input from the queue, reduces the rows by removing columns
+// and sends the result to the next step
 func (r *Reducer) ReduceDims() {
 	for {
 		msg, ok := r.consumer.Pop()
