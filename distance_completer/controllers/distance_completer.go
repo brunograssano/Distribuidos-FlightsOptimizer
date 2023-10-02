@@ -112,7 +112,10 @@ func shouldCompleteCol(distance float32) bool {
 
 func (dc *DistanceCompleter) sendNext(row *dataStructures.DynamicMap) {
 	bytesToSend := dc.serializer.Serialize(row)
-	dc.producer.Send(bytesToSend)
+	err := dc.producer.Send(bytesToSend)
+	if err != nil {
+		log.Errorf("Error trying to send to the next service...")
+	}
 }
 
 func (dc *DistanceCompleter) loadAirports() {
