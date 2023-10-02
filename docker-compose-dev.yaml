@@ -98,6 +98,52 @@ services:
         max_attempts: 15
         window: 10s
 
+  filter_distances-1:
+    container_name: filter_distances-1
+    image: filter_distancias:latest
+    environment:
+      - CLI_ID=5
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
+    networks:
+      - testing_net
+    volumes:
+      - ./filters/filter_distancias/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  distance_completer-1:
+    container_name: distance_completer-1
+    image: distance_completer:latest
+    environment:
+      - CLI_ID=6
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
+      - CLI_RABBITMQ_QUEUES_OUTPUT=filters_distances
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
+      - CLI_COMPLETER_FILENAME=airports.csv
+    networks:
+      - testing_net
+    volumes:
+      - ./distance_completer/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
 networks:
   testing_net:
     ipam:

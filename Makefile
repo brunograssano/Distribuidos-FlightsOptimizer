@@ -6,6 +6,8 @@ docker-image:
 	docker build -f ./dim_reducer/Dockerfile -t "dim_reducer:latest" .
 	docker build -f ./data_processor/Dockerfile -t "data_processor:latest" .
 	docker build -f ./filters/filter_escalas/Dockerfile -t "filter_escalas:latest" .
+	docker build -f ./filters/filter_distancias/Dockerfile -t "filter_distancias:latest" .
+	docker build -f ./distance_completer/Dockerfile -t "distance_completer:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you
 	# want to avoid rebuilding client image every time the docker-compose-up command

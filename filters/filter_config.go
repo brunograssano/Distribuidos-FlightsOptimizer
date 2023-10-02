@@ -2,6 +2,7 @@ package filters_config
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -18,6 +19,26 @@ type FilterConfig struct {
 const ValueListSeparator string = ","
 const maxGoroutines int = 32
 const defaultGoroutines int = 4
+
+func InitEnv() (*viper.Viper, error) {
+	v := viper.New()
+
+	v.AutomaticEnv()
+	v.SetEnvPrefix("cli")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	_ = v.BindEnv("id")
+	_ = v.BindEnv("log", "level")
+	_ = v.BindEnv("rabbitmq", "queues", "input")
+	_ = v.BindEnv("rabbitmq", "queues", "output")
+	_ = v.BindEnv("filter", "goroutines")
+	v.SetConfigFile("./config.yaml")
+	if err := v.ReadInConfig(); err != nil {
+		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+	}
+
+	return v, nil
+}
 
 func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	id := env.GetString("id")

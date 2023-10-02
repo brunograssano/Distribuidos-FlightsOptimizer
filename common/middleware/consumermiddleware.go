@@ -1,6 +1,9 @@
 package middleware
 
-import amqp "github.com/rabbitmq/amqp091-go"
+import (
+	"fmt"
+	amqp "github.com/rabbitmq/amqp091-go"
+)
 
 type Consumer struct {
 	ConsumerInterface
@@ -31,4 +34,18 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 func (queue *Consumer) Pop() ([]byte, bool) {
 	msg, ok := <-queue.messageChannel
 	return msg.Body, ok
+}
+
+func (queue *Consumer) BindTo(nameExchange string, routingKey string) error {
+	err := queue.rabbitMQChannel.QueueBind(
+		queue.queue.Name, // queue name
+		routingKey,       // routing key
+		nameExchange,     // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error binding queue to exchange: %v", err)
+	}
+	return nil
 }

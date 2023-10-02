@@ -16,16 +16,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
-	filterEscalasConfig, err := filters_config.GetConfigFilters(env)
+	filterDistanciaConfig, err := filters_config.GetConfigFilters(env)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware(filterEscalasConfig.RabbitAddress)
-	for i := 0; i < filterEscalasConfig.GoroutinesCount; i++ {
-		fe := NewFilterEscalas(i, qMiddleware, filterEscalasConfig)
+	qMiddleware := middleware.NewQueueMiddleware(filterDistanciaConfig.RabbitAddress)
+	for i := 0; i < filterDistanciaConfig.GoroutinesCount; i++ {
+		fd := NewFilterDistancias(i, qMiddleware, filterDistanciaConfig)
 		log.Infof("Spawning GoRoutine #%v - Filter Escalas", i)
-		go fe.FilterEscalas()
+		go fd.FilterDistances()
 	}
 	<-sigs
 	qMiddleware.Close()

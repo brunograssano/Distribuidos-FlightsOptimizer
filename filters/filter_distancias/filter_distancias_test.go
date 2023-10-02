@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"math"
 	"testing"
 	"time"
 )
@@ -40,7 +41,7 @@ func (m *mockProducer) Send(data []byte) error {
 	return nil
 }
 
-func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T) {
+func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesFilter(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
 	serializer := data_structures.NewDynamicMapSerializer()
@@ -53,7 +54,7 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterEscalas := &FilterEscalas{
+	filterDistancias := &FilterDistancias{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
@@ -61,23 +62,67 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 		serializer: data_structures.NewDynamicMapSerializer(),
 		filter:     filters.NewFilter(),
 	}
-	go filterEscalas.FilterEscalas()
+	go filterDistancias.FilterDistances()
 
 	dynMap := make(map[string][]byte)
-	dynMap["totalStopovers"] = make([]byte, 4)
-	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(2))
+	dynMap["directDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
+	dynMap["totalTravelDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(8.5))
+	row := data_structures.NewDynamicMap(dynMap)
+	input <- serializer.Serialize(row)
+	close(input)
+	select {
+	case result := <-output:
+		newRow := serializer.Deserialize(result)
+		columnCount := newRow.GetColumnCount()
+		if columnCount != 2 {
+			t.Errorf("Received a row that was not expected, has not 2 columns, it has %v", columnCount)
+		}
+	case <-time.After(2 * time.Second):
+		t.Errorf("Timeout happened. Should have finished before.")
+	}
+}
+
+func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(t *testing.T) {
+	input := make(chan []byte)
+	output := make(chan []byte)
+	serializer := data_structures.NewDynamicMapSerializer()
+
+	mockCons := &mockConsumer{
+		inputChannel: input,
+		ok:           true,
+	}
+	arrayProducers := make([]middleware.ProducerInterface, 1)
+	arrayProducers[0] = &mockProducer{
+		outputChannel: output,
+	}
+	filterDistancias := &FilterDistancias{
+		filterId:   0,
+		config:     &filters_config.FilterConfig{},
+		consumer:   mockCons,
+		producers:  arrayProducers,
+		serializer: data_structures.NewDynamicMapSerializer(),
+		filter:     filters.NewFilter(),
+	}
+	go filterDistancias.FilterDistances()
+
+	dynMap := make(map[string][]byte)
+	dynMap["directDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
+	dynMap["totalTravelDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(7.6))
 	row := data_structures.NewDynamicMap(dynMap)
 	input <- serializer.Serialize(row)
 	close(input)
 	select {
 	case <-output:
-		t.Errorf("RowCount expected was 0")
-
+		t.Errorf("Should not have received this row.")
 	case <-time.After(2 * time.Second):
 	}
 }
 
-func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
+func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
 	serializer := data_structures.NewDynamicMapSerializer()
@@ -90,7 +135,7 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterEscalas := &FilterEscalas{
+	filterDistancias := &FilterDistancias{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
@@ -98,31 +143,24 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 		serializer: data_structures.NewDynamicMapSerializer(),
 		filter:     filters.NewFilter(),
 	}
-	go filterEscalas.FilterEscalas()
+	go filterDistancias.FilterDistances()
 
 	dynMap := make(map[string][]byte)
-	dynMap["totalStopovers"] = make([]byte, 4)
-	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(3))
+	dynMap["directDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
+	dynMap["totalTravelDistance"] = make([]byte, 4)
+	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.0))
 	row := data_structures.NewDynamicMap(dynMap)
 	input <- serializer.Serialize(row)
 	close(input)
 	select {
-	case result := <-output:
-		newRow := serializer.Deserialize(result)
-		ts, err := newRow.GetAsInt("totalStopovers")
-		if err != nil {
-			t.Errorf("Error getting totalStopovers...")
-		}
-		if ts < 3 {
-			t.Errorf("Received a row that was not expected, has less than 3 stopovers...")
-		}
-
-	case <-time.After(1 * time.Second):
-		t.Errorf("Timeout! Should have finished by now...")
+	case <-output:
+		t.Errorf("Should not have received this row.")
+	case <-time.After(2 * time.Second):
 	}
 }
 
-func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T) {
+func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
 	serializer := data_structures.NewDynamicMapSerializer()
@@ -135,7 +173,7 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterEscalas := &FilterEscalas{
+	filterDistancias := &FilterDistancias{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
@@ -143,56 +181,14 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 		serializer: data_structures.NewDynamicMapSerializer(),
 		filter:     filters.NewFilter(),
 	}
-	go filterEscalas.FilterEscalas()
-
-	dynMap := make(map[string][]byte)
-	dynMap["totalStopovers"] = make([]byte, 4)
-	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(4))
-	row := data_structures.NewDynamicMap(dynMap)
-	input <- serializer.Serialize(row)
-	close(input)
-	select {
-	case result := <-output:
-		newRow := serializer.Deserialize(result)
-		ts, err := newRow.GetAsInt("totalStopovers")
-		if err != nil {
-			t.Errorf("Error getting totalStopovers...")
-		}
-		if ts < 3 {
-			t.Errorf("Received a row that was not expected, has less than 3 stopovers...")
-		}
-	case <-time.After(1 * time.Second):
-		t.Errorf("Timeout! Should have finished by now...")
-	}
-}
-
-func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.T) {
-	input := make(chan []byte, 3)
-	output := make(chan []byte, 3)
-	serializer := data_structures.NewDynamicMapSerializer()
-
-	mockCons := &mockConsumer{
-		inputChannel: input,
-		ok:           true,
-	}
-	arrayProducers := make([]middleware.ProducerInterface, 1)
-	arrayProducers[0] = &mockProducer{
-		outputChannel: output,
-	}
-	filterEscalas := &FilterEscalas{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewDynamicMapSerializer(),
-		filter:     filters.NewFilter(),
-	}
-	go filterEscalas.FilterEscalas()
+	go filterDistancias.FilterDistances()
 
 	for i := 0; i < 3; i++ {
 		dynMap := make(map[string][]byte)
-		dynMap["totalStopovers"] = make([]byte, 4)
-		binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(2+i))
+		dynMap["directDistance"] = make([]byte, 4)
+		binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
+		dynMap["totalTravelDistance"] = make([]byte, 4)
+		binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.7+1.9*float32(i)))
 		row := data_structures.NewDynamicMap(dynMap)
 		input <- serializer.Serialize(row)
 	}
@@ -203,22 +199,19 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 		case result := <-output:
 			newRow := serializer.Deserialize(result)
 			rowCountRecvd++
-			ts, err := newRow.GetAsInt("totalStopovers")
-			if err != nil {
-				t.Errorf("Error getting totalStopovers...")
-			}
-			if ts < 3 {
+			colC := newRow.GetColumnCount()
+			if colC != 2 {
 				t.Errorf("Received a row that was not expected, has less than 3 stopovers...")
 			}
 
 		case <-time.After(1 * time.Second):
-			// Should only read two messages from channel (3 and 4 stopovers)
-			if rowCountRecvd != 2 {
+			// Should only read one message from channel (The greater one)
+			if rowCountRecvd != 1 {
 				t.Errorf("Timeout! Should have finished by now...")
 			}
 		}
 	}
-	if rowCountRecvd != 2 {
-		t.Errorf("Expected to receive only 2 rows, but %v were received", rowCountRecvd)
+	if rowCountRecvd != 1 {
+		t.Errorf("Expected to receive only 1 row, but %v were received", rowCountRecvd)
 	}
 }
