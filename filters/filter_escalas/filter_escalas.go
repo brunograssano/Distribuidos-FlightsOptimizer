@@ -51,7 +51,10 @@ func (fe *FilterEscalas) FilterEscalas() {
 		}
 		if passesFilter {
 			for _, producer := range fe.producers {
-				producer.Send(data)
+				err = producer.Send(data)
+				if err != nil {
+					log.Errorf("Error trying to send message that passed filter...")
+				}
 			}
 		}
 	}

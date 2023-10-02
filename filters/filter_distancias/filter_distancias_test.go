@@ -26,14 +26,19 @@ func (m *mockConsumer) Pop() ([]byte, bool) {
 	return msg, ok
 }
 
+func (m *mockConsumer) BindTo(_ string, _ string) error {
+	return nil
+}
+
 type (
 	mockProducer struct {
 		outputChannel chan []byte
 	}
 )
 
-func (m *mockProducer) Send(data []byte) {
+func (m *mockProducer) Send(data []byte) error {
 	m.outputChannel <- data
+	return nil
 }
 
 func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesFilter(t *testing.T) {

@@ -56,7 +56,10 @@ func (d *DataProcessor) ProcessData() {
 		}
 		serialized := d.serializer.Serialize(cols)
 		for _, producer := range d.producersEx123 {
-			producer.Send(serialized)
+			err = producer.Send(serialized)
+			if err != nil {
+				log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
+			}
 		}
 		cols, err = d.processEx4Row(cols)
 		if err != nil {
@@ -64,7 +67,10 @@ func (d *DataProcessor) ProcessData() {
 			continue
 		}
 		serialized = d.serializer.Serialize(cols)
-		d.producersEx4.Send(serialized)
+		err = d.producersEx4.Send(serialized)
+		if err != nil {
+			log.Errorf("Error trying to send to exercise 4 the serialized row")
+		}
 
 	}
 }

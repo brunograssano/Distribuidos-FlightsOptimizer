@@ -55,7 +55,10 @@ func (fd *FilterDistancias) FilterDistances() {
 		}
 		if passesFilter {
 			for _, producer := range fd.producers {
-				producer.Send(data)
+				err = producer.Send(data)
+				if err != nil {
+					log.Errorf("Error trying to send message that passed filter...")
+				}
 			}
 		}
 	}

@@ -9,13 +9,15 @@ import (
 )
 
 type CompleterConfig struct {
-	ID                     string
-	InputQueueAirportsName string
-	InputQueueFlightsName  string
-	OutputQueueName        string
-	GoroutinesCount        int
-	RabbitAddress          string
-	AirportsFilename       string
+	ID                         string
+	InputQueueAirportsName     string
+	RoutingKeyExchangeAirports string
+	ExchangeNameAirports       string
+	InputQueueFlightsName      string
+	OutputQueueName            string
+	GoroutinesCount            int
+	RabbitAddress              string
+	AirportsFilename           string
 }
 
 const maxGoroutines int = 32
@@ -35,6 +37,9 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "output")
 	_ = v.BindEnv("completer", "goroutines")
 	_ = v.BindEnv("completer", "filename")
+	_ = v.BindEnv("rabbitmq", "queue", "input", "airportroutingkey")
+	_ = v.BindEnv("rabbitmq", "queue", "input", "airportexchange")
+	_ = v.BindEnv("rabbitmq", "address")
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
@@ -52,6 +57,16 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 	inputQueueAirportsName := env.GetString("rabbitmq.queue.input.airport")
 	if inputQueueAirportsName == "" {
 		return nil, errors.New("missing input queue for airports")
+	}
+
+	airportRoutingKey := env.GetString("rabbitmq.queue.input.airportroutingkey")
+	if airportRoutingKey == "" {
+		return nil, errors.New("missing input for airports routing key")
+	}
+
+	airportExchangeName := env.GetString("rabbitmq.queue.input.airportexchange")
+	if airportExchangeName == "" {
+		return nil, errors.New("missing input for airports exchange name")
 	}
 
 	inputQueueFlightsName := env.GetString("rabbitmq.queue.input.flights")
@@ -80,7 +95,7 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		return nil, errors.New("missing filename")
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputQueueAirportName: %v | inputQueueFlightName: %v | outputQueueNames: %v | goroutinesCount: %v | airportsFilename: %v",
+	log.Infof("action: config | result: success | id: %s | log_level: %s | inputQueueAirportName: %v | inputQueueFlightName: %v | outputQueueNames: %v | goroutinesCount: %v | airportsFilename: %v | exchangeName: %v | routingKey: %v",
 		id,
 		env.GetString("log.level"),
 		inputQueueAirportsName,
@@ -88,15 +103,19 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		outputQueueName,
 		goroutinesCount,
 		fileName,
+		airportExchangeName,
+		airportRoutingKey,
 	)
 
 	return &CompleterConfig{
-		ID:                     id,
-		InputQueueAirportsName: inputQueueAirportsName,
-		InputQueueFlightsName:  inputQueueFlightsName,
-		OutputQueueName:        outputQueueName,
-		GoroutinesCount:        goroutinesCount,
-		RabbitAddress:          rabbitAddress,
-		AirportsFilename:       fileName,
+		ID:                         id,
+		InputQueueAirportsName:     inputQueueAirportsName,
+		InputQueueFlightsName:      inputQueueFlightsName,
+		OutputQueueName:            outputQueueName,
+		GoroutinesCount:            goroutinesCount,
+		RabbitAddress:              rabbitAddress,
+		AirportsFilename:           fileName,
+		ExchangeNameAirports:       airportExchangeName,
+		RoutingKeyExchangeAirports: airportRoutingKey,
 	}, nil
 }

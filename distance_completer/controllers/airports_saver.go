@@ -24,6 +24,10 @@ func NewAirportSaver(
 	fileLoadedSignals []chan bool,
 ) *AirportSaver {
 	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
+	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports)
+	if err != nil {
+		log.Fatalf("Error trying to bind the consumer's queue to the exchange: %v", err)
+	}
 	fileWriter, err := filemanager.NewFileWriter(conf.AirportsFilename)
 	if err != nil {
 		log.Fatalf("Error trying to initialize FileWriter in saver: %v", err)
@@ -72,7 +76,7 @@ func (as *AirportSaver) SaveAirports() {
 			log.Errorf("Error trying to get longitude: %v. Skipping row...", err)
 			continue
 		}
-		stringToSave := fmt.Sprintf("%v,%v,%v", airportCode, lat, long)
+		stringToSave := fmt.Sprintf("%v,%v,%v\n", airportCode, lat, long)
 		err = as.fileSaver.WriteLine(stringToSave)
 		if err != nil {
 			log.Errorf("Error trying to write line: %v. Skipping row...", err)
@@ -80,4 +84,9 @@ func (as *AirportSaver) SaveAirports() {
 		}
 	}
 	as.signalCompleters()
+	err := as.fileSaver.FileManager.Close()
+	if err != nil {
+		log.Errorf("Error closing file...")
+	}
+
 }
