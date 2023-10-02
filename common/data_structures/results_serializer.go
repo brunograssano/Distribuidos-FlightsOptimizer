@@ -2,6 +2,7 @@ package data_structures
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,7 +20,7 @@ func (r *ResultsSerializer) SendLine(line string) error {
 }
 
 func (r *ResultsSerializer) Close() {
-	CloseSocketAndNotifyError(r.socket)
+	utils.CloseSocketAndNotifyError(r.socket)
 }
 
 func (r *ResultsSerializer) AskLaterForResults() {
@@ -35,12 +36,5 @@ func (r *ResultsSerializer) EndedFile() {
 	_, err := r.socket.Write([]byte("ENDED_FILE"))
 	if err != nil {
 		log.Errorf("action: sending_ended_msg | status: error | %v", err)
-	}
-}
-
-func CloseSocketAndNotifyError(s communication.TCPSocketInterface) {
-	err := s.Close()
-	if err != nil {
-		log.Errorf("action: closing_socket | status: error | %v", err)
 	}
 }

@@ -4,10 +4,11 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"io"
 )
 
+// SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
 	c          *SaverConfig
 	consumer   middleware.ConsumerInterface
@@ -15,18 +16,13 @@ type SimpleSaver struct {
 	canSend    chan bool
 }
 
+// NewSimpleSaver Creates a new saver for the results
 func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.DynamicMapSerializer, canSend chan bool) *SimpleSaver {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
 }
 
-func closeFile(file io.Closer) {
-	err := file.Close()
-	if err != nil {
-		log.Errorf("action: closing_file | status: error | %v", err)
-	}
-}
-
+// SaveData Saves the results from the queue in a file
 func (s *SimpleSaver) SaveData() {
 	for {
 		msg, ok := s.consumer.Pop()
@@ -49,9 +45,9 @@ func (s *SimpleSaver) SaveData() {
 		err = writer.WriteLine(line)
 		if err != nil {
 			log.Errorf("action: writing_file | status: error | %v", err)
-			closeFile(writer.FileManager)
+			utils.CloseFileAndNotifyError(writer.FileManager)
 			return
 		}
-		closeFile(writer.FileManager)
+		utils.CloseFileAndNotifyError(writer.FileManager)
 	}
 }

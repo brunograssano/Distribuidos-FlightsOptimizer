@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// SaverConfig The configuration of the application
 type SaverConfig struct {
 	ID             string
 	InputQueueName string
@@ -16,6 +17,7 @@ type SaverConfig struct {
 	GetterAddress  string
 }
 
+// InitEnv Initializes the configuration properties from a config file and environment
 func InitEnv() (*viper.Viper, error) {
 	v := viper.New()
 
@@ -46,6 +48,7 @@ func InitEnv() (*viper.Viper, error) {
 	return v, nil
 }
 
+// GetConfig Validates and returns the configuration of the application
 func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 	id := env.GetString("id")
 	if id == "" {
