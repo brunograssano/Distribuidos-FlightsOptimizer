@@ -80,6 +80,12 @@ func (dynMapSerializer *DynamicMapSerializer) SerializeToString(dynMap *DynamicM
 	return line.String()
 }
 
+func (dynMapSerializer *DynamicMapSerializer) SerializeFloat(value float32) []byte {
+	bytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(bytes, math.Float32bits(value))
+	return bytes
+}
+
 func isFloatColumn(key string) bool {
 	return key == "totalFare"
 }

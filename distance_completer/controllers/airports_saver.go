@@ -50,6 +50,7 @@ func (as *AirportSaver) signalCompleters() {
 }
 
 func (as *AirportSaver) SaveAirports() {
+	defer as.closeFile()
 	for {
 		msg, ok := as.consumer.Pop()
 		if !ok {
@@ -84,9 +85,12 @@ func (as *AirportSaver) SaveAirports() {
 		}
 	}
 	as.signalCompleters()
+
+}
+
+func (as *AirportSaver) closeFile() {
 	err := as.fileSaver.FileManager.Close()
 	if err != nil {
-		log.Errorf("Error closing file...")
+		log.Errorf("Error closing airports file...")
 	}
-
 }
