@@ -8,5 +8,6 @@ use (
 	filters/filter_distancias
 	./data_processor
 	./simple_saver
+	./client
 	./distance_completer
 )
