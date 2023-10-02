@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
@@ -22,7 +23,7 @@ func NewProducer(channel *amqp.Channel, name string, durable bool) *Producer {
 	}
 }
 
-func (queue *Producer) Send(data []byte) {
+func (queue *Producer) Send(data []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUTSECONDS*time.Second)
 	defer cancel()
 	err := queue.rabbitMQChannel.PublishWithContext(ctx,
@@ -36,5 +37,8 @@ func (queue *Producer) Send(data []byte) {
 			DeliveryMode: amqp.Persistent,
 		},
 	)
-	FailOnError(err, "Failed to Publish content into queue.")
+	if err != nil {
+		return fmt.Errorf("failed to Publish content into queue: %v", err)
+	}
+	return nil
 }

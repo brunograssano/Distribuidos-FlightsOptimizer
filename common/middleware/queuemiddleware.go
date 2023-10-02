@@ -31,6 +31,10 @@ func (qm *QueueMiddleware) CreateProducer(name string, durable bool) ProducerInt
 	return NewProducer(qm.channel, name, durable)
 }
 
+func (qm *QueueMiddleware) CreateExchangeProducer(nameExchange string, routingKey string, typeExchange string, durable bool) ProducerInterface {
+	return NewExchangeProducer(qm.channel, nameExchange, routingKey, typeExchange, durable)
+}
+
 func (qm *QueueMiddleware) Close() {
 	err := qm.channel.Close()
 	FailOnError(err, "Error closing QueueMiddleware Channel")

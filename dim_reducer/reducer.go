@@ -40,6 +40,9 @@ func (r *Reducer) ReduceDims() {
 			continue
 		}
 		serialized := r.serializer.Serialize(reducedData)
-		r.producer.Send(serialized)
+		err = r.producer.Send(serialized)
+		if err != nil {
+			log.Errorf("Error trying to send message to output queue")
+		}
 	}
 }
