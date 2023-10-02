@@ -30,14 +30,16 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
 	serializer := dataStructures.NewDynamicMapSerializer()
-	saver := NewSimpleSaver(qMiddleware, saverConfig, serializer)
+	canSend := make(chan bool)
+	saver := NewSimpleSaver(qMiddleware, saverConfig, serializer, canSend)
 	go saver.SaveData()
 
-	getter, err := NewGetter(saverConfig)
+	getter, err := NewGetter(saverConfig, canSend)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 	go getter.ReturnResults()
 	<-sigs
 	qMiddleware.Close()
+	getter.Close()
 }

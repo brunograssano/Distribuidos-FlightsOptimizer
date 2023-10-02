@@ -11,11 +11,12 @@ type SimpleSaver struct {
 	c          *SaverConfig
 	consumer   middleware.ConsumerInterface
 	serializer *dataStructures.DynamicMapSerializer
+	canSend    chan bool
 }
 
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.DynamicMapSerializer) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.DynamicMapSerializer, canSend chan bool) *SimpleSaver {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
-	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer}
+	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
 }
 
 func closeFile(file filemanager.IOManagerInterface) {
@@ -33,6 +34,12 @@ func (s *SimpleSaver) SaveData() {
 			return
 		}
 		dynMap := s.serializer.Deserialize(msg)
+		if dynMap.GetColumnCount() == 0 {
+			s.canSend <- true
+			close(s.canSend)
+			log.Infof("Received all results")
+			return
+		}
 		writer, err := filemanager.NewFileWriter(s.c.OutputFileName)
 		if err != nil {
 			return

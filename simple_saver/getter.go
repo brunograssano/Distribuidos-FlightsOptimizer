@@ -2,53 +2,73 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	log "github.com/sirupsen/logrus"
 )
 
 type Getter struct {
-	c      *SaverConfig
-	server *communication.PassiveTCPSocket
+	c       *SaverConfig
+	server  *communication.PassiveTCPSocket
+	stop    chan bool
+	canSend chan bool
 }
 
-func NewGetter(c *SaverConfig) (*Getter, error) {
+func NewGetter(c *SaverConfig, canSend chan bool) (*Getter, error) {
 	server, err := communication.NewPassiveTCPSocket(c.GetterAddress)
 	if err != nil {
 		log.Errorf("action: create_server | result: error | id: %v | address: %v | %v", c.ID, c.GetterAddress, err)
 		return nil, err
 	}
-	return &Getter{c: c, server: server}, nil
+	return &Getter{c: c, server: server, stop: make(chan bool), canSend: canSend}, nil
 }
 
 func (g *Getter) ReturnResults() {
-	defer g.Close()
+	defer dataStructures.CloseSocketAndNotifyError(g.server)
 	for {
 		socket, err := g.server.Accept()
 		if err != nil {
 			log.Errorf("action: accept_connection | result: error | id: %v | address: %v | %v", g.c.ID, g.c.GetterAddress, err)
 			return
 		}
-		g.sendResults(socket)
+		clientSerializer := dataStructures.NewResultsSerializer(socket)
+		select {
+		case <-g.canSend:
+			g.sendResults(clientSerializer)
+		default:
+			g.askLaterForResults(clientSerializer)
+		}
+
 	}
 }
 
-func (g *Getter) sendResults(socket *communication.TCPSocket) {
-	defer closeSocket(socket)
+func (g *Getter) askLaterForResults(resultsSerializer *dataStructures.ResultsSerializer) {
+	resultsSerializer.AskLaterForResults()
+	resultsSerializer.Close()
+}
+
+func (g *Getter) sendResults(resultsSerializer *dataStructures.ResultsSerializer) {
+	defer resultsSerializer.Close()
 	reader, err := filemanager.NewFileReader(g.c.OutputFileName)
 	if err != nil {
 		return
 	}
 	defer closeFile(reader)
-	// TODO terminar en caso de señal
 	for reader.CanRead() {
+		select {
+		case <-g.stop:
+			log.Warnf("Received signal while sending file, stopping transfer")
+			return
+		default:
+		}
 		line := reader.ReadLine()
-		_, err = socket.Write([]byte(line))
+		err = resultsSerializer.SendLine(line)
 		if err != nil {
 			log.Errorf("action: sending_file | status: error | %v", err)
 			return
 		}
 	}
-	// TODO avisar que se termino el archivo
+	resultsSerializer.EndedFile()
 	err = reader.Err()
 	if err != nil {
 		log.Errorf("action: read_file | status: error | %v", err)
@@ -56,16 +76,8 @@ func (g *Getter) sendResults(socket *communication.TCPSocket) {
 
 }
 
-func closeSocket(s communication.TCPSocketInterface) {
-	err := s.Close()
-	if err != nil {
-		log.Errorf("action: closing_socket | status: error | %v", err)
-	}
-}
-
 func (g *Getter) Close() {
-	err := g.server.Close()
-	if err != nil {
-		log.Errorf("action: close_server | result: error | id: %v | address: %v | %v", g.c.ID, g.c.GetterAddress, err)
-	}
+	g.stop <- true
+	close(g.stop)
+	dataStructures.CloseSocketAndNotifyError(g.server)
 }
