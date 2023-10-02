@@ -5,6 +5,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	log "github.com/sirupsen/logrus"
+	"io"
 )
 
 type SimpleSaver struct {
@@ -19,7 +20,7 @@ func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, ser
 	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
 }
 
-func closeFile(file filemanager.IOManagerInterface) {
+func closeFile(file io.Closer) {
 	err := file.Close()
 	if err != nil {
 		log.Errorf("action: closing_file | status: error | %v", err)
@@ -48,9 +49,9 @@ func (s *SimpleSaver) SaveData() {
 		err = writer.WriteLine(line)
 		if err != nil {
 			log.Errorf("action: writing_file | status: error | %v", err)
-			closeFile(writer)
+			closeFile(writer.FileManager)
 			return
 		}
-		closeFile(writer)
+		closeFile(writer.FileManager)
 	}
 }

@@ -55,7 +55,7 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 }
 
 // Close Closes the file
-func (f *FileManager) Close() error {
+func (f FileManager) Close() error {
 	log.Infof("action: closing_file | file_name: %v", f.filename)
 	return f.file.Close()
 }

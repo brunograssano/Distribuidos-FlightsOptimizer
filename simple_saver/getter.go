@@ -53,7 +53,7 @@ func (g *Getter) sendResults(resultsSerializer *dataStructures.ResultsSerializer
 	if err != nil {
 		return
 	}
-	defer closeFile(reader)
+	defer closeFile(reader.FileManager)
 	for reader.CanRead() {
 		select {
 		case <-g.stop:

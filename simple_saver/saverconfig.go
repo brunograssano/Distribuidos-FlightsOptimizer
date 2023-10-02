@@ -31,6 +31,7 @@ func InitEnv() (*viper.Viper, error) {
 	v.BindEnv("id")
 	v.BindEnv("log", "level")
 	v.BindEnv("rabbitmq", "address")
+	v.BindEnv("rabbitmq", "queue", "input")
 	v.BindEnv("saver", "output")
 	v.BindEnv("getter", "address")
 	// Try to read configuration from config file. If config file

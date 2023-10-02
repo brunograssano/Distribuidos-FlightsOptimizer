@@ -6,10 +6,10 @@ import (
 )
 
 type ResultsSerializer struct {
-	socket *communication.TCPSocket
+	socket communication.TCPSocketInterface
 }
 
-func NewResultsSerializer(socket *communication.TCPSocket) *ResultsSerializer {
+func NewResultsSerializer(socket communication.TCPSocketInterface) *ResultsSerializer {
 	return &ResultsSerializer{socket: socket}
 }
 
