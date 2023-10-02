@@ -24,6 +24,8 @@ type DistanceCompleter struct {
 	fileLoadedSignal chan bool
 }
 
+const KmToMiles = 1 / 1.60934
+
 func NewDistanceCompleter(
 	id int,
 	qMiddleware *middleware.QueueMiddleware,
@@ -67,9 +69,8 @@ func (dc *DistanceCompleter) calculateDirectDistance(flightRow *dataStructures.D
 	originPoint := geodist.Point{Lat: float64(origenAirport[0]), Long: float64(origenAirport[1])}
 	destPoint := geodist.Point{Lat: float64(destinationAirport[0]), Long: float64(destinationAirport[1])}
 	directDistance := geodist.HaversineDistance(originPoint, destPoint)
-	fmt.Printf("Haversine: %.2f km\n", directDistance)
 
-	return float32(directDistance), nil
+	return float32(directDistance) * KmToMiles, nil
 }
 
 func (dc *DistanceCompleter) addColumnToRow(key string, value float32, row *dataStructures.DynamicMap) {
@@ -101,7 +102,7 @@ func (dc *DistanceCompleter) calculateTotalTravelDistance(flightRow *dataStructu
 		destPoint := geodist.Point{Lat: float64(nextAirport[0]), Long: float64(nextAirport[1])}
 		segmentDistance := geodist.HaversineDistance(originPoint, destPoint)
 
-		totalTravelDistance += segmentDistance
+		totalTravelDistance += segmentDistance * KmToMiles
 	}
 	return float32(totalTravelDistance), nil
 }
@@ -121,7 +122,14 @@ func (dc *DistanceCompleter) sendNext(row *dataStructures.DynamicMap) {
 func (dc *DistanceCompleter) loadAirports() {
 	reader, err := filemanager.NewFileReader(dc.c.AirportsFilename)
 	if err != nil {
-		log.Fatalf("Error trying to read the airports: %v", err)
+		log.Errorf("Error trying to read the airports: %v", err)
+		if reader != nil {
+			err = reader.FileManager.Close()
+			if err != nil {
+				log.Errorf("Error trying to close FileManager: %v", err)
+			}
+		}
+		return
 	}
 	for reader.CanRead() {
 		csvAirport := reader.ReadLine()
@@ -136,6 +144,10 @@ func (dc *DistanceCompleter) loadAirports() {
 			log.Fatalf("Error trying to cast latitude: %v", err)
 		}
 		dc.airportsMap[id] = [2]float32{float32(lat), float32(long)}
+	}
+	err = reader.FileManager.Close()
+	if err != nil {
+		log.Errorf("Error trying to close file: %v. Error was: %v", dc.c.AirportsFilename, err)
 	}
 }
 
