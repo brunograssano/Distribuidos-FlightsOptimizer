@@ -7,13 +7,46 @@ import (
 	"strings"
 )
 
-type DynamicMapSerializer struct{}
+type Serializer struct{}
 
-func NewDynamicMapSerializer() *DynamicMapSerializer {
-	return &DynamicMapSerializer{}
+func NewSerializer() *Serializer {
+	return &Serializer{}
 }
 
-func (dynMapSerializer *DynamicMapSerializer) Serialize(dynamicMap *DynamicMap) []byte {
+func (serializer *Serializer) SerializeMsg(msg *Message) []byte {
+	serializedMsg := []byte{}
+	typeBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(typeBytes, uint32(msg.TypeMessage))
+	nRows := make([]byte, 4)
+	binary.BigEndian.PutUint32(nRows, uint32(len(msg.DynMaps)))
+	serializedMsg = append(serializedMsg, typeBytes...)
+	serializedMsg = append(serializedMsg, nRows...)
+	for _, row := range msg.DynMaps {
+		serializedRow := serializer.SerializeDynMap(row)
+		serializedMsg = append(serializedMsg, serializedRow...)
+	}
+	return serializedMsg
+}
+
+func (serializer *Serializer) DeserializeMsg(bytesMsg []byte) *Message {
+	offset := 0
+	typeMsg := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
+	offset = 4
+	nRows := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
+	offset = 8
+	var dynMaps []*DynamicMap
+	for i := 0; i < nRows; i++ {
+		dynMap, bytesRead := serializer.DeserializeDynMap(bytesMsg[offset:])
+		dynMaps = append(dynMaps, dynMap)
+		offset += bytesRead
+	}
+	return &Message{
+		TypeMessage: typeMsg,
+		DynMaps:     dynMaps,
+	}
+}
+
+func (serializer *Serializer) SerializeDynMap(dynamicMap *DynamicMap) []byte {
 	var rowBytes []byte
 	mapLength := dynamicMap.GetColumnCount()
 	bytesNCols := make([]byte, 4)
@@ -34,7 +67,7 @@ func (dynMapSerializer *DynamicMapSerializer) Serialize(dynamicMap *DynamicMap) 
 	return rowBytes
 }
 
-func (dynMapSerializer *DynamicMapSerializer) Deserialize(dynamicMapBytes []byte) *DynamicMap {
+func (serializer *Serializer) DeserializeDynMap(dynamicMapBytes []byte) (*DynamicMap, int) {
 	nCols := int(binary.BigEndian.Uint32(dynamicMapBytes[0:4]))
 	currOffset := 4
 	mapForDynMap := make(map[string][]byte)
@@ -49,20 +82,20 @@ func (dynMapSerializer *DynamicMapSerializer) Deserialize(dynamicMapBytes []byte
 		currOffset += lenValue
 		mapForDynMap[key] = value
 	}
-	return NewDynamicMap(mapForDynMap)
+	return NewDynamicMap(mapForDynMap), currOffset
 }
 
-func (dynMapSerializer *DynamicMapSerializer) SerializeUint(value uint32) []byte {
+func (serializer *Serializer) SerializeUint(value uint32) []byte {
 	byteValue := make([]byte, 4)
 	binary.BigEndian.PutUint32(byteValue, value)
 	return byteValue
 }
 
-func (dynMapSerializer *DynamicMapSerializer) SerializeString(value string) []byte {
+func (serializer *Serializer) SerializeString(value string) []byte {
 	return []byte(value)
 }
 
-func (dynMapSerializer *DynamicMapSerializer) SerializeToString(dynMap *DynamicMap) string {
+func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
 	const commaSeparator = ","
 	const newLine = "\n"
 	line := strings.Builder{}
@@ -80,7 +113,7 @@ func (dynMapSerializer *DynamicMapSerializer) SerializeToString(dynMap *DynamicM
 	return line.String()
 }
 
-func (dynMapSerializer *DynamicMapSerializer) SerializeFloat(value float32) []byte {
+func (serializer *Serializer) SerializeFloat(value float32) []byte {
 	bytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytes, math.Float32bits(value))
 	return bytes

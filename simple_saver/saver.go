@@ -12,12 +12,12 @@ import (
 type SimpleSaver struct {
 	c          *SaverConfig
 	consumer   middleware.ConsumerInterface
-	serializer *dataStructures.DynamicMapSerializer
+	serializer *dataStructures.Serializer
 	canSend    chan bool
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.DynamicMapSerializer, canSend chan bool) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.Serializer, canSend chan bool) *SimpleSaver {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
 }
@@ -30,23 +30,27 @@ func (s *SimpleSaver) SaveData() {
 			log.Infof("Exiting saver")
 			return
 		}
-		dynMap := s.serializer.Deserialize(msg)
-		if dynMap.GetColumnCount() == 0 {
-			s.canSend <- true
-			close(s.canSend)
-			log.Infof("Received all results")
-			return
-		}
+		msgStruct := s.serializer.DeserializeMsg(msg)
 		writer, err := filemanager.NewFileWriter(s.c.OutputFileName)
 		if err != nil {
 			return
 		}
-		line := s.serializer.SerializeToString(dynMap)
-		err = writer.WriteLine(line)
-		if err != nil {
-			log.Errorf("action: writing_file | status: error | %v", err)
-			utils.CloseFileAndNotifyError(writer.FileManager)
-			return
+		for _, row := range msgStruct.DynMaps {
+			// todo cambiar a EOF msg
+			if row.GetColumnCount() == 0 {
+				s.canSend <- true
+				close(s.canSend)
+				log.Infof("Received all results")
+				return
+			}
+
+			line := s.serializer.SerializeToString(row)
+			err = writer.WriteLine(line)
+			if err != nil {
+				log.Errorf("action: writing_file | status: error | %v", err)
+				utils.CloseFileAndNotifyError(writer.FileManager)
+				return
+			}
 		}
 		utils.CloseFileAndNotifyError(writer.FileManager)
 	}

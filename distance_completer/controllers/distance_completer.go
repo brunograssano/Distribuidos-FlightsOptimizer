@@ -17,7 +17,7 @@ type DistanceCompleter struct {
 	c                *config.CompleterConfig
 	consumer         middleware.ConsumerInterface
 	producer         middleware.ProducerInterface
-	serializer       *dataStructures.DynamicMapSerializer
+	serializer       *dataStructures.Serializer
 	fileLoadedSignal chan bool
 }
 
@@ -25,7 +25,7 @@ func NewDistanceCompleter(
 	id int,
 	qMiddleware *middleware.QueueMiddleware,
 	c *config.CompleterConfig,
-	s *dataStructures.DynamicMapSerializer,
+	s *dataStructures.Serializer,
 	fileLoadedSignal chan bool,
 ) *DistanceCompleter {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueFlightsName, true)
@@ -97,8 +97,8 @@ func shouldCompleteCol(distance float32) bool {
 	return distance == 0
 }
 
-func (dc *DistanceCompleter) sendNext(row *dataStructures.DynamicMap) {
-	bytesToSend := dc.serializer.Serialize(row)
+func (dc *DistanceCompleter) sendNext(message *dataStructures.Message) {
+	bytesToSend := dc.serializer.SerializeMsg(message)
 	err := dc.producer.Send(bytesToSend)
 	if err != nil {
 		log.Errorf("Error trying to send to the next service...")
@@ -147,20 +147,26 @@ func (dc *DistanceCompleter) CompleteDistances() {
 			log.Infof("Closing goroutine %v", dc.completerId)
 			return
 		}
-		row := dc.serializer.Deserialize(msg)
-		totalTravelDistance, err := row.GetAsFloat("totalTravelDistance")
-		if err != nil || shouldCompleteCol(totalTravelDistance) {
-			totalTravelDistance, err = dc.calculateTotalTravelDistance(row)
+		msgStruct := dc.serializer.DeserializeMsg(msg)
+		rows := msgStruct.DynMaps
+		var nextBatch []*dataStructures.DynamicMap
+		for _, row := range rows {
+			totalTravelDistance, err := row.GetAsFloat("totalTravelDistance")
+			if err != nil || shouldCompleteCol(totalTravelDistance) {
+				totalTravelDistance, err = dc.calculateTotalTravelDistance(row)
+				if err != nil {
+					continue
+				}
+				dc.addColumnToRow("totalTravelDistance", totalTravelDistance, row)
+			}
+			directDistance, err := dc.calculateDirectDistance(row)
 			if err != nil {
 				continue
 			}
-			dc.addColumnToRow("totalTravelDistance", totalTravelDistance, row)
+			dc.addColumnToRow("directDistance", directDistance, row)
+			nextBatch = append(nextBatch, row)
 		}
-		directDistance, err := dc.calculateDirectDistance(row)
-		if err != nil {
-			continue
-		}
-		dc.addColumnToRow("directDistance", directDistance, row)
-		dc.sendNext(row)
+		msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch}
+		dc.sendNext(msgToSend)
 	}
 }

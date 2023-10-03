@@ -43,7 +43,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	outputEx13 := make(chan []byte, 10)
 	outputEx2 := make(chan []byte, 10)
 	outputEx4 := make(chan []byte, 10)
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 
 	mConsumer := &mockConsumer{
 		inputChannel: input,
@@ -78,27 +78,27 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	row := dataStructures.NewDynamicMap(dynMap)
 
 	go processor.ProcessData()
-
-	input <- serializer.Serialize(row)
+	rows := []*dataStructures.DynamicMap{row}
+	input <- serializer.SerializeMsg(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows})
 	close(input)
 
 	sentResponseToAll := [3]bool{false, false, false}
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-outputEx13:
-			newRow := serializer.Deserialize(result)
+			newRow := serializer.DeserializeMsg(result).DynMaps[0]
 			if newRow.GetColumnCount() != 4 {
 				t.Errorf("RowCount expected was 2")
 			}
 			sentResponseToAll[0] = true
 		case result := <-outputEx2:
-			newRow := serializer.Deserialize(result)
+			newRow := serializer.DeserializeMsg(result).DynMaps[0]
 			if newRow.GetColumnCount() != 4 {
 				t.Errorf("RowCount expected was 2")
 			}
 			sentResponseToAll[1] = true
 		case result := <-outputEx4:
-			newRow := serializer.Deserialize(result)
+			newRow := serializer.DeserializeMsg(result).DynMaps[0]
 			if newRow.GetColumnCount() != 1 {
 				t.Errorf("RowCount expected was 2")
 			}
@@ -116,7 +116,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 }
 
 func TestShouldProcessTheDataOfEx123(t *testing.T) {
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
 		serializer:   serializer,
@@ -153,7 +153,7 @@ func TestShouldProcessTheDataOfEx123(t *testing.T) {
 }
 
 func TestShouldReturnAnErrorIfTheSegmentsColDoesNotExist(t *testing.T) {
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
 		serializer:   serializer,
@@ -171,7 +171,7 @@ func TestShouldReturnAnErrorIfTheSegmentsColDoesNotExist(t *testing.T) {
 }
 
 func TestShouldReturnAnErrorIfTheStartingAirportColDoesNotExist(t *testing.T) {
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
 		serializer:   serializer,
