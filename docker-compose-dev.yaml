@@ -144,6 +144,48 @@ services:
         max_attempts: 15
         window: 10s
 
+  saver-ex1:
+    container_name: saver-ex1
+    image: simple_saver:latest
+    environment:
+      - CLI_ID=7
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
+      - CLI_SAVER_OUTPUT=results_ex1.csv
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  saver-ex2:
+    container_name: saver-ex2
+    image: simple_saver:latest
+    environment:
+      - CLI_ID=8
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
+      - CLI_SAVER_OUTPUT=results_ex2.csv
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
 networks:
   testing_net:
     ipam:

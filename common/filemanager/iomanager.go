@@ -1,17 +1,15 @@
 package filemanager
 
-type IOManagerInterface interface {
-	Close() error
-}
+import "io"
 
 type InputManagerInterface interface {
-	IOManagerInterface
+	io.Closer
 	CanRead() bool
 	ReadLine() string
 	Err() error
 }
 
 type OutputManagerInterface interface {
-	IOManagerInterface
+	io.Closer
 	WriteLine(line string) error
 }

@@ -2,14 +2,11 @@ package controllers
 
 import (
 	"distance_completer/config"
-	"encoding/binary"
 	"fmt"
-	"github.com/asmarques/geodist"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	log "github.com/sirupsen/logrus"
-	"math"
 	"strconv"
 	"strings"
 )
@@ -23,8 +20,6 @@ type DistanceCompleter struct {
 	serializer       *dataStructures.DynamicMapSerializer
 	fileLoadedSignal chan bool
 }
-
-const KmToMiles = 1 / 1.60934
 
 func NewDistanceCompleter(
 	id int,
@@ -66,16 +61,11 @@ func (dc *DistanceCompleter) calculateDirectDistance(flightRow *dataStructures.D
 		return -1, fmt.Errorf("row does not have correctly the destination airport. Skipping")
 	}
 
-	originPoint := geodist.Point{Lat: float64(origenAirport[0]), Long: float64(origenAirport[1])}
-	destPoint := geodist.Point{Lat: float64(destinationAirport[0]), Long: float64(destinationAirport[1])}
-	directDistance := geodist.HaversineDistance(originPoint, destPoint)
-
-	return float32(directDistance) * KmToMiles, nil
+	return float32(CalculateDistanceFrom(origenAirport, destinationAirport)), nil
 }
 
 func (dc *DistanceCompleter) addColumnToRow(key string, value float32, row *dataStructures.DynamicMap) {
-	bytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(bytes, math.Float32bits(value))
+	bytes := dc.serializer.SerializeFloat(value)
 	row.AddColumn(key, bytes)
 }
 
@@ -98,11 +88,7 @@ func (dc *DistanceCompleter) calculateTotalTravelDistance(flightRow *dataStructu
 			return -1, fmt.Errorf("row does not have correctly the route. Skipping")
 		}
 
-		originPoint := geodist.Point{Lat: float64(initialAirport[0]), Long: float64(initialAirport[1])}
-		destPoint := geodist.Point{Lat: float64(nextAirport[0]), Long: float64(nextAirport[1])}
-		segmentDistance := geodist.HaversineDistance(originPoint, destPoint)
-
-		totalTravelDistance += segmentDistance * KmToMiles
+		totalTravelDistance += CalculateDistanceFrom(initialAirport, nextAirport)
 	}
 	return float32(totalTravelDistance), nil
 }
