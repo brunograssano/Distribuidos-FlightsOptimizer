@@ -11,6 +11,7 @@ import (
 const segmentSplitter = "||"
 const destinationAirport = 1
 
+// DataProcessor Structure that handles the initial row preprocessing by removing columns and creating auxiliary columns
 type DataProcessor struct {
 	processorId    int
 	c              *ProcessorConfig
@@ -22,6 +23,7 @@ type DataProcessor struct {
 	ex4Columns     []string
 }
 
+// NewDataProcessor Creates a new DataProcessor structure
 func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig, serializer *dataStructures.DynamicMapSerializer) *DataProcessor {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	producersEx123 := []middleware.ProducerInterface{}
@@ -41,6 +43,7 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 	}
 }
 
+// ProcessData General loop that listens to the queue, preprocess the data, and passes it to the next steps
 func (d *DataProcessor) ProcessData() {
 	for {
 		msg, ok := d.consumer.Pop()
@@ -75,6 +78,7 @@ func (d *DataProcessor) ProcessData() {
 	}
 }
 
+// processEx4Row Exercise 1,2 & 3 preprocessing. Removes columns, calculates total stopovers, and makes the route
 func (d *DataProcessor) processEx123Row(cols *dataStructures.DynamicMap) (*dataStructures.DynamicMap, error) {
 	segments, err := cols.GetAsString("segmentsArrivalAirportCode")
 	if err != nil {
@@ -96,6 +100,7 @@ func (d *DataProcessor) processEx123Row(cols *dataStructures.DynamicMap) (*dataS
 	return cols.ReduceToColumns(d.ex123Columns)
 }
 
+// processEx4Row Exercise 4 preprocessing. Removes unnecessary columns
 func (d *DataProcessor) processEx4Row(cols *dataStructures.DynamicMap) (*dataStructures.DynamicMap, error) {
 	return cols.ReduceToColumns(d.ex4Columns)
 }
