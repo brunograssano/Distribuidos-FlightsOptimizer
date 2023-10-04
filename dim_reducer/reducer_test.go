@@ -7,46 +7,46 @@ import (
 )
 
 type (
-	mockConsumer struct {
-		inputChannel chan []byte
+	mockConsumerQueueProtocolHandler struct {
+		inputChannel chan *dataStructures.Message
 		ok           bool
 	}
 )
 
-func (m *mockConsumer) Pop() ([]byte, bool) {
+func (m *mockConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
-		return []byte{}, m.ok
+		return nil, m.ok
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
 }
 
-func (m *mockConsumer) BindTo(_ string, _ string) error {
+func (m *mockConsumerQueueProtocolHandler) BindTo(_ string, _ string) error {
 	return nil
 }
 
 type (
-	mockProducer struct {
-		outputChannel chan []byte
+	mockProducerQueueProtocolHandler struct {
+		outputChannel chan *dataStructures.Message
 	}
 )
 
-func (m *mockProducer) Send(data []byte) error {
-	m.outputChannel <- data
+func (m *mockProducerQueueProtocolHandler) Send(msg *dataStructures.Message) error {
+	m.outputChannel <- msg
 	return nil
 }
 
 func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	reducerConfig := &ReducerConfig{ColumnsToKeep: []string{"col1"}}
-	input := make(chan []byte, 10)
-	output := make(chan []byte, 10)
+	input := make(chan *dataStructures.Message, 10)
+	output := make(chan *dataStructures.Message, 10)
 	serializer := dataStructures.NewSerializer()
 
-	mConsumer := &mockConsumer{
+	mConsumer := &mockConsumerQueueProtocolHandler{
 		inputChannel: input,
 		ok:           true,
 	}
-	mProducer := &mockProducer{
+	mProducer := &mockProducerQueueProtocolHandler{
 		outputChannel: output,
 	}
 
@@ -66,12 +66,12 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 
 	go reducer.ReduceDims()
 	rows := []*dataStructures.DynamicMap{row}
-	input <- serializer.SerializeMsg(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows})
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
 	close(input)
 
 	select {
 	case result := <-output:
-		newRow := serializer.DeserializeMsg(result).DynMaps[0]
+		newRow := result.DynMaps[0]
 		if newRow.GetColumnCount() != 1 {
 			t.Errorf("RowCount expected was 1")
 		}

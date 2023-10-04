@@ -3,6 +3,7 @@ package main
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -10,15 +11,15 @@ import (
 type Reducer struct {
 	reducerId  int
 	c          *ReducerConfig
-	consumer   middleware.ConsumerInterface
-	producer   middleware.ProducerInterface
+	consumer   protocol.ConsumerProtocolInterface
+	producer   protocol.ProducerProtocolInterface
 	serializer *dataStructures.Serializer
 }
 
 // NewReducer Creates a new reducer
 func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.Serializer) *Reducer {
-	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
-	producer := qMiddleware.CreateProducer(c.OutputQueueName, true)
+	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 	return &Reducer{
 		reducerId:  reducerId,
 		c:          c,
@@ -38,8 +39,7 @@ func (r *Reducer) ReduceDims() {
 			return
 		}
 		var rows []*dataStructures.DynamicMap
-		msgStruct := r.serializer.DeserializeMsg(msg)
-		for _, row := range msgStruct.DynMaps {
+		for _, row := range msg.DynMaps {
 			reducedData, err := row.ReduceToColumns(r.c.ColumnsToKeep)
 			if err != nil {
 				log.Errorf("action: reduce_columns | reducer_id: %v | result: fail | skipping row | error: %v", r.reducerId, err)
@@ -48,9 +48,8 @@ func (r *Reducer) ReduceDims() {
 			rows = append(rows, reducedData)
 
 		}
-		msgStruct = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
-		serialized := r.serializer.SerializeMsg(msgStruct)
-		err := r.producer.Send(serialized)
+		msg = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
+		err := r.producer.Send(msg)
 		if err != nil {
 			log.Errorf("Error trying to send message to output queue")
 		}

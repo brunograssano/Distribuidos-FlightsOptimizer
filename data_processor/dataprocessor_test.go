@@ -2,21 +2,21 @@ package main
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	"testing"
 	"time"
 )
 
 type (
 	mockConsumer struct {
-		inputChannel chan []byte
+		inputChannel chan *dataStructures.Message
 		ok           bool
 	}
 )
 
-func (m *mockConsumer) Pop() ([]byte, bool) {
+func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
-		return []byte{}, m.ok
+		return nil, m.ok
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
@@ -28,21 +28,21 @@ func (m *mockConsumer) BindTo(_ string, _ string) error {
 
 type (
 	mockProducer struct {
-		outputChannel chan []byte
+		outputChannel chan *dataStructures.Message
 	}
 )
 
-func (m *mockProducer) Send(data []byte) error {
+func (m *mockProducer) Send(data *dataStructures.Message) error {
 	m.outputChannel <- data
 	return nil
 }
 
 func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	pConfig := &ProcessorConfig{}
-	input := make(chan []byte, 10)
-	outputEx13 := make(chan []byte, 10)
-	outputEx2 := make(chan []byte, 10)
-	outputEx4 := make(chan []byte, 10)
+	input := make(chan *dataStructures.Message, 10)
+	outputEx13 := make(chan *dataStructures.Message, 10)
+	outputEx2 := make(chan *dataStructures.Message, 10)
+	outputEx4 := make(chan *dataStructures.Message, 10)
 	serializer := dataStructures.NewSerializer()
 
 	mConsumer := &mockConsumer{
@@ -63,7 +63,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		processorId:    0,
 		c:              pConfig,
 		consumer:       mConsumer,
-		producersEx123: []middleware.ProducerInterface{mProducer2, mProducer13},
+		producersEx123: []protocol.ProducerProtocolInterface{mProducer2, mProducer13},
 		producersEx4:   mProducer4,
 		serializer:     serializer,
 		ex123Columns:   []string{"startingAirport", "segmentsArrivalAirportCode", "totalStopovers", "route"},
@@ -79,26 +79,26 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 
 	go processor.ProcessData()
 	rows := []*dataStructures.DynamicMap{row}
-	input <- serializer.SerializeMsg(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows})
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
 	close(input)
 
 	sentResponseToAll := [3]bool{false, false, false}
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-outputEx13:
-			newRow := serializer.DeserializeMsg(result).DynMaps[0]
+			newRow := result.DynMaps[0]
 			if newRow.GetColumnCount() != 4 {
 				t.Errorf("RowCount expected was 2")
 			}
 			sentResponseToAll[0] = true
 		case result := <-outputEx2:
-			newRow := serializer.DeserializeMsg(result).DynMaps[0]
+			newRow := result.DynMaps[0]
 			if newRow.GetColumnCount() != 4 {
 				t.Errorf("RowCount expected was 2")
 			}
 			sentResponseToAll[1] = true
 		case result := <-outputEx4:
-			newRow := serializer.DeserializeMsg(result).DynMaps[0]
+			newRow := result.DynMaps[0]
 			if newRow.GetColumnCount() != 1 {
 				t.Errorf("RowCount expected was 2")
 			}

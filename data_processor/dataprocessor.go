@@ -4,6 +4,7 @@ import (
 	"errors"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -15,9 +16,9 @@ const destinationAirport = 1
 type DataProcessor struct {
 	processorId    int
 	c              *ProcessorConfig
-	consumer       middleware.ConsumerInterface
-	producersEx123 []middleware.ProducerInterface
-	producersEx4   middleware.ProducerInterface
+	consumer       protocol.ConsumerProtocolInterface
+	producersEx123 []protocol.ProducerProtocolInterface
+	producersEx4   protocol.ProducerProtocolInterface
 	serializer     *dataStructures.Serializer
 	ex123Columns   []string
 	ex4Columns     []string
@@ -25,12 +26,12 @@ type DataProcessor struct {
 
 // NewDataProcessor Creates a new DataProcessor structure
 func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig, serializer *dataStructures.Serializer) *DataProcessor {
-	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
-	producersEx123 := []middleware.ProducerInterface{}
+	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	var producersEx123 []protocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
-		producersEx123 = append(producersEx123, qMiddleware.CreateProducer(queueName, true))
+		producersEx123 = append(producersEx123, protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(queueName, true)))
 	}
-	producersEx4 := qMiddleware.CreateProducer(c.OutputQueueNameEx4, true)
+	producersEx4 := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueNameEx4, true))
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,
@@ -72,8 +73,7 @@ func (d *DataProcessor) ProcessData() {
 			log.Infof("Closing goroutine %v", d.processorId)
 			return
 		}
-		rows := d.serializer.DeserializeMsg(msg).DynMaps
-		ex123Rows, ex4Rows := d.processRows(rows)
+		ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
 
 		d.sendToEx123(ex123Rows)
 		d.sendToEx4(ex4Rows)
@@ -82,8 +82,7 @@ func (d *DataProcessor) ProcessData() {
 
 func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap) {
 	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex4Rows}
-	serialized := d.serializer.SerializeMsg(msg)
-	err := d.producersEx4.Send(serialized)
+	err := d.producersEx4.Send(msg)
 	if err != nil {
 		log.Errorf("Error trying to send to exercise 4 the serialized row")
 	}
@@ -91,9 +90,8 @@ func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap) {
 
 func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
 	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex123Rows}
-	serialized := d.serializer.SerializeMsg(msg)
 	for _, producer := range d.producersEx123 {
-		err := producer.Send(serialized)
+		err := producer.Send(msg)
 		if err != nil {
 			log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
 		}
