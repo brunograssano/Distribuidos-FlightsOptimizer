@@ -137,6 +137,7 @@ services:
       - ./distance_completer/config.yaml:/config.yaml
     depends_on:
       - rabbitmq
+      - server
     deploy:
       restart_policy:
         condition: on-failure
@@ -177,6 +178,31 @@ services:
       - testing_net
     volumes:
       - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      - rabbitmq
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
+  server:
+    container_name: server
+    image: server:latest
+    environment:
+      - CLI_ID=9
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_GETTER_ADDRESSES="saver-ex1:8080,saver-ex2:8080"
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
+      - CLI_QUEUES_FLIGHTROWS=flight_row_processor
+      - CLI_SAVER_OUTPUT=results_ex2.csv
+    networks:
+      - testing_net
+    volumes:
+      - ./server/config.yaml:/config.yaml
     depends_on:
       - rabbitmq
     deploy:

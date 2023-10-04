@@ -1,0 +1,6 @@
+log:
+  level: "info"
+rabbitmq:
+  address: "amqp://guest:guest@rabbitmq:5672/"
+server:
+  address: "localhost:8080"

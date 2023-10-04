@@ -11,7 +11,7 @@ import (
 
 type AirportSaver struct {
 	c             *config.CompleterConfig
-	serializer    *dataStructures.DynamicMapSerializer
+	serializer    *dataStructures.Serializer
 	consumer      middleware.ConsumerInterface
 	loadedSignals []chan bool
 	fileSaver     *filemanager.FileWriter
@@ -20,7 +20,7 @@ type AirportSaver struct {
 func NewAirportSaver(
 	conf *config.CompleterConfig,
 	qMiddleware *middleware.QueueMiddleware,
-	s *dataStructures.DynamicMapSerializer,
+	s *dataStructures.Serializer,
 	fileLoadedSignals []chan bool,
 ) *AirportSaver {
 	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
@@ -57,31 +57,34 @@ func (as *AirportSaver) SaveAirports() {
 			log.Infof("Closing goroutine SaverAirports")
 			return
 		}
-		row := as.serializer.Deserialize(msg)
-		if row.GetColumnCount() == 0 {
+		msgStruct := as.serializer.DeserializeMsg(msg)
+		if msgStruct.TypeMessage == dataStructures.EOFAirports {
 			log.Infof("Received EOF. Signalizing completers to start completion...")
 			break
 		}
-		airportCode, err := row.GetAsString("Airport Code")
-		if err != nil {
-			log.Errorf("Error trying to get airport code: %v. Skipping row...", err)
-			continue
-		}
-		lat, err := row.GetAsFloat("Latitude")
-		if err != nil {
-			log.Errorf("Error trying to get latitude: %v. Skipping row...", err)
-			continue
-		}
-		long, err := row.GetAsFloat("Longitude")
-		if err != nil {
-			log.Errorf("Error trying to get longitude: %v. Skipping row...", err)
-			continue
-		}
-		stringToSave := fmt.Sprintf("%v,%v,%v\n", airportCode, lat, long)
-		err = as.fileSaver.WriteLine(stringToSave)
-		if err != nil {
-			log.Errorf("Error trying to write line: %v. Skipping row...", err)
-			continue
+		rows := msgStruct.DynMaps
+		for _, row := range rows {
+			airportCode, err := row.GetAsString("Airport Code")
+			if err != nil {
+				log.Errorf("Error trying to get airport code: %v. Skipping row...", err)
+				continue
+			}
+			lat, err := row.GetAsFloat("Latitude")
+			if err != nil {
+				log.Errorf("Error trying to get latitude: %v. Skipping row...", err)
+				continue
+			}
+			long, err := row.GetAsFloat("Longitude")
+			if err != nil {
+				log.Errorf("Error trying to get longitude: %v. Skipping row...", err)
+				continue
+			}
+			stringToSave := fmt.Sprintf("%v,%v,%v\n", airportCode, lat, long)
+			err = as.fileSaver.WriteLine(stringToSave)
+			if err != nil {
+				log.Errorf("Error trying to write line: %v. Skipping row...", err)
+				continue
+			}
 		}
 	}
 	as.signalCompleters()

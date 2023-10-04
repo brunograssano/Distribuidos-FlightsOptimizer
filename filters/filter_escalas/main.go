@@ -23,9 +23,9 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(filterEscalasConfig.RabbitAddress)
 	for i := 0; i < filterEscalasConfig.GoroutinesCount; i++ {
-		fe := NewFilterEscalas(i, qMiddleware, filterEscalasConfig)
+		fe := NewFilterStopovers(i, qMiddleware, filterEscalasConfig)
 		log.Infof("Spawning GoRoutine #%v - Filter Escalas", i)
-		go fe.FilterEscalas()
+		go fe.FilterStopovers()
 	}
 	<-sigs
 	qMiddleware.Close()

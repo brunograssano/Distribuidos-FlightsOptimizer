@@ -14,8 +14,8 @@ func TestSerializeDynMapWithAnIntReturnsTheBytesExpected(t *testing.T) {
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
 	row := dataStructures.NewDynamicMap(dynMap)
-	serializer := dataStructures.NewDynamicMapSerializer()
-	serializedRow := serializer.Serialize(row)
+	serializer := dataStructures.NewSerializer()
+	serializedRow := serializer.SerializeDynMap(row)
 
 	var bytesExpected []byte
 	bytesNCols := make([]byte, 4)
@@ -48,8 +48,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 	dynMap["test_string"] = []byte(stringCol2)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
 	row := dataStructures.NewDynamicMap(dynMap)
-	serializer := dataStructures.NewDynamicMapSerializer()
-	serializedRow := serializer.Serialize(row)
+	serializer := dataStructures.NewSerializer()
+	serializedRow := serializer.SerializeDynMap(row)
 
 	var bytesExpected []byte
 	bytesNCols := make([]byte, 4)
@@ -86,8 +86,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 
 func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
 	row := dataStructures.NewDynamicMap(make(map[string][]byte))
-	serializer := dataStructures.NewDynamicMapSerializer()
-	serializedRow := serializer.Serialize(row)
+	serializer := dataStructures.NewSerializer()
+	serializedRow := serializer.SerializeDynMap(row)
 	bytesExpected := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytesExpected, uint32(0))
 	if bytes.Compare(serializedRow, bytesExpected) != 0 {
@@ -129,8 +129,8 @@ func TestDeserializeDynMapWithTwoColumnsReturnsTheExpectedDynMap(t *testing.T) {
 	bytesSer = append(bytesSer, bytesLenValue2...)
 	bytesSer = append(bytesSer, bytesValue2...)
 
-	serializer := dataStructures.NewDynamicMapSerializer()
-	rowReceived := serializer.Deserialize(bytesSer)
+	serializer := dataStructures.NewSerializer()
+	rowReceived, _ := serializer.DeserializeDynMap(bytesSer)
 
 	stringCol, errStringCol := rowReceived.GetAsString("test_string")
 	if errStringCol != nil {

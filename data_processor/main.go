@@ -29,7 +29,7 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(processorConfig.RabbitAddress)
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	for i := 0; i < processorConfig.GoroutinesCount; i++ {
 		r := NewDataProcessor(i, qMiddleware, processorConfig, serializer)
 		go r.ProcessData()

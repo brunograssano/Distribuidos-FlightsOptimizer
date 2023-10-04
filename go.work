@@ -9,4 +9,5 @@ use (
 	./data_processor
 	./simple_saver
 	./distance_completer
+	./server
 )

@@ -18,13 +18,13 @@ type DataProcessor struct {
 	consumer       middleware.ConsumerInterface
 	producersEx123 []middleware.ProducerInterface
 	producersEx4   middleware.ProducerInterface
-	serializer     *dataStructures.DynamicMapSerializer
+	serializer     *dataStructures.Serializer
 	ex123Columns   []string
 	ex4Columns     []string
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
-func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig, serializer *dataStructures.DynamicMapSerializer) *DataProcessor {
+func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig, serializer *dataStructures.Serializer) *DataProcessor {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	producersEx123 := []middleware.ProducerInterface{}
 	for _, queueName := range c.OutputQueueNameEx123 {
@@ -43,6 +43,27 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 	}
 }
 
+func (d *DataProcessor) processRows(rows []*dataStructures.DynamicMap) ([]*dataStructures.DynamicMap, []*dataStructures.DynamicMap) {
+
+	var ex123Rows []*dataStructures.DynamicMap
+	var ex4Rows []*dataStructures.DynamicMap
+	for _, cols := range rows {
+		cols, err := d.processEx123Row(cols)
+		if err != nil {
+			log.Errorf("action: reduce_columns_ex123 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
+			continue
+		}
+		ex123Rows = append(ex123Rows, cols)
+		cols, err = d.processEx4Row(cols)
+		if err != nil {
+			log.Errorf("action: reduce_columns_ex4 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
+			continue
+		}
+		ex4Rows = append(ex4Rows, cols)
+	}
+	return ex123Rows, ex4Rows
+}
+
 // ProcessData General loop that listens to the queue, preprocess the data, and passes it to the next steps
 func (d *DataProcessor) ProcessData() {
 	for {
@@ -51,31 +72,33 @@ func (d *DataProcessor) ProcessData() {
 			log.Infof("Closing goroutine %v", d.processorId)
 			return
 		}
-		cols := d.serializer.Deserialize(msg)
-		cols, err := d.processEx123Row(cols)
-		if err != nil {
-			log.Errorf("action: reduce_columns_ex123 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
-			continue
-		}
-		serialized := d.serializer.Serialize(cols)
-		for _, producer := range d.producersEx123 {
-			err = producer.Send(serialized)
-			if err != nil {
-				log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
-			}
-		}
-		cols, err = d.processEx4Row(cols)
-		if err != nil {
-			log.Errorf("action: reduce_columns_ex4 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
-			continue
-		}
-		serialized = d.serializer.Serialize(cols)
-		err = d.producersEx4.Send(serialized)
-		if err != nil {
-			log.Errorf("Error trying to send to exercise 4 the serialized row")
-		}
+		rows := d.serializer.DeserializeMsg(msg).DynMaps
+		ex123Rows, ex4Rows := d.processRows(rows)
 
+		d.sendToEx123(ex123Rows)
+		d.sendToEx4(ex4Rows)
 	}
+}
+
+func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap) {
+	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex4Rows}
+	serialized := d.serializer.SerializeMsg(msg)
+	err := d.producersEx4.Send(serialized)
+	if err != nil {
+		log.Errorf("Error trying to send to exercise 4 the serialized row")
+	}
+}
+
+func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
+	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex123Rows}
+	serialized := d.serializer.SerializeMsg(msg)
+	for _, producer := range d.producersEx123 {
+		err := producer.Send(serialized)
+		if err != nil {
+			log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
+		}
+	}
+
 }
 
 // processEx4Row Exercise 1,2 & 3 preprocessing. Removes columns, calculates total stopovers, and makes the route
