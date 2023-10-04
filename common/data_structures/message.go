@@ -11,3 +11,4 @@ const FlightRows = 2
 const EOFFlightRows = 3
 const GetResults = 4
 const Later = 5
+const EOFGetter = 6

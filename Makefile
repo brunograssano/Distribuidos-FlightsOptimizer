@@ -9,6 +9,7 @@ docker-image:
 	docker build -f ./filters/filter_distancias/Dockerfile -t "filter_distancias:latest" .
 	docker build -f ./distance_completer/Dockerfile -t "distance_completer:latest" .
 	docker build -f ./simple_saver/Dockerfile -t "simple_saver:latest" .
+	docker build -f ./server/Dockerfile -t "server:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you
 	# want to avoid rebuilding client image every time the docker-compose-up command

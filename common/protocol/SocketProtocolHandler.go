@@ -48,3 +48,40 @@ func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
 	}
 	return message, nil
 }
+
+func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
+	lengthOfBytes := len(msgBytes)
+	msgSize := sph.serializer.SerializeUint(uint32(lengthOfBytes))
+	write, err := sph.sock.Write(msgSize)
+	if err != nil {
+		return err
+	}
+	if write < sizeOfLen {
+		return fmt.Errorf("send wrote less than %v bytes, instead size sent was %v", sizeOfLen, write)
+	}
+	return nil
+}
+
+func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
+	write, err := sph.sock.Write(msgBytes)
+	if err != nil {
+		return err
+	}
+	if write < len(msgBytes) {
+		return fmt.Errorf("send wrote less than %v bytes, instead size sent was %v", len(msgBytes), write)
+	}
+	return nil
+}
+
+func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
+	bytesToSend := sph.serializer.SerializeMsg(msg)
+	err := sph.sendLength(bytesToSend)
+	if err != nil {
+		return fmt.Errorf("sending length: %v", err)
+	}
+	err = sph.sendMessage(bytesToSend)
+	if err != nil {
+		return fmt.Errorf("sending message: %v", err)
+	}
+	return nil
+}
