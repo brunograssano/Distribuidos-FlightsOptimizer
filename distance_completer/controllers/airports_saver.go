@@ -6,6 +6,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -64,17 +65,17 @@ func (as *AirportSaver) SaveAirports() {
 		}
 		rows := msgStruct.DynMaps
 		for _, row := range rows {
-			airportCode, err := row.GetAsString("Airport Code")
+			airportCode, err := row.GetAsString(utils.AirportCode)
 			if err != nil {
 				log.Errorf("Error trying to get airport code: %v. Skipping row...", err)
 				continue
 			}
-			lat, err := row.GetAsFloat("Latitude")
+			lat, err := row.GetAsFloat(utils.Latitude)
 			if err != nil {
 				log.Errorf("Error trying to get latitude: %v. Skipping row...", err)
 				continue
 			}
-			long, err := row.GetAsFloat("Longitude")
+			long, err := row.GetAsFloat(utils.Longitude)
 			if err != nil {
 				log.Errorf("Error trying to get longitude: %v. Skipping row...", err)
 				continue

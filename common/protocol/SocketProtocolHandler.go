@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 )
 
 const sizeOfLen = 4
 
 type SocketProtocolHandler struct {
-	sock       *communication.TCPSocket
+	sock       communication.TCPSocketInterface
 	serializer *data_structures.Serializer
 }
 
-func NewSocketProtocolHandler(sock *communication.TCPSocket) *SocketProtocolHandler {
+func NewSocketProtocolHandler(sock communication.TCPSocketInterface) *SocketProtocolHandler {
 	return &SocketProtocolHandler{
 		sock:       sock,
 		serializer: data_structures.NewSerializer(),
@@ -84,4 +85,8 @@ func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
 		return fmt.Errorf("sending message: %v", err)
 	}
 	return nil
+}
+
+func (sph *SocketProtocolHandler) Close() {
+	utils.CloseSocketAndNotifyError(sph.sock)
 }

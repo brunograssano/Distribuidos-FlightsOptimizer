@@ -8,12 +8,15 @@ import (
 	"strings"
 )
 
+const DefaultBatchSize = 300
+
 // ClientConfig The configuration of the application
 type ClientConfig struct {
 	ID              string
 	InputFileName   string
 	AirportFileName string
 	ServerAddress   string
+	Batch           uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -33,6 +36,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("log", "level")
 	_ = v.BindEnv("input", "file")
 	_ = v.BindEnv("input", "airports")
+	_ = v.BindEnv("input", "batch")
 	_ = v.BindEnv("server", "address")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
@@ -68,17 +72,25 @@ func GetConfig(env *viper.Viper) (*ClientConfig, error) {
 		return nil, errors.New("missing server address")
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputFile: %v | serverAddress: %v | inputAirports: %v",
+	batch := env.GetUint("input.batch")
+	if batch == 0 {
+		log.Warnf("Missing batch size, using default")
+		batch = DefaultBatchSize
+	}
+
+	log.Infof("action: config | result: success | id: %s | log_level: %s | inputFile: %v | serverAddress: %v | inputAirports: %v | batch: %v",
 		id,
 		env.GetString("log.level"),
 		inputFile,
 		serverAddress,
-		inputAirports)
+		inputAirports,
+		batch)
 
 	return &ClientConfig{
 		ID:              id,
 		InputFileName:   inputFile,
 		ServerAddress:   serverAddress,
 		AirportFileName: inputAirports,
+		Batch:           batch,
 	}, nil
 }
