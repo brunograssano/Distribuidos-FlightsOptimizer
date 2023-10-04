@@ -10,5 +10,6 @@ use (
 	./simple_saver
 	./client
 	./distance_completer
+	./ex4
 	./server
 )

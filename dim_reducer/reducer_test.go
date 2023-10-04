@@ -13,6 +13,10 @@ type (
 	}
 )
 
+func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages() int {
+	return 0
+}
+
 func (m *mockConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
 		return nil, m.ok
@@ -34,6 +38,10 @@ type (
 func (m *mockProducerQueueProtocolHandler) Send(msg *dataStructures.Message) error {
 	m.outputChannel <- msg
 	return nil
+}
+
+func (m *mockProducerQueueProtocolHandler) GetSentMessages() int {
+	return 0
 }
 
 func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {

@@ -14,6 +14,10 @@ type (
 	}
 )
 
+func (m *mockConsumer) GetReceivedMessages() int {
+	return 0
+}
+
 func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
 		return nil, m.ok
@@ -31,6 +35,10 @@ type (
 		outputChannel chan *dataStructures.Message
 	}
 )
+
+func (m *mockProducer) GetSentMessages() int {
+	return 0
+}
 
 func (m *mockProducer) Send(data *dataStructures.Message) error {
 	m.outputChannel <- data
