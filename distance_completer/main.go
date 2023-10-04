@@ -40,7 +40,7 @@ func main() {
 			i,
 			qMiddleware,
 			completerConfig,
-			data_structures.NewDynamicMapSerializer(),
+			data_structures.NewSerializer(),
 			startProcessing,
 		)
 		go distCompleter.CompleteDistances()
@@ -49,7 +49,7 @@ func main() {
 	airportsSaver := controllers.NewAirportSaver(
 		completerConfig,
 		qMiddleware,
-		data_structures.NewDynamicMapSerializer(),
+		data_structures.NewSerializer(),
 		startChannels,
 	)
 	go airportsSaver.SaveAirports()

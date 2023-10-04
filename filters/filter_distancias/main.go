@@ -23,7 +23,7 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(filterDistanciaConfig.RabbitAddress)
 	for i := 0; i < filterDistanciaConfig.GoroutinesCount; i++ {
-		fd := NewFilterDistancias(i, qMiddleware, filterDistanciaConfig)
+		fd := NewFilterDistances(i, qMiddleware, filterDistanciaConfig)
 		log.Infof("Spawning GoRoutine #%v - Filter Escalas", i)
 		go fd.FilterDistances()
 	}

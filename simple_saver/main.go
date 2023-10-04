@@ -29,7 +29,7 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	canSend := make(chan bool)
 	saver := NewSimpleSaver(qMiddleware, saverConfig, serializer, canSend)
 	go saver.SaveData()

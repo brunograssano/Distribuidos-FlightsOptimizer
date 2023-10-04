@@ -44,7 +44,7 @@ func (m *mockProducer) Send(data []byte) error {
 func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesFilter(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
@@ -54,12 +54,12 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterDistancias := &FilterDistancias{
+	filterDistancias := &FilterDistances{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
-		serializer: data_structures.NewDynamicMapSerializer(),
+		serializer: data_structures.NewSerializer(),
 		filter:     filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
@@ -70,12 +70,15 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(8.5))
 	row := data_structures.NewDynamicMap(dynMap)
-	input <- serializer.Serialize(row)
+	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}})
 	close(input)
 	select {
 	case result := <-output:
-		newRow := serializer.Deserialize(result)
-		columnCount := newRow.GetColumnCount()
+		msg := serializer.DeserializeMsg(result)
+		if len(msg.DynMaps) != 1 {
+			t.Errorf("Received a row that was not expected, it has %v rows", len(msg.DynMaps))
+		}
+		columnCount := msg.DynMaps[0].GetColumnCount()
 		if columnCount != 2 {
 			t.Errorf("Received a row that was not expected, has not 2 columns, it has %v", columnCount)
 		}
@@ -87,7 +90,7 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
@@ -97,12 +100,12 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterDistancias := &FilterDistancias{
+	filterDistancias := &FilterDistances{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
-		serializer: data_structures.NewDynamicMapSerializer(),
+		serializer: data_structures.NewSerializer(),
 		filter:     filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
@@ -113,7 +116,8 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(7.6))
 	row := data_structures.NewDynamicMap(dynMap)
-	input <- serializer.Serialize(row)
+	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+	input <- serializer.SerializeMsg(msgToSend)
 	close(input)
 	select {
 	case <-output:
@@ -125,7 +129,7 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
@@ -135,12 +139,12 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterDistancias := &FilterDistancias{
+	filterDistancias := &FilterDistances{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
-		serializer: data_structures.NewDynamicMapSerializer(),
+		serializer: data_structures.NewSerializer(),
 		filter:     filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
@@ -151,7 +155,8 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.0))
 	row := data_structures.NewDynamicMap(dynMap)
-	input <- serializer.Serialize(row)
+	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+	input <- serializer.SerializeMsg(msgToSend)
 	close(input)
 	select {
 	case <-output:
@@ -163,7 +168,7 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 	input := make(chan []byte)
 	output := make(chan []byte)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
@@ -173,12 +178,12 @@ func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
-	filterDistancias := &FilterDistancias{
+	filterDistancias := &FilterDistances{
 		filterId:   0,
 		config:     &filters_config.FilterConfig{},
 		consumer:   mockCons,
 		producers:  arrayProducers,
-		serializer: data_structures.NewDynamicMapSerializer(),
+		serializer: data_structures.NewSerializer(),
 		filter:     filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
@@ -190,14 +195,15 @@ func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 		dynMap["totalTravelDistance"] = make([]byte, 4)
 		binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.7+1.9*float32(i)))
 		row := data_structures.NewDynamicMap(dynMap)
-		input <- serializer.Serialize(row)
+		msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+		input <- serializer.SerializeMsg(msgToSend)
 	}
 	close(input)
 	rowCountRecvd := 0
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-output:
-			newRow := serializer.Deserialize(result)
+			newRow := serializer.DeserializeMsg(result).DynMaps[0]
 			rowCountRecvd++
 			colC := newRow.GetColumnCount()
 			if colC != 2 {

@@ -29,7 +29,7 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
 		r := NewReducer(i, qMiddleware, reducerConfig, serializer)
 		go r.ReduceDims()

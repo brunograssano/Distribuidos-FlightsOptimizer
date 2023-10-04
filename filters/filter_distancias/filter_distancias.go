@@ -8,24 +8,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type FilterDistancias struct {
+type FilterDistances struct {
 	filterId   int
 	config     *filters_config.FilterConfig
 	consumer   middleware.ConsumerInterface
 	producers  []middleware.ProducerInterface
-	serializer *dataStructures.DynamicMapSerializer
+	serializer *dataStructures.Serializer
 	filter     *filters.Filter
 }
 
-func NewFilterDistancias(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterDistancias {
+func NewFilterDistances(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterDistances {
 	inputQueue := qMiddleware.CreateConsumer(conf.InputQueueName, true)
 	outputQueues := make([]middleware.ProducerInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = qMiddleware.CreateProducer(conf.OutputQueueNames[i], true)
 	}
-	dynMapSerializer := dataStructures.NewDynamicMapSerializer()
+	dynMapSerializer := dataStructures.NewSerializer()
 	filter := filters.NewFilter()
-	return &FilterDistancias{
+	return &FilterDistances{
 		filterId:   filterId,
 		config:     conf,
 		consumer:   inputQueue,
@@ -35,31 +35,38 @@ func NewFilterDistancias(filterId int, qMiddleware *middleware.QueueMiddleware, 
 	}
 }
 
-func (fd *FilterDistancias) FilterDistances() {
+func (fd *FilterDistances) FilterDistances() {
 	for {
 		data, ok := fd.consumer.Pop()
 		if !ok {
-			log.Infof("Closing FilterEscalas Goroutine...")
+			log.Infof("Closing FilterStopovers Goroutine...")
 			break
 		}
-		dynamicMap := fd.serializer.Deserialize(data)
-		directDistance, errCast := dynamicMap.GetAsFloat("directDistance")
-		if errCast != nil {
-			log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, errCast)
-			continue
+		msgStruct := fd.serializer.DeserializeMsg(data)
+		var filteredRows []*dataStructures.DynamicMap
+		for _, row := range msgStruct.DynMaps {
+			directDistance, errCast := row.GetAsFloat("directDistance")
+			if errCast != nil {
+				log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, errCast)
+				continue
+			}
+			passesFilter, err := fd.filter.Greater(row, 4*directDistance, "totalTravelDistance")
+			if err != nil {
+				log.Errorf("action: filter_distances | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, err)
+				continue
+			}
+			if passesFilter {
+				filteredRows = append(filteredRows, row)
+			}
 		}
-		passesFilter, err := fd.filter.Greater(dynamicMap, 4*directDistance, "totalTravelDistance")
-		if err != nil {
-			log.Errorf("action: filter_distances | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, err)
-			continue
-		}
-		if passesFilter {
+		if len(filteredRows) > 0 {
 			for _, producer := range fd.producers {
-				err = producer.Send(data)
+				err := producer.Send(data)
 				if err != nil {
 					log.Errorf("Error trying to send message that passed filter...")
 				}
 			}
 		}
+
 	}
 }

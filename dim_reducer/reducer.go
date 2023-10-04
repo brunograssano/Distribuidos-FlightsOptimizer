@@ -12,11 +12,11 @@ type Reducer struct {
 	c          *ReducerConfig
 	consumer   middleware.ConsumerInterface
 	producer   middleware.ProducerInterface
-	serializer *dataStructures.DynamicMapSerializer
+	serializer *dataStructures.Serializer
 }
 
 // NewReducer Creates a new reducer
-func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.DynamicMapSerializer) *Reducer {
+func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.Serializer) *Reducer {
 	consumer := qMiddleware.CreateConsumer(c.InputQueueName, true)
 	producer := qMiddleware.CreateProducer(c.OutputQueueName, true)
 	return &Reducer{
@@ -37,14 +37,20 @@ func (r *Reducer) ReduceDims() {
 			log.Infof("Closing goroutine %v", r.reducerId)
 			return
 		}
-		cols := r.serializer.Deserialize(msg)
-		reducedData, err := cols.ReduceToColumns(r.c.ColumnsToKeep)
-		if err != nil {
-			log.Errorf("action: reduce_columns | reducer_id: %v | result: fail | skipping row | error: %v", r.reducerId, err)
-			continue
+		var rows []*dataStructures.DynamicMap
+		msgStruct := r.serializer.DeserializeMsg(msg)
+		for _, row := range msgStruct.DynMaps {
+			reducedData, err := row.ReduceToColumns(r.c.ColumnsToKeep)
+			if err != nil {
+				log.Errorf("action: reduce_columns | reducer_id: %v | result: fail | skipping row | error: %v", r.reducerId, err)
+				continue
+			}
+			rows = append(rows, reducedData)
+
 		}
-		serialized := r.serializer.Serialize(reducedData)
-		err = r.producer.Send(serialized)
+		msgStruct = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
+		serialized := r.serializer.SerializeMsg(msgStruct)
+		err := r.producer.Send(serialized)
 		if err != nil {
 			log.Errorf("Error trying to send message to output queue")
 		}

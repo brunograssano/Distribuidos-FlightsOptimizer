@@ -40,7 +40,7 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	reducerConfig := &ReducerConfig{ColumnsToKeep: []string{"col1"}}
 	input := make(chan []byte, 10)
 	output := make(chan []byte, 10)
-	serializer := dataStructures.NewDynamicMapSerializer()
+	serializer := dataStructures.NewSerializer()
 
 	mConsumer := &mockConsumer{
 		inputChannel: input,
@@ -65,13 +65,13 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	row := dataStructures.NewDynamicMap(dynMap)
 
 	go reducer.ReduceDims()
-
-	input <- serializer.Serialize(row)
+	rows := []*dataStructures.DynamicMap{row}
+	input <- serializer.SerializeMsg(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows})
 	close(input)
 
 	select {
 	case result := <-output:
-		newRow := serializer.Deserialize(result)
+		newRow := serializer.DeserializeMsg(result).DynMaps[0]
 		if newRow.GetColumnCount() != 1 {
 			t.Errorf("RowCount expected was 1")
 		}

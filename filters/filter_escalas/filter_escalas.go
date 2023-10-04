@@ -8,26 +8,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type FilterEscalas struct {
+type FilterStopovers struct {
 	filterId   int
 	config     *filters_config.FilterConfig
 	consumer   middleware.ConsumerInterface
 	producers  []middleware.ProducerInterface
-	serializer *dataStructures.DynamicMapSerializer
+	serializer *dataStructures.Serializer
 	filter     *filters.Filter
 }
 
 const MinStopovers = 3
 
-func NewFilterEscalas(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterEscalas {
+func NewFilterStopovers(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterStopovers {
 	inputQueue := qMiddleware.CreateConsumer(conf.InputQueueName, true)
 	outputQueues := make([]middleware.ProducerInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = qMiddleware.CreateProducer(conf.OutputQueueNames[i], true)
 	}
-	dynMapSerializer := dataStructures.NewDynamicMapSerializer()
+	dynMapSerializer := dataStructures.NewSerializer()
 	filter := filters.NewFilter()
-	return &FilterEscalas{
+	return &FilterStopovers{
 		filterId:   filterId,
 		config:     conf,
 		consumer:   inputQueue,
@@ -37,21 +37,27 @@ func NewFilterEscalas(filterId int, qMiddleware *middleware.QueueMiddleware, con
 	}
 }
 
-func (fe *FilterEscalas) FilterEscalas() {
+func (fe *FilterStopovers) FilterStopovers() {
 	for {
 		data, ok := fe.consumer.Pop()
 		if !ok {
-			log.Infof("Closing FilterEscalas Goroutine...")
+			log.Infof("Closing FilterStopovers Goroutine...")
 			break
 		}
-		dynamicMap := fe.serializer.Deserialize(data)
-		passesFilter, err := fe.filter.GreaterOrEquals(dynamicMap, MinStopovers, "totalStopovers")
-		if err != nil {
-			log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fe.filterId, err)
+		msg := fe.serializer.DeserializeMsg(data)
+		var filteredRows []*dataStructures.DynamicMap
+		for _, row := range msg.DynMaps {
+			passesFilter, err := fe.filter.GreaterOrEquals(row, MinStopovers, "totalStopovers")
+			if err != nil {
+				log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fe.filterId, err)
+			}
+			if passesFilter {
+				filteredRows = append(filteredRows, row)
+			}
 		}
-		if passesFilter {
+		if len(filteredRows) > 0 {
 			for _, producer := range fe.producers {
-				err = producer.Send(data)
+				err := producer.Send(data)
 				if err != nil {
 					log.Errorf("Error trying to send message that passed filter...")
 				}

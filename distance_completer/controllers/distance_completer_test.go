@@ -59,7 +59,7 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewDynamicMapSerializer(),
+		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()
@@ -68,11 +68,11 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.Serialize(dynMapStructure)
-	dynMapResult := serializer.Deserialize(<-output)
+	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
+	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}
@@ -111,7 +111,7 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewDynamicMapSerializer(),
+		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()
@@ -120,11 +120,11 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.Serialize(dynMapStructure)
-	dynMapResult := serializer.Deserialize(<-output)
+	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
+	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}
@@ -163,7 +163,7 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewDynamicMapSerializer(),
+		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()
@@ -172,11 +172,11 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewDynamicMapSerializer()
+	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.Serialize(dynMapStructure)
-	dynMapResult := serializer.Deserialize(<-output)
+	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
+	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}
