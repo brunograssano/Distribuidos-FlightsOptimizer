@@ -53,6 +53,10 @@ func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHand
 		log.Errorf("%v", err)
 		return err
 	}
+	if addedToMsg > 0 {
+		msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows}
+		err = conn.Write(msg)
+	}
 
 	return conn.Write(&dataStructures.Message{TypeMessage: parser.GetEofMsgType()})
 }
