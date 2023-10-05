@@ -13,8 +13,7 @@ type JourneyDispatcher struct {
 	input    protocol.ConsumerProtocolInterface
 }
 
-// TODO hacer la implementacion con channels
-func NewDispatcher(input protocol.ConsumerProtocolInterface, outputChannels []protocol.ProducerProtocolInterface) *JourneyDispatcher {
+func NewJourneyDispatcher(input protocol.ConsumerProtocolInterface, outputChannels []protocol.ProducerProtocolInterface) *JourneyDispatcher {
 	return &JourneyDispatcher{
 		input:    input,
 		channels: outputChannels,
