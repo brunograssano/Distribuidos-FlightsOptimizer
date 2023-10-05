@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client/parsers"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
@@ -27,12 +28,16 @@ func (c *Client) StartClientLoop() {
 
 	defer c.Close()
 
-	err := SendAirports(c.conf.AirportFileName, c.conf.Batch, c.conn)
+	err := SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.AirportsParser{})
 	if err != nil {
 		return
 	}
 
-	// Send flight rows
+	err = SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
+	if err != nil {
+		return
+	}
+	
 	// Request results
 
 }
