@@ -19,6 +19,7 @@ func NewClient(c *ClientConfig) *Client {
 	if err != nil {
 		log.Fatalf("action: connect | result: fail | client_id: %v | error: %v", c.ID, err)
 	}
+	log.Infof("Connected to server")
 	return &Client{conn: protocol.NewSocketProtocolHandler(socket.TCPSocketInterface), conf: c}
 }
 
@@ -28,11 +29,13 @@ func (c *Client) StartClientLoop() {
 
 	defer c.Close()
 
+	log.Infof("Sending airports file...")
 	err := SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.AirportsParser{})
 	if err != nil {
 		return
 	}
 
+	log.Infof("Sending flight rows file...")
 	err = SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
 	if err != nil {
 		return

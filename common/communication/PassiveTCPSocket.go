@@ -1,6 +1,7 @@
 package communication
 
 import (
+	log "github.com/sirupsen/logrus"
 	"net"
 )
 
@@ -30,6 +31,7 @@ func NewPassiveTCPSocket(address string) (*PassiveTCPSocket, error) {
 
 func (passiveTCPSocket *PassiveTCPSocket) Accept() (*TCPSocket, error) {
 	conn, err := passiveTCPSocket.listener.Accept()
+	log.Infof("Received new connection: %v", conn.LocalAddr())
 	if err != nil {
 		return nil, err
 	}
