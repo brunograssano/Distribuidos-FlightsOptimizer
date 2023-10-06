@@ -3,4 +3,4 @@ log:
 rabbitmq:
   address: "amqp://guest:guest@rabbitmq:5672/"
 server:
-  address: "localhost:8080"
+  address: "server:8080"

@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,15 +54,20 @@ func (svr *Server) handleGetResults(cliSPH *protocol.SocketProtocolHandler) erro
 				_ = socketGetter.Close()
 				return err
 			}
-			if msg.TypeMessage == data_structures.EOFGetter {
-				_ = socketGetter.Close()
-				break
-			}
+
+			// Sends the results to the client.
+			// If the getter finishes it notifies the client the end of an exercise results
 			err = cliSPH.Write(msg)
 			if err != nil {
 				log.Errorf("Error trying to send to client. Ending loop...")
 				_ = socketGetter.Close()
 				return err
+			}
+
+			// If the getter finishes we stop the innermost loop
+			if msg.TypeMessage == data_structures.EOFGetter {
+				_ = socketGetter.Close()
+				break
 			}
 		}
 		_ = socketGetter.Close()
@@ -100,17 +106,20 @@ func (svr *Server) handleMessage(message *data_structures.Message, cliSPH *proto
 
 func (svr *Server) handleClient(cSock *communication.TCPSocket) {
 	sph := protocol.NewSocketProtocolHandler(cSock)
-	message, err := sph.Read()
-	if err != nil {
-		log.Errorf("Error trying to receive message: %v. Ending client handle & Closing socket...", err)
-		_ = cSock.Close()
-		return
-	}
-	err = svr.handleMessage(message, sph)
-	_ = cSock.Close()
-	if err != nil {
-		log.Errorf("%v", err)
-		return
+	defer utils.CloseSocketAndNotifyError(cSock)
+	for {
+		message, err := sph.Read()
+		if err != nil {
+			log.Errorf("Error trying to receive message: %v. Ending client handle & Closing socket...", err)
+			_ = cSock.Close()
+			return
+		}
+		err = svr.handleMessage(message, sph)
+
+		if err != nil {
+			log.Errorf("%v", err)
+			return
+		}
 	}
 }
 
