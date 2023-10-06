@@ -10,6 +10,12 @@ services:
       - testing_net
     ports:
       - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 50s
 
   reducer-ex1-1:
     container_name: dim_reducer_reducer-ex1-1
@@ -25,13 +31,8 @@ services:
     volumes:
       - ./dim_reducer/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   reducer-ex2-1:
     container_name: dim_reducer_reducer-ex2-1
@@ -47,13 +48,8 @@ services:
     volumes:
       - ./dim_reducer/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   filter_stopovers-1:
     container_name: filter_stopovers-1
@@ -68,13 +64,8 @@ services:
     volumes:
       - ./filters/filter_escalas/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   data_processor-1:
     container_name: data_processor-1
@@ -90,13 +81,8 @@ services:
     volumes:
       - ./data_processor/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   filter_distances-1:
     container_name: filter_distances-1
@@ -111,13 +97,8 @@ services:
     volumes:
       - ./filters/filter_distancias/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   distance_completer-1:
     container_name: distance_completer-1
@@ -136,14 +117,11 @@ services:
     volumes:
       - ./distance_completer/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-      - server
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+        rabbitmq:
+          condition: service_healthy
+        server:
+          condition: service_healthy
+
 
   saver-ex1:
     container_name: saver-ex1
@@ -158,13 +136,8 @@ services:
     volumes:
       - ./simple_saver/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   saver-ex2:
     container_name: saver-ex2
@@ -179,14 +152,8 @@ services:
     volumes:
       - ./simple_saver/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
-
+      rabbitmq:
+        condition: service_healthy
   server:
     container_name: server
     image: server:latest
@@ -203,13 +170,8 @@ services:
     volumes:
       - ./server/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   ex4_handler-1:
     container_name: ex4_handler-1
@@ -224,13 +186,8 @@ services:
     volumes:
       - ./ex4/config.yaml:/config.yaml
     depends_on:
-      - rabbitmq
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 15
-        window: 10s
+      rabbitmq:
+        condition: service_healthy
 
   client:
     container_name: client
