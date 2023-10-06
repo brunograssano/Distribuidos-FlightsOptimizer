@@ -24,9 +24,9 @@ func TestGetAsAllGetsOfNonExistentColumnShouldThrowError(t *testing.T) {
 	if err == nil {
 		t.Errorf("GetAsString should have thrown error")
 	}
-	_, err = row.GetAsAny("non_existent")
+	_, err = row.GetAsBytes("non_existent")
 	if err == nil {
-		t.Errorf("GetAsAny should have thrown error")
+		t.Errorf("GetAsBytes should have thrown error")
 	}
 }
 

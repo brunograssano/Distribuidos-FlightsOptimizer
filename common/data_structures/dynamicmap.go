@@ -43,14 +43,13 @@ func (dm *DynamicMap) GetAsString(colName string) (string, error) {
 	return strVal, nil
 }
 
-// GetAsAny
+// GetAsBytes
 /*
-	Gets the data as an interface, user should get type of interface afterward
-	or use reflect library to know the dynamic data type and cast it.
+	Gets the data in byte format, user should get type afterward
 
 	Returns error on lack of existence of the column
 */
-func (dm *DynamicMap) GetAsAny(colName string) (interface{}, error) {
+func (dm *DynamicMap) GetAsBytes(colName string) ([]byte, error) {
 	data, exists := dm.cols[colName]
 	if !exists {
 		return nil, fmt.Errorf("column %v does not exist", colName)

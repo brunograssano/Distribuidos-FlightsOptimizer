@@ -22,6 +22,7 @@ type DataProcessor struct {
 	serializer     *dataStructures.Serializer
 	ex123Columns   []string
 	ex4Columns     []string
+	inputQueueProd protocol.ProducerProtocolInterface
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
@@ -32,6 +33,7 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 		producersEx123 = append(producersEx123, protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(queueName, true)))
 	}
 	producersEx4 := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueNameEx4, true))
+	inputQProd := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,
@@ -41,6 +43,7 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 		serializer:     serializer,
 		ex123Columns:   []string{"legId", "startingAirport", "destinationAirport", "travelDuration", "totalFare", "totalTravelDistance", "segmentsAirlineName", "totalStopovers", "route"},
 		ex4Columns:     []string{"startingAirport", "destinationAirport", "totalFare"},
+		inputQueueProd: inputQProd,
 	}
 }
 
@@ -67,10 +70,14 @@ func (d *DataProcessor) processRows(rows []*dataStructures.DynamicMap) ([]*dataS
 
 // ProcessData General loop that listens to the queue, preprocess the data, and passes it to the next steps
 func (d *DataProcessor) ProcessData() {
+	defer log.Infof("Closing goroutine %v", d.processorId)
 	for {
 		msg, ok := d.consumer.Pop()
 		if !ok {
-			log.Infof("Closing goroutine %v", d.processorId)
+			return
+		}
+		if msg.TypeMessage == dataStructures.EOFFlightRows {
+			_ = protocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
 			return
 		}
 		ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
