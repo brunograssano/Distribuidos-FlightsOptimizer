@@ -35,7 +35,7 @@ func main() {
 	saver := NewSimpleSaver(qMiddleware, saverConfig, serializer, canSend)
 	go saver.SaveData()
 
-	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)
+	getterConf := getters.NewGetterConfig(saverConfig.ID, saverConfig.OutputFileNames, saverConfig.GetterAddress, saverConfig.GetterBatchLines)
 	getter, err := getters.NewGetter(getterConf, canSend)
 	if err != nil {
 		log.Fatalf("%s", err)

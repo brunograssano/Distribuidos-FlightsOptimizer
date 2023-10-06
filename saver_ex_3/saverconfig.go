@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
+const maxBatchLines = 1500
+const defaultBatchLines = 300
+
 // SaverConfig The configuration of the application
 type SaverConfig struct {
 	ID               string
 	InputQueueName   string
-	OutputFileName   string
+	OutputFileNames  []string
 	RabbitAddress    string
 	GetterAddress    string
 	GetterBatchLines uint
 }
-
-const maxBatchLines = 1500
-const defaultBatchLines = 300
 
 // InitEnv Initializes the configuration properties from a config file and environment
 func InitEnv() (*viper.Viper, error) {
@@ -65,10 +65,11 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		return nil, errors.New("missing input queue")
 	}
 
-	outputFilename := env.GetString("saver.output")
+	outputFilenamesStr := env.GetString("saver.output")
 	if inputQueueName == "" {
 		return nil, errors.New("missing output filename")
 	}
+	outputs := strings.Split(outputFilenamesStr, ",")
 
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
@@ -91,14 +92,14 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		env.GetString("log.level"),
 		rabbitAddress,
 		inputQueueName,
-		outputFilename,
+		outputFilenamesStr,
 		getterAddress,
 		getterBatchLines)
 
 	return &SaverConfig{
 		ID:               id,
 		InputQueueName:   inputQueueName,
-		OutputFileName:   outputFilename,
+		OutputFileNames:  outputs,
 		RabbitAddress:    rabbitAddress,
 		GetterAddress:    getterAddress,
 		GetterBatchLines: getterBatchLines,

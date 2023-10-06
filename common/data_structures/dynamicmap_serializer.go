@@ -4,8 +4,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 )
+
+const commaSeparator = ","
+const newLine = "\n"
 
 type Serializer struct{}
 
@@ -96,8 +100,6 @@ func (serializer *Serializer) SerializeString(value string) []byte {
 }
 
 func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
-	const commaSeparator = ","
-	const newLine = "\n"
 	line := strings.Builder{}
 	currMap := dynMap.GetCurrentMap()
 	for key, value := range currMap {
@@ -111,6 +113,28 @@ func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
 	}
 	line.WriteString(newLine)
 	return line.String()
+}
+
+func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMap {
+	keyValuePairs := strings.Split(dynMapStr, commaSeparator)
+	dynMapData := make(map[string][]byte)
+	for _, pair := range keyValuePairs {
+		keyValuePair := strings.Split(pair, "=")
+		key := keyValuePair[0]
+		strVal := keyValuePair[1]
+		intVal, err := strconv.Atoi(strVal)
+		if err != nil {
+			floatVal, err := strconv.ParseFloat(strVal, 32)
+			if err != nil {
+				dynMapData[key] = []byte(strVal)
+			} else {
+				dynMapData[key] = serializer.SerializeFloat(float32(floatVal))
+			}
+		} else {
+			dynMapData[key] = serializer.SerializeUint(uint32(intVal))
+		}
+	}
+	return NewDynamicMap(dynMapData)
 }
 
 func (serializer *Serializer) SerializeFloat(value float32) []byte {

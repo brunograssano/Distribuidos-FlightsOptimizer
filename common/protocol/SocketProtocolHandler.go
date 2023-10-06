@@ -85,3 +85,7 @@ func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
 	}
 	return nil
 }
+
+func (sph *SocketProtocolHandler) Close() {
+	_ = sph.sock.Close()
+}

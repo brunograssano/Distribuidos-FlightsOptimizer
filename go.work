@@ -11,5 +11,6 @@ use (
 	./client
 	./distance_completer
 	./ex4
+	./saver_ex_3
 	./server
 )

@@ -153,6 +153,7 @@ services:
       - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_SAVER_OUTPUT=results_ex1.csv
+      - CLI_GETTER_BATCH_LINES = 300
     networks:
       - testing_net
     volumes:
@@ -174,6 +175,7 @@ services:
       - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_SAVER_OUTPUT=results_ex2.csv
+      - CLI_GETTER_BATCH_LINES = 300
     networks:
       - testing_net
     volumes:
