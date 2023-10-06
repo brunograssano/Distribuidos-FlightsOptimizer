@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -105,17 +106,20 @@ func (svr *Server) handleMessage(message *data_structures.Message, cliSPH *proto
 
 func (svr *Server) handleClient(cSock *communication.TCPSocket) {
 	sph := protocol.NewSocketProtocolHandler(cSock)
-	message, err := sph.Read()
-	if err != nil {
-		log.Errorf("Error trying to receive message: %v. Ending client handle & Closing socket...", err)
-		_ = cSock.Close()
-		return
-	}
-	err = svr.handleMessage(message, sph)
-	_ = cSock.Close()
-	if err != nil {
-		log.Errorf("%v", err)
-		return
+	defer utils.CloseSocketAndNotifyError(cSock)
+	for {
+		message, err := sph.Read()
+		if err != nil {
+			log.Errorf("Error trying to receive message: %v. Ending client handle & Closing socket...", err)
+			_ = cSock.Close()
+			return
+		}
+		err = svr.handleMessage(message, sph)
+
+		if err != nil {
+			log.Errorf("%v", err)
+			return
+		}
 	}
 }
 

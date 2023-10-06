@@ -1,6 +1,7 @@
 package utils
 
 const CommaSeparator = ","
+const DotCommaSeparator = ";"
 
 const AirportCode = "Airport Code"
 const Latitude = "Latitude"

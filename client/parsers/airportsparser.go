@@ -18,8 +18,8 @@ type AirportsParser struct{}
 // LineToDynMap converts a row from the airports file to a dynamic map
 func (a AirportsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, error) {
 	serializer := dataStructures.Serializer{}
-	fields := strings.Split(line, utils.CommaSeparator)
-	dynMap := &dataStructures.DynamicMap{}
+	fields := strings.Split(line, utils.DotCommaSeparator)
+	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
 	if len(fields) != airportFileColumnCount {
 		return nil, fmt.Errorf("airports file has incorrect format: %v columns", len(fields))
 	}

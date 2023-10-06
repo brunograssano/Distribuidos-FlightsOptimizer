@@ -4,6 +4,7 @@ import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -30,7 +31,7 @@ type FlightsParser struct{}
 func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, error) {
 	serializer := dataStructures.Serializer{}
 	fields := strings.Split(line, utils.CommaSeparator)
-	dynMap := &dataStructures.DynamicMap{}
+	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
 	if len(fields) != flightFileColumnCount {
 		return nil, fmt.Errorf("flights file has incorrect format: %v columns", len(fields))
 	}
@@ -43,6 +44,7 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 	travelDurationString, _ = strings.CutPrefix(travelDurationString, TravelDurationPrefix)
 	durationParts := strings.Split(travelDurationString, TravelDurationHour)
 	duration := 0
+	//PT3H18M
 	if len(durationParts) == 2 {
 		hourString := durationParts[0]
 		hour, err := strconv.Atoi(hourString)
@@ -50,10 +52,15 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 			return nil, fmt.Errorf("hour conversion error: %v", err)
 		}
 		minutesString := durationParts[1]
-		minutes, err := strconv.Atoi(minutesString)
-		if err != nil {
-			return nil, fmt.Errorf("minutes conversion error: %v", err)
+		minutesString, found := strings.CutSuffix(minutesString, TravelDurationMinute)
+		minutes := 0
+		if found {
+			minutes, err = strconv.Atoi(minutesString)
+			if err != nil {
+				log.Warnf("Error converting minutes duration, will be sent as zero")
+			}
 		}
+
 		duration = hour*minutesInHour + minutes
 	}
 	// TODO handle other case
@@ -65,12 +72,15 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 		return nil, fmt.Errorf("totalFare conversion to float: %v", err)
 	}
 	dynMap.AddColumn(utils.TotalFare, serializer.SerializeFloat(float32(totalFare)))
-
-	totalTravelDistance, err := strconv.Atoi(fields[totalTravelDistancePos])
-	if err != nil {
-		return nil, fmt.Errorf("totalTravelDistance conversion error: %v", err)
+	totalTravelDistance := float64(0)
+	if fields[totalTravelDistancePos] != "" {
+		totalTravelDistance, err = strconv.ParseFloat(fields[totalTravelDistancePos], 32)
+		if err != nil {
+			log.Warnf("Error converting totalTravelDistance, will be sent as zero")
+		}
 	}
-	dynMap.AddColumn(utils.TotalTravelDistance, serializer.SerializeUint(uint32(totalTravelDistance)))
+
+	dynMap.AddColumn(utils.TotalTravelDistance, serializer.SerializeFloat(float32(totalTravelDistance)))
 	dynMap.AddColumn(utils.SegmentsArrivalAirportCode, serializer.SerializeString(fields[segmentsArrivalAirportCodePos]))
 	dynMap.AddColumn(utils.SegmentsAirlineName, serializer.SerializeString(fields[segmentsAirlineNamePos]))
 

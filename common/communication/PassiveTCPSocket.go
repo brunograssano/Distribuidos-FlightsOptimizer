@@ -21,6 +21,7 @@ func NewPassiveTCPSocket(address string) (*PassiveTCPSocket, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Created new server at: %v", address)
 	return &PassiveTCPSocket{
 		TCPSocket: TCPSocket{
 			address: address,
@@ -31,10 +32,10 @@ func NewPassiveTCPSocket(address string) (*PassiveTCPSocket, error) {
 
 func (passiveTCPSocket *PassiveTCPSocket) Accept() (*TCPSocket, error) {
 	conn, err := passiveTCPSocket.listener.Accept()
-	log.Infof("Received new connection: %v", conn.LocalAddr())
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Received new connection: %v", conn.LocalAddr())
 	return &TCPSocket{
 		connection: conn,
 		address:    passiveTCPSocket.address,

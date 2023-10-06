@@ -20,7 +20,7 @@ func NewClient(c *ClientConfig) *Client {
 		log.Fatalf("action: connect | result: fail | client_id: %v | error: %v", c.ID, err)
 	}
 	log.Infof("Connected to server")
-	return &Client{conn: protocol.NewSocketProtocolHandler(socket.TCPSocketInterface), conf: c}
+	return &Client{conn: protocol.NewSocketProtocolHandler(socket), conf: c}
 }
 
 // StartClientLoop Sends the flight rows and airport
@@ -36,7 +36,7 @@ func (c *Client) StartClientLoop() {
 	}
 
 	log.Infof("Sending flight rows file...")
-	err = SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
+	err = SendFile(c.conf.InputFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
 	if err != nil {
 		return
 	}

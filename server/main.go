@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 	server := NewServer(serverConfig)
-	server.StartServerLoop()
+	go server.StartServerLoop()
 	log.Infof("Spawned Server...")
 	<-sigs
 	log.Infof("Ending Server...")

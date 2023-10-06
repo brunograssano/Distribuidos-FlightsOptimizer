@@ -131,6 +131,7 @@ services:
       - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_SAVER_OUTPUT=results_ex1.csv
+      - CLI_GETTER_ADDRESS=saver-ex1:8080
     networks:
       - testing_net
     volumes:
@@ -147,6 +148,7 @@ services:
       - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_SAVER_OUTPUT=results_ex2.csv
+      - CLI_GETTER_ADDRESS=saver-ex2:8080
     networks:
       - testing_net
     volumes:
@@ -154,6 +156,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
   server:
     container_name: server
     image: server:latest
@@ -172,6 +175,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      saver-ex1:
+        condition: service_started
+      saver-ex2:
+        condition: service_started
 
   ex4_handler-1:
     container_name: ex4_handler-1
@@ -195,8 +202,8 @@ services:
     environment:
       - CLI_ID=11
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_INPUT_BATCH=300
-      - CLI_INPUT_AIRPORT=/data/airports.csv # configurar localmente
+      - CLI_INPUT_BATCH=100
+      - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
       - CLI_INPUT_FILE=/data/flightrows.csv # configurar localmente
     networks:
       - testing_net

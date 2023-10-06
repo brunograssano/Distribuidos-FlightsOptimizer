@@ -62,7 +62,7 @@ func GetConfig(env *viper.Viper) (*ClientConfig, error) {
 		return nil, errors.New("missing input file")
 	}
 
-	inputAirports := env.GetString("input.file")
+	inputAirports := env.GetString("input.airports")
 	if inputAirports == "" {
 		return nil, errors.New("missing airports file")
 	}
