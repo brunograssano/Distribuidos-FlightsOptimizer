@@ -13,7 +13,6 @@ type Ex4Config struct {
 	ID                  string
 	InputQueueName      string
 	OutputQueueName     string
-	OutputFileName      string
 	RabbitAddress       string
 	InternalSaversCount uint
 }
@@ -35,7 +34,6 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "address")
 	_ = v.BindEnv("rabbitmq", "queue", "input")
 	_ = v.BindEnv("rabbitmq", "queue", "output")
-	_ = v.BindEnv("saver", "output")
 	_ = v.BindEnv("internal", "savers", "count")
 
 	v.SetConfigFile("./config.yaml")
@@ -63,11 +61,6 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 		return nil, errors.New("missing output queue")
 	}
 
-	outputFilename := env.GetString("saver.output")
-	if inputQueueName == "" {
-		return nil, errors.New("missing output filename")
-	}
-
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
 		return nil, errors.New("missing rabbitmq address")
@@ -79,19 +72,17 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 		internalSaversCount = defaultSaversCount
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | internalSaversCount: %v",
+	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,
 		inputQueueName,
-		outputFilename,
 		internalSaversCount)
 
 	return &Ex4Config{
 		ID:                  id,
 		InputQueueName:      inputQueueName,
 		OutputQueueName:     outputQueueName,
-		OutputFileName:      outputFilename,
 		RabbitAddress:       rabbitAddress,
 		InternalSaversCount: internalSaversCount,
 	}, nil

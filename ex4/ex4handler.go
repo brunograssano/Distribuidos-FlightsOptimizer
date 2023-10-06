@@ -2,15 +2,15 @@ package main
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
-	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 type Ex4Handler struct {
 	c                 *Ex4Config
-	journeyDispatcher *utils.JourneyDispatcher
+	journeyDispatcher *dispatcher.JourneyDispatcher
 	savers            []*JourneySaver
 	accumulator       *AvgCalculator
 	qMiddleware       *middleware.QueueMiddleware
@@ -40,7 +40,7 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 		))
 		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalServerChannel))
 	}
-	jd := utils.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
+	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
 
 	// crear acumulador general --> tiene todos los canales de los savers individuales (resultado final)
 

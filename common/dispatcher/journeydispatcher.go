@@ -1,4 +1,4 @@
-package utils
+package dispatcher
 
 import (
 	"crypto/sha256"
