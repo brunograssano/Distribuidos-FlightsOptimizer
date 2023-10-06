@@ -31,7 +31,7 @@ func (s *SimpleSaver) SaveData() {
 			return
 		}
 		msgStruct := s.serializer.DeserializeMsg(msg)
-		writer, err := filemanager.NewFileWriter(s.c.OutputFileName)
+		writer, err := filemanager.NewFileWriter(s.c.OutputFileNames[0])
 		if err != nil {
 			return
 		}

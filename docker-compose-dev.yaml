@@ -165,7 +165,7 @@ services:
     environment:
       - CLI_ID=9
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_GETTER_ADDRESSES="saver-ex1:8080,saver-ex2:8080"
+      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
