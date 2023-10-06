@@ -232,6 +232,29 @@ services:
         max_attempts: 15
         window: 10s
 
+  client:
+    container_name: client
+    image: client:latest
+    environment:
+      - CLI_ID=11
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_INPUT_BATCH=300
+      - CLI_INPUT_AIRPORT=/data/airports.csv # configurar localmente
+      - CLI_INPUT_FILE=/data/flightrows.csv # configurar localmente
+    networks:
+      - testing_net
+    volumes:
+      - ./client/config.yaml:/config.yaml
+      - ./data:/data
+    depends_on:
+      - server
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 15
+        window: 10s
+
 networks:
   testing_net:
     ipam:

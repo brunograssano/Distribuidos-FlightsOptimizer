@@ -53,15 +53,20 @@ func (svr *Server) handleGetResults(cliSPH *protocol.SocketProtocolHandler) erro
 				_ = socketGetter.Close()
 				return err
 			}
-			if msg.TypeMessage == data_structures.EOFGetter {
-				_ = socketGetter.Close()
-				break
-			}
+
+			// Sends the results to the client.
+			// If the getter finishes it notifies the client the end of an exercise results
 			err = cliSPH.Write(msg)
 			if err != nil {
 				log.Errorf("Error trying to send to client. Ending loop...")
 				_ = socketGetter.Close()
 				return err
+			}
+
+			// If the getter finishes we stop the innermost loop
+			if msg.TypeMessage == data_structures.EOFGetter {
+				_ = socketGetter.Close()
+				break
 			}
 		}
 		_ = socketGetter.Close()

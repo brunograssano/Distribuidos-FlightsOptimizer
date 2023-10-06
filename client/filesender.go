@@ -16,13 +16,13 @@ func skipHeader(reader *filemanager.FileReader) {
 	}
 }
 
-// SendFile Sends the airports data to the server
+// SendFile Sends a file data through a socket
 func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHandler, parser parsers.Parser) error {
 	reader, err := filemanager.NewFileReader(FileName)
 	if err != nil {
 		return err
 	}
-	defer utils.CloseFileAndNotifyError(reader)
+	defer utils.CloseFileAndNotifyError(reader.FileManager)
 
 	rows := make([]*dataStructures.DynamicMap, 0, batchSize)
 	addedToMsg := uint(0)

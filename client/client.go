@@ -3,7 +3,6 @@ package main
 import (
 	"client/parsers"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,27 +37,8 @@ func (c *Client) StartClientLoop() {
 	if err != nil {
 		return
 	}
-	
-	log.Infof("Requesting results")
-	msg := &dataStructures.Message{TypeMessage: dataStructures.GetResults}
-	err = c.conn.Write(msg)
-	if err != nil {
-		log.Errorf("Error requesting results: %v", err)
-		return
-	}
-	for {
-		msg, err = c.conn.Read()
-		if err != nil {
-			log.Errorf("Error reading results: %v", err)
-			return
-		}
-		if msg.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("End results")
-			return
-		}
 
-		// TODO serializar a string todo para imprimir
-	}
+	RequestResults(err, c.conn)
 
 }
 
