@@ -10,6 +10,7 @@ docker-image:
 	docker build -f ./distance_completer/Dockerfile -t "distance_completer:latest" .
 	docker build -f ./simple_saver/Dockerfile -t "simple_saver:latest" .
 	docker build -f ./server/Dockerfile -t "server:latest" .
+	docker build -f ./client/Dockerfile -t "client:latest" .
 	docker build -f ./ex4/Dockerfile -t "ex4_handler:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you

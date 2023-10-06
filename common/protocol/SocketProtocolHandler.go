@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const sizeOfLen = 4
 
 type SocketProtocolHandler struct {
-	sock       *communication.TCPSocket
+	sock       communication.TCPSocketInterface
 	serializer *data_structures.Serializer
 }
 
-func NewSocketProtocolHandler(sock *communication.TCPSocket) *SocketProtocolHandler {
+func NewSocketProtocolHandler(sock communication.TCPSocketInterface) *SocketProtocolHandler {
 	return &SocketProtocolHandler{
 		sock:       sock,
 		serializer: data_structures.NewSerializer(),
@@ -50,8 +52,11 @@ func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
 }
 
 func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
+	log.Infof("Sending length...")
 	lengthOfBytes := len(msgBytes)
+	log.Infof("Length to send is %v", lengthOfBytes)
 	msgSize := sph.serializer.SerializeUint(uint32(lengthOfBytes))
+	log.Infof("Msg size bytes: %v", msgSize)
 	write, err := sph.sock.Write(msgSize)
 	if err != nil {
 		return err
@@ -63,6 +68,7 @@ func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
 }
 
 func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
+	log.Infof("Sending message of len: %v...", len(msgBytes))
 	write, err := sph.sock.Write(msgBytes)
 	if err != nil {
 		return err
@@ -70,6 +76,7 @@ func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
 	if write < len(msgBytes) {
 		return fmt.Errorf("send wrote less than %v bytes, instead size sent was %v", len(msgBytes), write)
 	}
+	log.Infof("Sent message")
 	return nil
 }
 
@@ -84,4 +91,8 @@ func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
 		return fmt.Errorf("sending message: %v", err)
 	}
 	return nil
+}
+
+func (sph *SocketProtocolHandler) Close() {
+	utils.CloseSocketAndNotifyError(sph.sock)
 }

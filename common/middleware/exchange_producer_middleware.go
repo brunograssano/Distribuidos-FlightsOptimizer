@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -25,6 +26,7 @@ func NewExchangeProducer(channel *amqp.Channel, nameEx string, routingKey string
 		nil,
 	)
 	FailOnError(err, fmt.Sprintf("Failed to declare the Exchange %v in RabbitMQ", nameEx))
+	log.Infof("Created new exchange %v in RabbitMQ", nameEx)
 	return &ExchangeProducer{
 		rabbitMQChannel: channel,
 		name:            nameEx,
