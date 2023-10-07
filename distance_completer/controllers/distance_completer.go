@@ -6,6 +6,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -15,8 +16,9 @@ type DistanceCompleter struct {
 	completerId      int
 	airportsMap      map[string][2]float32
 	c                *config.CompleterConfig
-	consumer         middleware.ConsumerInterface
-	producer         middleware.ProducerInterface
+	consumer         protocol.ConsumerProtocolInterface
+	producer         protocol.ProducerProtocolInterface
+	prodForCons      protocol.ProducerProtocolInterface
 	serializer       *dataStructures.Serializer
 	fileLoadedSignal chan bool
 }
@@ -28,8 +30,9 @@ func NewDistanceCompleter(
 	s *dataStructures.Serializer,
 	fileLoadedSignal chan bool,
 ) *DistanceCompleter {
-	consumer := qMiddleware.CreateConsumer(c.InputQueueFlightsName, true)
-	producer := qMiddleware.CreateProducer(c.OutputQueueName, true)
+	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
+	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
+	producerForCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueFlightsName, true))
 
 	return &DistanceCompleter{
 		completerId:      id,
@@ -37,6 +40,7 @@ func NewDistanceCompleter(
 		c:                c,
 		consumer:         consumer,
 		producer:         producer,
+		prodForCons:      producerForCons,
 		serializer:       s,
 		fileLoadedSignal: fileLoadedSignal,
 	}
@@ -98,10 +102,11 @@ func shouldCompleteCol(distance float32) bool {
 }
 
 func (dc *DistanceCompleter) sendNext(message *dataStructures.Message) {
-	bytesToSend := dc.serializer.SerializeMsg(message)
-	err := dc.producer.Send(bytesToSend)
+	err := dc.producer.Send(message)
 	if err != nil {
 		log.Errorf("Error trying to send to the next service...")
+	} else {
+		log.Infof("Message sent correctly to the consumer...")
 	}
 }
 
@@ -147,26 +152,49 @@ func (dc *DistanceCompleter) CompleteDistances() {
 			log.Infof("Closing goroutine %v", dc.completerId)
 			return
 		}
-		msgStruct := dc.serializer.DeserializeMsg(msg)
-		rows := msgStruct.DynMaps
-		var nextBatch []*dataStructures.DynamicMap
-		for _, row := range rows {
-			totalTravelDistance, err := row.GetAsFloat("totalTravelDistance")
-			if err != nil || shouldCompleteCol(totalTravelDistance) {
-				totalTravelDistance, err = dc.calculateTotalTravelDistance(row)
-				if err != nil {
-					continue
-				}
-				dc.addColumnToRow("totalTravelDistance", totalTravelDistance, row)
-			}
-			directDistance, err := dc.calculateDirectDistance(row)
+		log.Debugf("Received Message: {type: %v, rowCount:%v}", msg.TypeMessage, len(msg.DynMaps))
+		if msg.TypeMessage == dataStructures.EOFFlightRows {
+			log.Infof("[CompleterProcess] Received EOF. Handling...")
+			err := protocol.HandleEOF(msg, dc.consumer, dc.prodForCons, []protocol.ProducerProtocolInterface{dc.producer})
 			if err != nil {
+				log.Errorf("Error handling EOF: %v", err)
+			}
+			return
+		} else if msg.TypeMessage == dataStructures.FlightRows {
+			log.Infof("[CompleterProcess] Received Batch. Handling rows to be completed...")
+			dc.handleFlightRows(msg)
+		} else {
+			log.Warnf("Unknown type of message: %v. Skipping it...", msg.TypeMessage)
+		}
+	}
+}
+
+func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
+	rows := msg.DynMaps
+	var nextBatch []*dataStructures.DynamicMap
+	for _, row := range rows {
+		totalTravelDistance, err := row.GetAsFloat("totalTravelDistance")
+		if err != nil || shouldCompleteCol(totalTravelDistance) {
+			log.Debugf("Row needs totalTravelDistance to be completed. Calculating...")
+			totalTravelDistance, err = dc.calculateTotalTravelDistance(row)
+			if err != nil {
+				log.Errorf("Error adding totalTravelDistance: %v. Skipping row...", err)
 				continue
 			}
-			dc.addColumnToRow("directDistance", directDistance, row)
-			nextBatch = append(nextBatch, row)
+			dc.addColumnToRow("totalTravelDistance", totalTravelDistance, row)
+			log.Debugf("totalTravelDistance added correctly!")
 		}
-		msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch}
-		dc.sendNext(msgToSend)
+		log.Debugf("Row needs directDistance to be completed. Calculating...")
+		directDistance, err := dc.calculateDirectDistance(row)
+		if err != nil {
+			log.Errorf("Error adding directDistance: %v. Skipping row...", err)
+			continue
+		}
+		dc.addColumnToRow("directDistance", directDistance, row)
+		log.Debugf("directDistance added correctly!")
+		nextBatch = append(nextBatch, row)
 	}
+	log.Infof("[CompleterProcess] Finished processing batch. Sending to next queue...")
+	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch}
+	dc.sendNext(msgToSend)
 }

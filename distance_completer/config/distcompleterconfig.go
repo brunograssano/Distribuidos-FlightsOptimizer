@@ -13,6 +13,7 @@ type CompleterConfig struct {
 	InputQueueAirportsName     string
 	RoutingKeyExchangeAirports string
 	ExchangeNameAirports       string
+	ExchangeType               string
 	InputQueueFlightsName      string
 	OutputQueueName            string
 	GoroutinesCount            int
@@ -40,6 +41,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "input", "airportroutingkey")
 	_ = v.BindEnv("rabbitmq", "queue", "input", "airportexchange")
 	_ = v.BindEnv("rabbitmq", "address")
+	_ = v.BindEnv("queues", "airports", "exchange", "type")
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
@@ -90,6 +92,11 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		goroutinesCount = defaultGoroutines
 	}
 
+	exchangeType := env.GetString("queues.airports.exchange.type")
+	if exchangeType == "" {
+		return nil, errors.New("missing exchangeType")
+	}
+
 	fileName := env.GetString("completer.filename")
 	if fileName == "" {
 		return nil, errors.New("missing filename")
@@ -116,6 +123,7 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		RabbitAddress:              rabbitAddress,
 		AirportsFilename:           fileName,
 		ExchangeNameAirports:       airportExchangeName,
+		ExchangeType:               exchangeType,
 		RoutingKeyExchangeAirports: airportRoutingKey,
 	}, nil
 }

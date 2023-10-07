@@ -109,6 +109,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
       - CLI_RABBITMQ_QUEUES_OUTPUT=filters_distances
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
       - CLI_COMPLETER_FILENAME=airports.csv
@@ -119,8 +120,6 @@ services:
     depends_on:
         rabbitmq:
           condition: service_healthy
-        server:
-          condition: service_started
 
 
   saver-ex1:
@@ -180,6 +179,8 @@ services:
       saver-ex1:
         condition: service_started
       saver-ex2:
+        condition: service_started
+      distance_completer-1:
         condition: service_started
 
   ex4_handler-1:

@@ -37,7 +37,17 @@ func (queue *Consumer) Pop() ([]byte, bool) {
 }
 
 func (queue *Consumer) BindTo(nameExchange string, routingKey string) error {
-	err := queue.rabbitMQChannel.QueueBind(
+	err := queue.rabbitMQChannel.ExchangeDeclare(
+		nameExchange,
+		"fanout",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	FailOnError(err, fmt.Sprintf("Failed to declare the Exchange %v in RabbitMQ", nameExchange))
+	err = queue.rabbitMQChannel.QueueBind(
 		queue.queue.Name, // queue name
 		routingKey,       // routing key
 		nameExchange,     // exchange
