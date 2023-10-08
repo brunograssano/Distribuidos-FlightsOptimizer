@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// JourneySaver Handles the prices of the assigned journeys
 type JourneySaver struct {
 	consumer          protocol.ConsumerProtocolInterface
 	accumProducer     protocol.ProducerProtocolInterface
@@ -17,6 +18,7 @@ type JourneySaver struct {
 	filesToRead       []string
 }
 
+// NewJourneySaver Creates a new JourneySaver
 func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer protocol.ProducerProtocolInterface, avgAndMaxProducer protocol.ProducerProtocolInterface) *JourneySaver {
 	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer}
 }
@@ -32,6 +34,7 @@ func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer 
 
 func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 	// May need optimization. Mix of memory and disk or only memory...
+	log.Debugf("Writing records to files")
 	for _, dynMap := range dynMaps {
 		stAirport, err := dynMap.GetAsString("startingAirport")
 		if err != nil {
@@ -111,6 +114,7 @@ func (js *JourneySaver) readJourneyAsArrays(journeyStr string) ([]float32, error
 	return prices, nil
 }
 
+// sumPricesAndCountQuantities Gets the values (total price and accum) of this JourneySaver by iterating all the managed files
 func (js *JourneySaver) sumPricesAndCountQuantities() (float32, int) {
 	accumPrice := float32(0.0)
 	accumLines := 0
@@ -125,6 +129,7 @@ func (js *JourneySaver) sumPricesAndCountQuantities() (float32, int) {
 	return accumPrice, accumLines
 }
 
+// sendToGeneralAccumulator Sends to the accumulator the values that the JourneySaver managed
 func (js *JourneySaver) sendToGeneralAccumulator(totalPrice float32, rows int) error {
 	dynMapData := make(map[string][]byte)
 	serializer := dataStructure.NewSerializer()
@@ -142,6 +147,7 @@ func (js *JourneySaver) sendToGeneralAccumulator(totalPrice float32, rows int) e
 	return nil
 }
 
+// filterGreaterThanAverage Returns the prices greater than the average
 func (js *JourneySaver) filterGreaterThanAverage(prices []float32, avg float32) []float32 {
 	var returnArray []float32
 	for _, price := range prices {
@@ -196,6 +202,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 	}
 }
 
+// SavePricesForJourneys JourneySaver loop that reads from the input channel, saves the journey and performs calculations
 func (js *JourneySaver) SavePricesForJourneys() {
 	for {
 		msg, ok := js.consumer.Pop()
@@ -204,6 +211,7 @@ func (js *JourneySaver) SavePricesForJourneys() {
 			return
 		}
 		if msg.TypeMessage == dataStructure.EOFFlightRows {
+			log.Infof("Received EOF message, calulating local values of JourneySaver")
 			totalPrice, quantities := js.sumPricesAndCountQuantities()
 			err := js.sendToGeneralAccumulator(totalPrice, quantities)
 			if err != nil {
