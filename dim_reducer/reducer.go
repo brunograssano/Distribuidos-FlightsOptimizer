@@ -14,11 +14,10 @@ type Reducer struct {
 	consumer   protocol.ConsumerProtocolInterface
 	producer   protocol.ProducerProtocolInterface
 	prodToCons protocol.ProducerProtocolInterface
-	serializer *dataStructures.Serializer
 }
 
 // NewReducer Creates a new reducer
-func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.Serializer) *Reducer {
+func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig) *Reducer {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 	prodToCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
@@ -28,7 +27,6 @@ func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Reduc
 		consumer:   consumer,
 		producer:   producer,
 		prodToCons: prodToCons,
-		serializer: serializer,
 	}
 }
 

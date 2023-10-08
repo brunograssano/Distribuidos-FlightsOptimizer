@@ -42,8 +42,6 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	}
 	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
 
-	// crear acumulador general --> tiene todos los canales de los savers individuales (resultado final)
-
 	return &Ex4Handler{
 		c:                 c,
 		journeyDispatcher: jd,

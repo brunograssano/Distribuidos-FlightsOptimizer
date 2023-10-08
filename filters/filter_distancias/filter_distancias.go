@@ -15,7 +15,6 @@ type FilterDistances struct {
 	consumer   protocol.ConsumerProtocolInterface
 	producers  []protocol.ProducerProtocolInterface
 	prodToCons protocol.ProducerProtocolInterface
-	serializer *dataStructures.Serializer
 	filter     *filters.Filter
 }
 
@@ -26,7 +25,7 @@ func NewFilterDistances(filterId int, qMiddleware *middleware.QueueMiddleware, c
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.OutputQueueNames[i], true))
 	}
-	dynMapSerializer := dataStructures.NewSerializer()
+
 	filter := filters.NewFilter()
 	return &FilterDistances{
 		filterId:   filterId,
@@ -34,7 +33,6 @@ func NewFilterDistances(filterId int, qMiddleware *middleware.QueueMiddleware, c
 		consumer:   inputQueue,
 		prodToCons: prodToCons,
 		producers:  outputQueues,
-		serializer: dynMapSerializer,
 		filter:     filter,
 	}
 }

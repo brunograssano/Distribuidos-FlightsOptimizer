@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -26,9 +25,8 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
-	serializer := dataStructures.NewSerializer()
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := NewReducer(i, qMiddleware, reducerConfig, serializer)
+		r := NewReducer(i, qMiddleware, reducerConfig)
 		go r.ReduceDims()
 	}
 	<-sigs

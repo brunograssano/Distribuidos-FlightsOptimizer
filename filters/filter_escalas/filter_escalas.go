@@ -15,7 +15,6 @@ type FilterStopovers struct {
 	consumer   protocol.ConsumerProtocolInterface
 	producers  []protocol.ProducerProtocolInterface
 	prodToCons protocol.ProducerProtocolInterface
-	serializer *dataStructures.Serializer
 	filter     *filters.Filter
 }
 
@@ -28,7 +27,7 @@ func NewFilterStopovers(filterId int, qMiddleware *middleware.QueueMiddleware, c
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.OutputQueueNames[i], true))
 	}
-	dynMapSerializer := dataStructures.NewSerializer()
+
 	filter := filters.NewFilter()
 	return &FilterStopovers{
 		filterId:   filterId,
@@ -36,7 +35,6 @@ func NewFilterStopovers(filterId int, qMiddleware *middleware.QueueMiddleware, c
 		consumer:   inputQueue,
 		producers:  outputQueues,
 		prodToCons: prodToCons,
-		serializer: dynMapSerializer,
 		filter:     filter,
 	}
 }

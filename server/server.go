@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	log "github.com/sirupsen/logrus"
 )
@@ -10,7 +9,6 @@ import (
 type Server struct {
 	pSocket            *communication.PassiveTCPSocket
 	c                  *ServerConfig
-	serializer         *data_structures.Serializer
 	qMiddleware        *middleware.QueueMiddleware
 	outQueueAirports   middleware.ProducerInterface
 	outQueueFlightRows middleware.ProducerInterface
@@ -21,14 +19,12 @@ func NewServer(c *ServerConfig) *Server {
 	if err != nil {
 		log.Fatalf("action: create_server | result: fail | server_id: %v | error: %v", c.ID, err)
 	}
-	serializer := data_structures.NewSerializer()
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 	qA := qMiddleware.CreateExchangeProducer(c.ExchangeNameAirports, c.ExchangeRKAirports, c.ExchangeTypeAirports, true)
 	qFR := qMiddleware.CreateProducer(c.QueueNameFlightRows, true)
 	return &Server{
 		pSocket:            socket,
 		c:                  c,
-		serializer:         serializer,
 		qMiddleware:        qMiddleware,
 		outQueueAirports:   qA,
 		outQueueFlightRows: qFR,
