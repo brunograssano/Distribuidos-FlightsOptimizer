@@ -4,6 +4,9 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 // CloseFileAndNotifyError Closes a file and logs an error if any
@@ -20,4 +23,10 @@ func CloseSocketAndNotifyError(s communication.TCPSocketInterface) {
 	if err != nil {
 		log.Errorf("action: closing_socket | status: error | %v", err)
 	}
+}
+
+func CreateSignalListener() chan os.Signal {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	return sigs
 }

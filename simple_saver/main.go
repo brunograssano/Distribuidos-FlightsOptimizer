@@ -5,15 +5,12 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	sigs := utils.CreateSignalListener()
 
 	env, err := InitEnv()
 	if err != nil {

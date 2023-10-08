@@ -2,10 +2,9 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 func handleSignals(sigs chan os.Signal, c *Client) {
@@ -14,8 +13,7 @@ func handleSignals(sigs chan os.Signal, c *Client) {
 }
 
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	sigs := utils.CreateSignalListener()
 
 	env, err := InitEnv()
 	if err != nil {
