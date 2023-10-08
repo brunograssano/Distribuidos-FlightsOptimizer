@@ -121,6 +121,7 @@ func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) 
 
 func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message) error {
 	err := ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))
+	ch.rowsSent += uint(len(message.DynMaps))
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) e
 	dynMap.AddColumn("localSent", ch.serializer.SerializeUint(uint32(0)))
 	dynMap.AddColumn("localReceived", ch.serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
-
+	log.Infof("Sending EOF. Batches sent: %v", ch.rowsSent)
 	return ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))
 }
 

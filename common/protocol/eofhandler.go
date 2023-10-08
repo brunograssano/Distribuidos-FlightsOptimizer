@@ -12,6 +12,7 @@ func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolIn
 	dynMapData["localReceived"] = serializer.SerializeUint(uint32(0))
 	dynMapData["localSent"] = serializer.SerializeUint(uint32(0))
 	dynMapData["prevSent"] = serializer.SerializeUint(uint32(localSent + sent))
+	log.Infof("Sent length of EOF is: %v. Local sent received was: %v, and node sent is: %v", localSent+sent, localSent, sent)
 	err := prodOutputQueue.Send(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
@@ -64,13 +65,19 @@ func HandleEOF(
 		return err
 	}
 	if received+localReceived >= prevSent {
+		log.Infof("Received accumulated were: %v. Prev sent were: %v", received+localReceived, prevSent)
+		log.Infof("Sum of EOF reached the expected value. Sending EOF to next nodes...")
 		for i := 0; i < len(prodOutputQueues); i++ {
+			log.Infof("Sending EOF to Next node with index %v", i)
 			err = sendEOFToOutput(localSent, sent, prodOutputQueues[i])
 			if err != nil {
 				log.Errorf("%v", err)
 				return err
 			}
 		}
+		return nil
 	}
+	log.Infof("Received accumulated were: %v. Prev sent were: %v", received+localReceived, prevSent)
+	log.Infof("Enqueueing EOF again...")
 	return sendEOFToInput(localReceived, received, prevSent, sent, localSent, prodInputQueue)
 }

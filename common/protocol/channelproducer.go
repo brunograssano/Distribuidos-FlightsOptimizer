@@ -18,7 +18,9 @@ func NewProducerChannel(producerChan chan *dataStructures.Message) *ProducerChan
 
 func (c *ProducerChannel) Send(msg *dataStructures.Message) error {
 	c.producerChan <- msg
-	c.totalSent++
+	if msg.TypeMessage == dataStructures.FlightRows {
+		c.totalSent += len(msg.DynMaps)
+	}
 	return nil
 }
 

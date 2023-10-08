@@ -80,12 +80,15 @@ func (d *DataProcessor) ProcessData() {
 			log.Infof("Received EOF from server. Now finishing...")
 			_ = protocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
 			return
+		} else if msg.TypeMessage == dataStructures.FlightRows {
+			log.Infof("Received Batch of Rows. Now processing...\n")
+			ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
+			log.Infof("Sending processed rows to next nodes...\n")
+			d.sendToEx123(ex123Rows)
+			d.sendToEx4(ex4Rows)
+		} else {
+			log.Warnf("Received unknown type of message. Skipping it...")
 		}
-		log.Infof("Received Batch of Rows. Now processing...\n")
-		ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
-		log.Infof("Sending processed rows to next nodes...\n")
-		d.sendToEx123(ex123Rows)
-		d.sendToEx4(ex4Rows)
 	}
 }
 

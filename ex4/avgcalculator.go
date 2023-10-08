@@ -18,9 +18,10 @@ func NewAvgCalculator(toInternalSaversChannels []protocol.ProducerProtocolInterf
 // CalculateAvgLoop Waits for the final results from the journey savers,
 // performs the calculation, and sends the results back
 func (a *AvgCalculator) CalculateAvgLoop() {
+	log.Infof("AvgCalculator | Started Avg Calculator loop")
 	sumOfPrices := float32(0)
 	sumOfRows := 0
-	log.Infof("[AverageCalculator] Starting await of internalSavers...")
+	log.Infof("[AverageCalculator] Starting await of internalSavers. Now waiting for %v savers...", len(a.toInternalSaversChannels))
 	for sentResults := 0; sentResults < len(a.toInternalSaversChannels); sentResults++ {
 		msg, ok := a.pricesConsumer.Pop()
 		if !ok {
@@ -36,20 +37,21 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 
 		prices, err := msg.DynMaps[0].GetAsFloat("localPrice")
 		if err != nil {
-			log.Errorf("Error: %v", err)
+			log.Errorf("AvgCalculator | Error getting localPrice | %v", err)
 			continue
 		}
 		sumOfPrices += prices
 
 		rows, err := msg.DynMaps[0].GetAsInt("localQuantity")
 		if err != nil {
-			log.Errorf("Error: %v", err)
+			log.Errorf("AvgCalculator | Error getting localQuantity | %v", err)
 			continue
 		}
 		sumOfRows += rows
 
 		log.Infof("[AverageCalculator] New Accum Price: %v ; New Accum Count: %v", sumOfPrices, sumOfRows)
 	}
+	log.Infof("AvgCalculator | Received all local JourneySaver values, calculating average")
 	avg := a.calculateAvg(sumOfRows, sumOfPrices)
 	log.Infof("[AverageCalculator] General Average is: %v. Now sending to journey savers...", avg)
 	a.sendToJourneySavers(avg)
@@ -67,7 +69,7 @@ func (a *AvgCalculator) sendToJourneySavers(avg float32) {
 		log.Infof("[AverageCalculator] Sending average to saver %v", i)
 		err := channel.Send(msg)
 		if err != nil {
-			log.Errorf("Error sending avg: %v", err)
+			log.Errorf("AvgCalculator | Error sending avg: %v", err)
 		}
 	}
 }
@@ -76,10 +78,10 @@ func (a *AvgCalculator) sendToJourneySavers(avg float32) {
 // If the total rows is zero, returns zero
 func (a *AvgCalculator) calculateAvg(sumOfRows int, sumOfPrices float32) float32 {
 	if sumOfRows == 0 {
-		log.Warnf("Total rows is zero")
+		log.Warnf("AvgCalculator | Total rows is zero")
 		return float32(0)
 	}
 	avg := sumOfPrices / float32(sumOfRows)
-	log.Infof("Sum of prices: %v | Total rows: %v | Avg: %v", sumOfPrices, sumOfRows, avg)
+	log.Infof("AvgCalculator | Sum of prices: %v | Total rows: %v | Avg: %v", sumOfPrices, sumOfRows, avg)
 	return avg
 }
