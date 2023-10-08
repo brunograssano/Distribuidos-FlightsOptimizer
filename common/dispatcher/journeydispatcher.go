@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"math/big"
@@ -57,12 +58,12 @@ func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 
 func (jd *JourneyDispatcher) dispatchFlightRows(message *dataStructures.Message) {
 	for _, row := range message.DynMaps {
-		startingAirport, err := row.GetAsBytes("startingAirport")
+		startingAirport, err := row.GetAsBytes(utils.StartingAirport)
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error getting starting airport. Skipping row | %v", err)
 			continue
 		}
-		destAirport, err := row.GetAsBytes("destinationAirport")
+		destAirport, err := row.GetAsBytes(utils.DestinationAirport)
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error getting destination airport. Skipping row | %v", err)
 			continue
