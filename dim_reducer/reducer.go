@@ -40,17 +40,17 @@ func (r *Reducer) ReduceDims() {
 			return
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("Received EOF. Now handling...")
+			log.Infof("DimReducer %v | Received EOF. Now handling...", r.reducerId)
 			err := protocol.HandleEOF(msg, r.consumer, r.prodToCons, []protocol.ProducerProtocolInterface{r.producer})
 			if err != nil {
-				log.Errorf("Error handling EOF: %v", err)
+				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}
 			return
 		} else if msg.TypeMessage == dataStructures.FlightRows {
-			log.Infof("Received flight rows. Now handling...")
+			log.Debugf("DimReducer %v | Received flight rows. Now handling...", r.reducerId)
 			r.handleFlightRows(msg)
 		} else {
-			log.Warnf("Received unknown type message. Skipping it...")
+			log.Warnf("DimReducer %v | Received unknown type message. Skipping it...", r.reducerId)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func (r *Reducer) handleFlightRows(msg *dataStructures.Message) {
 	for _, row := range msg.DynMaps {
 		reducedData, err := row.ReduceToColumns(r.c.ColumnsToKeep)
 		if err != nil {
-			log.Errorf("action: reduce_columns | reducer_id: %v | result: fail | skipping row | error: %v", r.reducerId, err)
+			log.Errorf("DimReducer %v | Error reducing column, skipping row | error: %v", r.reducerId, err)
 			continue
 		}
 		rows = append(rows, reducedData)
@@ -68,6 +68,6 @@ func (r *Reducer) handleFlightRows(msg *dataStructures.Message) {
 	msg = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
 	err := r.producer.Send(msg)
 	if err != nil {
-		log.Errorf("Error trying to send message to output queue")
+		log.Errorf("DimReducer %v | Error trying to send message to output queue", r.reducerId)
 	}
 }
