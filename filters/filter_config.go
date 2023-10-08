@@ -52,7 +52,7 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	}
 
 	outputQueueNames := env.GetString("rabbitmq.queues.output")
-	if len(outputQueueNames) <= 0 {
+	if outputQueueNames == "" {
 		return nil, errors.New("missing output queue")
 	}
 	outputQueueNamesArray := strings.Split(outputQueueNames, ValueListSeparator)
@@ -72,7 +72,7 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 		id,
 		env.GetString("log.level"),
 		inputQueueName,
-		outputQueueNames,
+		outputQueueNamesArray,
 		goroutinesCount,
 	)
 
