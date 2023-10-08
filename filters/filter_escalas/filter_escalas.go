@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,21 +44,21 @@ func (fe *FilterStopovers) FilterStopovers() {
 	for {
 		msg, ok := fe.consumer.Pop()
 		if !ok {
-			log.Infof("Closing FilterStopovers Goroutine...")
+			log.Infof("FilterStopovers %v | Closing FilterStopovers Goroutine...", fe.filterId)
 			break
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("Received EOF. Now handling...")
+			log.Infof("FilterStopovers %v | Received EOF. Now handling...", fe.filterId)
 			err := protocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
 			if err != nil {
-				log.Errorf("Error handling EOF: %v", err)
+				log.Errorf("FilterStopovers %v | Error handling EOF: %v", fe.filterId, err)
 			}
 			break
 		} else if msg.TypeMessage == dataStructures.FlightRows {
-			log.Infof("Received flight rows. Now filtering...")
+			log.Infof("FilterStopovers %v | Received flight rows. Now filtering...", fe.filterId)
 			fe.handleFlightRows(msg)
 		} else {
-			log.Warnf("Unknonw message type received. Skipping it...")
+			log.Warnf("FilterStopovers %v | Unknonw message type received. Skipping it...", fe.filterId)
 		}
 	}
 }
@@ -65,7 +66,7 @@ func (fe *FilterStopovers) FilterStopovers() {
 func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 	var filteredRows []*dataStructures.DynamicMap
 	for _, row := range msg.DynMaps {
-		passesFilter, err := fe.filter.GreaterOrEquals(row, MinStopovers, "totalStopovers")
+		passesFilter, err := fe.filter.GreaterOrEquals(row, MinStopovers, utils.TotalStopovers)
 		if err != nil {
 			log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fe.filterId, err)
 		}
@@ -81,7 +82,7 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 				DynMaps:     filteredRows,
 			})
 			if err != nil {
-				log.Errorf("Error trying to send message that passed filter...")
+				log.Errorf("Error trying to send message that passed filter...", fe.filterId)
 			}
 		}
 	}

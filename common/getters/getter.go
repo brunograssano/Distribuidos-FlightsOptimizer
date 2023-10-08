@@ -48,31 +48,33 @@ func (g *Getter) ReturnResults() {
 
 // askLaterForResults Tells the client to wait and finishes the connection
 func (g *Getter) askLaterForResults(sph *protocol.SocketProtocolHandler) {
+	log.Infof("Getter | Client asked for results when they are not ready. Answer 'Later'")
 	err := sph.Write(&dataStructures.Message{
 		TypeMessage: dataStructures.Later,
 		DynMaps:     make([]*dataStructures.DynamicMap, 0),
 	})
 	if err != nil {
-		log.Errorf("Error trying to send 'Later' Message to socket...")
+		log.Errorf("Getter | Error trying to send 'Later' Message to socket...")
 		return
 	}
 }
 
 // sendResults Sends the saved results to the client
 func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
+	log.Infof("Getter | Sending results to client")
 	var currBatch []*dataStructures.DynamicMap
 	curLengthOfBatch := 0
 	serializer := dataStructures.NewSerializer()
 	for _, filename := range g.c.FileNames {
 		reader, err := filemanager.NewFileReader(filename)
 		if err != nil {
-			log.Errorf("Error trying to open file: %v. Skipping it...", filename)
+			log.Errorf("Getter | Error trying to open file: %v. Skipping it...", filename)
 			continue
 		}
 		for reader.CanRead() {
 			select {
 			case <-g.stop:
-				log.Warnf("Received signal while sending file, stopping transfer")
+				log.Warnf("Getter | Received signal while sending file, stopping transfer")
 				return
 			default:
 			}
@@ -86,12 +88,9 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 		}
 		err = reader.Err()
 		if err != nil {
-			log.Errorf("action: read_file | status: error | %v", err)
+			log.Errorf("Getter | Error reading file | %v", err)
 		}
-		err = reader.FileManager.Close()
-		if err != nil {
-			log.Errorf("action: closing_file | status: error | %v", err)
-		}
+		utils.CloseFileAndNotifyError(reader.FileManager)
 	}
 	if curLengthOfBatch > 0 {
 		g.sendBatch(sph, currBatch)
@@ -100,7 +99,7 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 }
 
 func (g *Getter) sendEOF(sph *protocol.SocketProtocolHandler) {
-	log.Infof("Sending EOF to client...")
+	log.Infof("Getter | Sending EOF to client...")
 	err := sph.Write(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFGetter,
 		DynMaps:     []*dataStructures.DynamicMap{},
@@ -117,7 +116,7 @@ func (g *Getter) sendBatch(sph *protocol.SocketProtocolHandler, batch []*dataStr
 		DynMaps:     batch,
 	})
 	if err != nil {
-		log.Errorf("Error sending batch from getter: %v", err)
+		log.Errorf("Getter | Error sending batch from getter: %v", err)
 	}
 }
 

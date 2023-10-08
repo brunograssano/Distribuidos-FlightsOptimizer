@@ -53,11 +53,9 @@ func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
 }
 
 func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
-	log.Infof("Sending length...")
 	lengthOfBytes := len(msgBytes)
-	log.Infof("Length to send is %v", lengthOfBytes)
 	msgSize := sph.serializer.SerializeUint(uint32(lengthOfBytes))
-	log.Infof("Msg size bytes: %v", msgSize)
+	log.Debugf("SocketProtocolHandler | Length to send is %v | Msg size bytes: %v", lengthOfBytes, msgSize)
 	write, err := sph.sock.Write(msgSize)
 	if err != nil {
 		return err
@@ -69,7 +67,7 @@ func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
 }
 
 func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
-	log.Infof("Sending message of len: %v...", len(msgBytes))
+	log.Debugf("SocketProtocolHandler | Sending message of len: %v | Message: %v", len(msgBytes), msgBytes)
 	write, err := sph.sock.Write(msgBytes)
 	if err != nil {
 		return err

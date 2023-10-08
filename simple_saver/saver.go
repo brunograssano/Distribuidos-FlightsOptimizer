@@ -28,18 +28,18 @@ func (s *SimpleSaver) SaveData() {
 	for {
 		msgStruct, ok := s.consumer.Pop()
 		if !ok {
-			log.Infof("Exiting saver")
+			log.Infof("SimpleSaver | Exiting saver")
 			return
 		}
 		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("Received all results. Closing saver...")
+			log.Infof("SimpleSaver | Received all results. Closing saver...")
 			s.canSend <- true
 			close(s.canSend)
 			return
 		} else if msgStruct.TypeMessage == dataStructures.FlightRows {
 			err := s.handleFlightRows(msgStruct)
 			if err != nil {
-				log.Errorf("Error handling flight rows. Closing saver...")
+				log.Errorf("SimpleSaver | Error handling flight rows. Closing saver...")
 				return
 			}
 		}
@@ -49,15 +49,15 @@ func (s *SimpleSaver) SaveData() {
 func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error {
 	writer, err := filemanager.NewFileWriter(s.c.OutputFileName)
 	if err != nil {
-		log.Errorf("Error opening file writer of output")
+		log.Errorf("SimpleSaver | Error opening file writer of output")
 		return err
 	}
 	for _, row := range msgStruct.DynMaps {
 		line := s.serializer.SerializeToString(row)
-		log.Debugf("Saving line: %v", line)
+		log.Debugf("SimpleSaver | Saving line: %v", line)
 		err = writer.WriteLine(line)
 		if err != nil {
-			log.Errorf("action: writing_file | status: error | %v", err)
+			log.Errorf("SimpleSaver | Error writing to file | %v", err)
 			utils.CloseFileAndNotifyError(writer.FileManager)
 			return err
 		}
