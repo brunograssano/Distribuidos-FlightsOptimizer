@@ -3,7 +3,10 @@ package data_structures
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
+	log "github.com/sirupsen/logrus"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -102,14 +105,22 @@ func (serializer *Serializer) SerializeString(value string) []byte {
 func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
 	line := strings.Builder{}
 	currMap := dynMap.GetCurrentMap()
+	currCol := 0
+	colCount := dynMap.GetColumnCount()
 	for key, value := range currMap {
 		if isFloatColumn(key) {
 			floatValue := math.Float32frombits(binary.BigEndian.Uint32(value))
 			line.WriteString(fmt.Sprintf("%v=%v", key, floatValue))
+		} else if isIntColumn(key) {
+			intValue := binary.BigEndian.Uint32(value)
+			line.WriteString(fmt.Sprintf("%v=%v", key, intValue))
 		} else {
 			line.WriteString(fmt.Sprintf("%v=%v", key, string(value)))
 		}
-		line.WriteString(commaSeparator)
+		if uint32(currCol) != colCount-1 {
+			line.WriteString(commaSeparator)
+			currCol++
+		}
 	}
 	line.WriteString(newLine)
 	return line.String()
@@ -122,16 +133,20 @@ func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMa
 		keyValuePair := strings.Split(pair, "=")
 		key := keyValuePair[0]
 		strVal := keyValuePair[1]
-		intVal, err := strconv.Atoi(strVal)
-		if err != nil {
+		if isIntColumn(key) {
+			intVal, err := strconv.Atoi(strVal)
+			if err != nil {
+				log.Errorf("Error casting column %v to integer.", intVal)
+			}
+			dynMapData[key] = serializer.SerializeUint(uint32(intVal))
+		} else if isFloatColumn(key) {
 			floatVal, err := strconv.ParseFloat(strVal, 32)
 			if err != nil {
-				dynMapData[key] = []byte(strVal)
-			} else {
-				dynMapData[key] = serializer.SerializeFloat(float32(floatVal))
+				log.Errorf("Error casting column %v to float.", floatVal)
 			}
+			dynMapData[key] = serializer.SerializeFloat(float32(floatVal))
 		} else {
-			dynMapData[key] = serializer.SerializeUint(uint32(intVal))
+			dynMapData[key] = []byte(strVal)
 		}
 	}
 	return NewDynamicMap(dynMapData)
@@ -144,5 +159,17 @@ func (serializer *Serializer) SerializeFloat(value float32) []byte {
 }
 
 func isFloatColumn(key string) bool {
-	return key == "totalFare"
+	floatColumnKeys := []string{
+		utils.Latitude,
+		utils.Longitude,
+		utils.TravelDuration,
+		utils.TotalFare,
+		utils.TotalTravelDistance,
+		utils.DirectDistance,
+	}
+	return slices.Contains(floatColumnKeys, key)
+}
+
+func isIntColumn(key string) bool {
+	return key == utils.TotalStopovers
 }

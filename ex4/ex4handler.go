@@ -30,6 +30,7 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 
 	var internalSavers []*JourneySaver
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
+	log.Infof("Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		internalServerChannel := make(chan *dataStructures.Message)
 		channels = append(channels, internalServerChannel)
@@ -39,7 +40,9 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 			outputQueue,
 		))
 		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalServerChannel))
+		log.Debugf("Spawned Saver #%v correctly...", i)
 	}
+	log.Debugf("Spawning dispatcher...")
 	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
 
 	return &Ex4Handler{
@@ -52,9 +55,12 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 }
 
 func (ex4h *Ex4Handler) StartHandler() {
-	for _, saver := range ex4h.savers {
+	log.Debugf("Number of savers is: %v", len(ex4h.savers))
+	for idx, saver := range ex4h.savers {
+		log.Infof("Spawning saver #%v", idx+1)
 		go saver.SavePricesForJourneys()
 	}
+	log.Infof("Spawning General Accumulator")
 	go ex4h.accumulator.CalculateAvgLoop()
 }
 

@@ -49,6 +49,12 @@ func (ch *ClientHandler) handleGetterMessage(
 			return false, false, err
 		}
 	} else if msg.TypeMessage == data_structures.EOFGetter {
+		err := cliSPH.Write(msg)
+		if err != nil {
+			log.Errorf("Error trying to send EOFGetter to client. Ending loop...")
+			_ = socketGetter.Close()
+			return true, false, err
+		}
 		_ = socketGetter.Close()
 		return true, false, nil
 	} else if msg.TypeMessage == data_structures.Later {

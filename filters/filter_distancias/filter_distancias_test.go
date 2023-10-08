@@ -62,12 +62,11 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -106,12 +105,11 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -144,12 +142,11 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -182,12 +179,11 @@ func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterDistancias.FilterDistances()
 

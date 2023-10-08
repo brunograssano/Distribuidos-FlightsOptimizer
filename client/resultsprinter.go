@@ -24,18 +24,19 @@ func RequestResults(err error, conn *protocol.SocketProtocolHandler) {
 		return
 	}
 
-	for i := 0; i < 4; {
-		msg, err = conn.Read()
-		if err != nil {
-			log.Errorf("Error reading results: %v", err)
-			return
+	for i := 0; i < 4; i++ {
+		log.Infof("----- Init results of ex %v -----", i+1)
+		for {
+			msg, err = conn.Read()
+			if err != nil {
+				log.Errorf("Error reading results: %v. Skipping message...", err)
+				continue
+			}
+			if msg.TypeMessage == dataStructures.EOFGetter {
+				break
+			}
+			printResults(msg.DynMaps)
 		}
-		if msg.TypeMessage == dataStructures.EOFGetter {
-			i++
-			log.Infof("----- End results of ex %v -----", i)
-			continue
-		}
-
-		printResults(msg.DynMaps)
+		log.Infof("----- End results of ex %v -----", i+1)
 	}
 }

@@ -20,15 +20,17 @@ func NewAvgCalculator(toInternalSaversChannels []protocol.ProducerProtocolInterf
 func (a *AvgCalculator) CalculateAvgLoop() {
 	sumOfPrices := float32(0)
 	sumOfRows := 0
+	log.Infof("[AverageCalculator] Starting await of internalSavers...")
 	for sentResults := 0; sentResults < len(a.toInternalSaversChannels); sentResults++ {
 		msg, ok := a.pricesConsumer.Pop()
 		if !ok {
-			log.Errorf("Consumer closed when not expected, exiting average calculator")
+			log.Errorf("[AverageCalculator] Consumer closed when not expected, exiting average calculator")
 			return
 		}
+		log.Debugf("[AverageCalculator] Received message from saver!")
 
 		if msg.TypeMessage != dataStructure.EOFFlightRows {
-			log.Errorf("Received a message that was not expected, skipping...")
+			log.Errorf("[AverageCalculator] Received a message that was not expected, skipping...")
 			continue
 		}
 
@@ -45,8 +47,11 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 			continue
 		}
 		sumOfRows += rows
+
+		log.Infof("[AverageCalculator] New Accum Price: %v ; New Accum Count: %v", sumOfPrices, sumOfRows)
 	}
 	avg := a.calculateAvg(sumOfRows, sumOfPrices)
+	log.Infof("[AverageCalculator] General Average is: %v. Now sending to journey savers...", avg)
 	a.sendToJourneySavers(avg)
 
 }
@@ -59,7 +64,7 @@ func (a *AvgCalculator) sendToJourneySavers(avg float32) {
 	data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
 	msg := &dataStructure.Message{TypeMessage: dataStructure.FinalAvg, DynMaps: data}
 	for i, channel := range a.toInternalSaversChannels {
-		log.Infof("Sending average to saver %v", i)
+		log.Infof("[AverageCalculator] Sending average to saver %v", i)
 		err := channel.Send(msg)
 		if err != nil {
 			log.Errorf("Error sending avg: %v", err)

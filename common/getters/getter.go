@@ -66,8 +66,8 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 	for _, filename := range g.c.FileNames {
 		reader, err := filemanager.NewFileReader(filename)
 		if err != nil {
-			log.Errorf("Error trying to open file: %v", filename)
-			return
+			log.Errorf("Error trying to open file: %v. Skipping it...", filename)
+			continue
 		}
 		for reader.CanRead() {
 			select {
@@ -95,6 +95,18 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 	}
 	if curLengthOfBatch > 0 {
 		g.sendBatch(sph, currBatch)
+	}
+	g.sendEOF(sph)
+}
+
+func (g *Getter) sendEOF(sph *protocol.SocketProtocolHandler) {
+	log.Infof("Sending EOF to client...")
+	err := sph.Write(&dataStructures.Message{
+		TypeMessage: dataStructures.EOFGetter,
+		DynMaps:     []*dataStructures.DynamicMap{},
+	})
+	if err != nil {
+		log.Errorf("Error trying to send EOF: %v", err)
 	}
 }
 
