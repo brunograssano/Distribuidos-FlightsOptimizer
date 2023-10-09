@@ -11,6 +11,7 @@ type QueueMiddleware struct {
 }
 
 func NewQueueMiddleware(address string) *QueueMiddleware {
+	log.Infof("Connecting to RabbitMQ")
 	conn, err := amqp.Dial(address)
 	FailOnError(err, "Failed to connect via Dial to RabbitMQ.")
 	log.Infof("Connected to RabbitMQ")

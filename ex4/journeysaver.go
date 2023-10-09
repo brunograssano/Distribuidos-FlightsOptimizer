@@ -199,14 +199,19 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		dynMap[utils.Max] = serializer.SerializeFloat(journeyMax)
 		data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
 		msg := &dataStructure.Message{
-			TypeMessage: dataStructure.FinalAvg,
+			TypeMessage: dataStructure.FlightRows,
 			DynMaps:     data,
 		}
 		log.Infof("JourneySaver | Sending max and avg to next step...")
 		err = js.avgAndMaxProducer.Send(msg)
 		if err != nil {
-			log.Errorf("JourneySaver | Error sending to saver the journey %v", fileStr)
+			log.Errorf("JourneySaver | Error sending to saver the journey %v | %v", fileStr, err)
+			return
 		}
+	}
+	err := js.avgAndMaxProducer.Send(&dataStructure.Message{TypeMessage: dataStructure.EOFFlightRows})
+	if err != nil {
+		log.Errorf("JourneySaver | Error sending EOF to saver | %v", err)
 	}
 }
 
