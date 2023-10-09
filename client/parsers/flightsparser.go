@@ -20,11 +20,6 @@ const totalTravelDistancePos = 14
 const segmentsArrivalAirportCodePos = 19
 const segmentsAirlineNamePos = 21
 
-const TravelDurationPrefix = "PT"
-const TravelDurationHour = "H"
-const TravelDurationMinute = "M"
-const minutesInHour = 60
-
 type FlightsParser struct{}
 
 // LineToDynMap Parses a line from the flights file
@@ -38,34 +33,7 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 	dynMap.AddColumn(utils.LegId, serializer.SerializeString(fields[legIdPos]))
 	dynMap.AddColumn(utils.StartingAirport, serializer.SerializeString(fields[startingAirportPos]))
 	dynMap.AddColumn(utils.DestinationAirport, serializer.SerializeString(fields[destinationAirportPos]))
-
-	// TODO definir si esto se hace aca
-	travelDurationString := fields[travelDurationPos]
-	travelDurationString, _ = strings.CutPrefix(travelDurationString, TravelDurationPrefix)
-	durationParts := strings.Split(travelDurationString, TravelDurationHour)
-	duration := 0
-	//PT3H18M
-	if len(durationParts) == 2 {
-		hourString := durationParts[0]
-		hour, err := strconv.Atoi(hourString)
-		if err != nil {
-			return nil, fmt.Errorf("hour conversion error: %v", err)
-		}
-		minutesString := durationParts[1]
-		minutesString, found := strings.CutSuffix(minutesString, TravelDurationMinute)
-		minutes := 0
-		if found {
-			minutes, err = strconv.Atoi(minutesString)
-			if err != nil {
-				log.Warnf("Error converting minutes duration, will be sent as zero")
-			}
-		}
-
-		duration = hour*minutesInHour + minutes
-	}
-	// TODO handle other case
-
-	dynMap.AddColumn(utils.TravelDuration, serializer.SerializeUint(uint32(duration)))
+	dynMap.AddColumn(utils.TravelDuration, []byte(fields[travelDurationPos]))
 
 	totalFare, err := strconv.ParseFloat(fields[totalFarePos], 32)
 	if err != nil {

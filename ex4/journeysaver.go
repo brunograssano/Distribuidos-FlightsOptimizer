@@ -24,15 +24,6 @@ func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer 
 	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer}
 }
 
-/*func (js *JourneySaver) containsJourneyFile(journey string) bool {
-	for _, journeyInFile := range js.filesToRead {
-		if strings.Compare(journeyInFile, journey) == 0{
-			return true
-		}
-	}
-	return false
-}*/
-
 func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 	// May need optimization. Mix of memory and disk or only memory...
 	log.Debugf("Writing records to files")
