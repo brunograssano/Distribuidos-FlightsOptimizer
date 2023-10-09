@@ -26,6 +26,9 @@ func NewConsumerQueueProtocolHandler(consumer middleware.ConsumerInterface) *Con
 
 func (q *ConsumerQueueProtocolHandler) Pop() (*data_structures.Message, bool) {
 	bytes, ok := q.consumer.Pop()
+	if !ok {
+		return nil, ok
+	}
 	msg := q.serializer.DeserializeMsg(bytes)
 	if msg.TypeMessage == data_structures.FlightRows {
 		q.recvCount += len(msg.DynMaps)
