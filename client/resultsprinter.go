@@ -20,7 +20,7 @@ func RequestResults(err error, conn *protocol.SocketProtocolHandler) {
 	msg := &dataStructures.Message{TypeMessage: dataStructures.GetResults}
 	err = conn.Write(msg)
 	if err != nil {
-		log.Errorf("Error requesting results: %v", err)
+		log.Errorf("Results printer | Error requesting results | %v", err)
 		return
 	}
 
@@ -29,8 +29,8 @@ func RequestResults(err error, conn *protocol.SocketProtocolHandler) {
 		for {
 			msg, err = conn.Read()
 			if err != nil {
-				log.Errorf("Error reading results: %v. Skipping message...", err)
-				continue
+				log.Errorf("Results printer | Error reading results | %v", err)
+				return
 			}
 			if msg.TypeMessage == dataStructures.EOFGetter {
 				break
