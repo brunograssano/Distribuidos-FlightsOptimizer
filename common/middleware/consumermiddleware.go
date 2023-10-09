@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type Consumer struct {
@@ -17,7 +18,7 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 	messages, err := channel.Consume(
 		queue.Name, // queue
 		"",         // consumer
-		true,       // auto-ack
+		false,      // auto-ack
 		false,      // exclusive
 		false,      // no-local
 		false,      // no-wait
@@ -33,6 +34,12 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 
 func (queue *Consumer) Pop() ([]byte, bool) {
 	msg, ok := <-queue.messageChannel
+	log.Debugf("Sending ACK to RabbitMQ.")
+	err := msg.Ack(false)
+	if err != nil {
+		log.Errorf("Error sending ACK to RabbitMQ.")
+		return msg.Body, ok
+	}
 	return msg.Body, ok
 }
 
