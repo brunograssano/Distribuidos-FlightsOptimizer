@@ -1,9 +1,8 @@
 package main
 
 import (
-	config2 "distance_completer/config"
+	config "distance_completer/config"
 	"distance_completer/controllers"
-	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -13,16 +12,12 @@ import (
 func main() {
 	sigs := utils.CreateSignalListener()
 
-	env, err := config2.InitEnv()
+	env, err := config.InitEnv()
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
-	if err := config.InitLogger(env.GetString("log.level")); err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	completerConfig, err := config2.GetConfig(env)
+	completerConfig, err := config.GetConfig(env)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}

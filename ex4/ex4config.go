@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -46,6 +47,10 @@ func InitEnv() (*viper.Viper, error) {
 
 // GetConfig Validates and returns the configuration of the application
 func GetConfig(env *viper.Viper) (*Ex4Config, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")
@@ -70,6 +75,10 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 	if internalSaversCount <= 0 || internalSaversCount > maxSaversCount {
 		log.Warnf("Not a valid value '%v' for internal savers count, using default", internalSaversCount)
 		internalSaversCount = defaultSaversCount
+	}
+
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
 	}
 
 	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",

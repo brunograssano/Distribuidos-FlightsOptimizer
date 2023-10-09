@@ -3,6 +3,7 @@ package filters_config
 import (
 	"errors"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -41,6 +42,10 @@ func InitEnv() (*viper.Viper, error) {
 }
 
 func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")

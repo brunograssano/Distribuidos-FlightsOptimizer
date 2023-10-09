@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -25,6 +26,7 @@ const maxGoroutines int = 32
 const defaultGoroutines int = 4
 
 func InitEnv() (*viper.Viper, error) {
+
 	v := viper.New()
 
 	v.AutomaticEnv()
@@ -51,6 +53,10 @@ func InitEnv() (*viper.Viper, error) {
 }
 
 func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")

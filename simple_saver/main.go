@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -14,10 +13,6 @@ func main() {
 
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		log.Fatalf("%s", err)
 	}
 
