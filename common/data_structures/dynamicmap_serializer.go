@@ -165,6 +165,8 @@ func isFloatColumn(key string) bool {
 		utils.TotalFare,
 		utils.TotalTravelDistance,
 		utils.DirectDistance,
+		utils.Max,
+		utils.Avg,
 	}
 	return slices.Contains(floatColumnKeys, key)
 }
