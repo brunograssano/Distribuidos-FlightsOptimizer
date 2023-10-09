@@ -169,7 +169,7 @@ func (js *JourneySaver) getMaxAndAverage(prices []float32) (float32, float32) {
 	if accumCount > 0 {
 		average = accumPrices / accumCount
 	}
-	return maxVal, average
+	return average, maxVal
 }
 
 func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
