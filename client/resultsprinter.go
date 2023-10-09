@@ -4,12 +4,13 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 func printResults(dynMaps []*dataStructures.DynamicMap) {
 	serializer := dataStructures.NewSerializer()
 	for _, row := range dynMaps {
-		line := serializer.SerializeToString(row)
+		line := strings.TrimRight(serializer.SerializeToString(row), "\n")
 		log.Infof(line)
 	}
 

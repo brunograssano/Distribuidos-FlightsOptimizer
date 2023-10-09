@@ -158,13 +158,31 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  saver-ex3:
+    container_name: saver-ex3
+    image: saver_ex_3:latest
+    environment:
+      - CLI_ID=9
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=saver_3
+      - CLI_SAVER_OUTPUT=results_ex3
+      - CLI_GETTER_BATCH_LINES=100
+      - CLI_GETTER_ADDRESS=saver-ex3:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   server:
     container_name: server
     image: server:latest
     environment:
-      - CLI_ID=9
+      - CLI_ID=10
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080
+      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
@@ -180,6 +198,8 @@ services:
         condition: service_started
       saver-ex2:
         condition: service_started
+      saver-ex3:
+        condition: service_started
       distance_completer-1:
         condition: service_started
 
@@ -187,7 +207,7 @@ services:
     container_name: ex4_handler-1
     image: ex4_handler:latest
     environment:
-      - CLI_ID=10
+      - CLI_ID=11
       - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver_4
@@ -203,7 +223,7 @@ services:
     container_name: client
     image: client:latest
     environment:
-      - CLI_ID=11
+      - CLI_ID=12
       - CLI_LOG_LEVEL=DEBUG
       - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente

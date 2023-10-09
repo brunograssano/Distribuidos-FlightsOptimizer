@@ -162,7 +162,6 @@ func isFloatColumn(key string) bool {
 	floatColumnKeys := []string{
 		utils.Latitude,
 		utils.Longitude,
-		utils.TravelDuration,
 		utils.TotalFare,
 		utils.TotalTravelDistance,
 		utils.DirectDistance,
@@ -171,5 +170,9 @@ func isFloatColumn(key string) bool {
 }
 
 func isIntColumn(key string) bool {
-	return key == utils.TotalStopovers
+	intColumnKeys := []string{
+		utils.TotalStopovers,
+		utils.ConvertedTravelDuration,
+	}
+	return slices.Contains(intColumnKeys, key)
 }
