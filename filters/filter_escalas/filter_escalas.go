@@ -82,7 +82,7 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 				DynMaps:     filteredRows,
 			})
 			if err != nil {
-				log.Errorf("Error trying to send message that passed filter...", fe.filterId)
+				log.Errorf("Error trying to send message that passed filter...")
 			}
 		}
 	}
