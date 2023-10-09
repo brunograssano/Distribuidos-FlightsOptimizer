@@ -31,7 +31,7 @@ func NewFileReader(filename string) (*FileReader, error) {
 		return nil, err
 	}
 	scanner := bufio.NewScanner(f)
-	log.Infof("action: opened_file | file_name: %v", filename)
+	log.Debugf("action: opened_file | file_name: %v", filename)
 	reader := &FileReader{
 		FileManager: FileManager{file: f, filename: filename},
 		scanner:     scanner,
@@ -56,7 +56,7 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 
 // Close Closes the file
 func (f FileManager) Close() error {
-	log.Infof("action: closing_file | file_name: %v", f.filename)
+	log.Debugf("action: closing_file | file_name: %v", f.filename)
 	return f.file.Close()
 }
 

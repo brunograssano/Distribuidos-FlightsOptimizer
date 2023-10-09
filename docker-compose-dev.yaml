@@ -109,9 +109,10 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
       - CLI_RABBITMQ_QUEUES_OUTPUT=filters_distances
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
-      - CLI_COMPLETER_FILENAME=airports.csv
+      - CLI_COMPLETER_FILENAME=flightrows.csv
     networks:
       - testing_net
     volumes:
@@ -119,8 +120,6 @@ services:
     depends_on:
         rabbitmq:
           condition: service_healthy
-        server:
-          condition: service_started
 
 
   saver-ex1:
@@ -129,8 +128,9 @@ services:
     environment:
       - CLI_ID=7
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
       - CLI_SAVER_OUTPUT=results_ex1.csv
+      - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex1:8080
     networks:
       - testing_net
@@ -146,8 +146,9 @@ services:
     environment:
       - CLI_ID=8
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
+      - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
       - CLI_SAVER_OUTPUT=results_ex2.csv
+      - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex2:8080
     networks:
       - testing_net
@@ -163,7 +164,7 @@ services:
     environment:
       - CLI_ID=9
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_GETTER_ADDRESSES="saver-ex1:8080,saver-ex2:8080"
+      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
@@ -178,6 +179,8 @@ services:
       saver-ex1:
         condition: service_started
       saver-ex2:
+        condition: service_started
+      distance_completer-1:
         condition: service_started
 
   ex4_handler-1:

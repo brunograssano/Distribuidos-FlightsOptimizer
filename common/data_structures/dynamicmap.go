@@ -19,7 +19,7 @@ func NewDynamicMap(dynMap map[string][]byte) *DynamicMap {
 func (dm *DynamicMap) GetAsInt(colName string) (int, error) {
 	data, exists := dm.cols[colName]
 	if !exists {
-		return 0, fmt.Errorf("column %v does not exists", colName)
+		return 0, fmt.Errorf("column %v does not exist", colName)
 	}
 	intValue := int(binary.BigEndian.Uint32(data))
 	return intValue, nil
@@ -28,7 +28,7 @@ func (dm *DynamicMap) GetAsInt(colName string) (int, error) {
 func (dm *DynamicMap) GetAsFloat(colName string) (float32, error) {
 	data, exists := dm.cols[colName]
 	if !exists {
-		return 0, fmt.Errorf("column %v does not exists", colName)
+		return 0, fmt.Errorf("column %v does not exist", colName)
 	}
 	floatValue := math.Float32frombits(binary.BigEndian.Uint32(data))
 	return floatValue, nil
@@ -37,7 +37,7 @@ func (dm *DynamicMap) GetAsFloat(colName string) (float32, error) {
 func (dm *DynamicMap) GetAsString(colName string) (string, error) {
 	data, exists := dm.cols[colName]
 	if !exists {
-		return "", fmt.Errorf("column %v does not exists", colName)
+		return "", fmt.Errorf("column %v does not exist", colName)
 	}
 	strVal := string(data)
 	return strVal, nil

@@ -9,14 +9,18 @@ import (
 
 type (
 	mockConsumer struct {
-		inputChannel chan []byte
+		inputChannel chan *data_structures.Message
 		ok           bool
 	}
 )
 
-func (m *mockConsumer) Pop() ([]byte, bool) {
+func (m *mockConsumer) GetReceivedMessages() int {
+	return 0
+}
+
+func (m *mockConsumer) Pop() (*data_structures.Message, bool) {
 	if !m.ok {
-		return []byte{}, m.ok
+		return &data_structures.Message{}, m.ok
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
@@ -28,18 +32,22 @@ func (m *mockConsumer) BindTo(_ string, _ string) error {
 
 type (
 	mockProducer struct {
-		outputChannel chan []byte
+		outputChannel chan *data_structures.Message
 	}
 )
 
-func (m *mockProducer) Send(data []byte) error {
+func (m *mockProducer) GetSentMessages() int {
+	return 0
+}
+
+func (m *mockProducer) Send(data *data_structures.Message) error {
 	m.outputChannel <- data
 	return nil
 }
 
 func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralConditions(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 	mapAirports := make(map[string][2]float32)
 	mapAirports["A"] = [2]float32{0.0, 0.0}
 	mapAirports["B"] = [2]float32{1.0, 0.0}
@@ -68,11 +76,10 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
-	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
+	input <- &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}}
+	dynMapResult := (<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}
@@ -90,8 +97,8 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 }
 
 func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 	mapAirports := make(map[string][2]float32)
 	mapAirports["A"] = [2]float32{0.0, 0.0}
 	mapAirports["B"] = [2]float32{0.0, 1.0}
@@ -120,11 +127,10 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
-	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
+	input <- &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}}
+	dynMapResult := (<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}
@@ -142,8 +148,8 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 }
 
 func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 	mapAirports := make(map[string][2]float32)
 	mapAirports["A"] = [2]float32{0.0, 0.0}
 	mapAirports["B"] = [2]float32{0.0, 1.0}
@@ -172,11 +178,10 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 	dynMapWithRoute["destinationAirport"] = []byte("D")
 	dynMapWithRoute["route"] = []byte("A||B||C||D")
 	dynMapStructure := data_structures.NewDynamicMap(dynMapWithRoute)
-	serializer := data_structures.NewSerializer()
 	signalChan <- true
 	close(signalChan)
-	input <- serializer.SerializeMsg(&data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}})
-	dynMapResult := serializer.DeserializeMsg(<-output).DynMaps[0]
+	input <- &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{dynMapStructure}}
+	dynMapResult := (<-output).DynMaps[0]
 	if dynMapResult.GetColumnCount() != 5 {
 		t.Errorf("Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
 	}

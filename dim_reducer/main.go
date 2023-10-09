@@ -2,17 +2,13 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	sigs := utils.CreateSignalListener()
 
 	env, err := initEnv()
 	if err != nil {
@@ -29,9 +25,8 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
-	serializer := dataStructures.NewSerializer()
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := NewReducer(i, qMiddleware, reducerConfig, serializer)
+		r := NewReducer(i, qMiddleware, reducerConfig)
 		go r.ReduceDims()
 	}
 	<-sigs

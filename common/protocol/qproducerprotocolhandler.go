@@ -26,7 +26,9 @@ func NewProducerQueueProtocolHandler(producer middleware.ProducerInterface) *Pro
 
 func (q *ProducerQueueProtocolHandler) Send(msg *data_structures.Message) error {
 	bytes := q.serializer.SerializeMsg(msg)
-	q.totalSent++
+	if msg.TypeMessage == data_structures.FlightRows {
+		q.totalSent += len(msg.DynMaps)
+	}
 	return q.producer.Send(bytes)
 }
 

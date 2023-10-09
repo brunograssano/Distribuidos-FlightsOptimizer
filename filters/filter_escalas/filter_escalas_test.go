@@ -5,21 +5,25 @@ import (
 	"filters_config"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	"testing"
 	"time"
 )
 
 type (
 	mockConsumer struct {
-		inputChannel chan []byte
+		inputChannel chan *data_structures.Message
 		ok           bool
 	}
 )
 
-func (m *mockConsumer) Pop() ([]byte, bool) {
+func (m *mockConsumer) GetReceivedMessages() int {
+	return 0
+}
+
+func (m *mockConsumer) Pop() (*data_structures.Message, bool) {
 	if !m.ok {
-		return []byte{}, m.ok
+		return &data_structures.Message{}, m.ok
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
@@ -31,35 +35,37 @@ func (m *mockConsumer) BindTo(_ string, _ string) error {
 
 type (
 	mockProducer struct {
-		outputChannel chan []byte
+		outputChannel chan *data_structures.Message
 	}
 )
 
-func (m *mockProducer) Send(data []byte) error {
+func (m *mockProducer) GetSentMessages() int {
+	return 0
+}
+
+func (m *mockProducer) Send(data *data_structures.Message) error {
 	m.outputChannel <- data
 	return nil
 }
 
 func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
-	serializer := data_structures.NewSerializer()
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]middleware.ProducerInterface, 1)
+	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -68,7 +74,7 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(2))
 	row := data_structures.NewDynamicMap(dynMap)
 	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
-	input <- serializer.SerializeMsg(msgToSend)
+	input <- msgToSend
 	close(input)
 	select {
 	case <-output:
@@ -79,25 +85,23 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 }
 
 func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
-	serializer := data_structures.NewSerializer()
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]middleware.ProducerInterface, 1)
+	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -106,11 +110,11 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(3))
 	row := data_structures.NewDynamicMap(dynMap)
 	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
-	input <- serializer.SerializeMsg(msgToSend)
+	input <- msgToSend
 	close(input)
 	select {
 	case result := <-output:
-		newRow := serializer.DeserializeMsg(result).DynMaps[0]
+		newRow := result.DynMaps[0]
 		ts, err := newRow.GetAsInt("totalStopovers")
 		if err != nil {
 			t.Errorf("Error getting totalStopovers...")
@@ -125,25 +129,23 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 }
 
 func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T) {
-	input := make(chan []byte)
-	output := make(chan []byte)
-	serializer := data_structures.NewSerializer()
+	input := make(chan *data_structures.Message)
+	output := make(chan *data_structures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]middleware.ProducerInterface, 1)
+	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -152,11 +154,11 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 	binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(4))
 	row := data_structures.NewDynamicMap(dynMap)
 	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
-	input <- serializer.SerializeMsg(msgToSend)
+	input <- msgToSend
 	close(input)
 	select {
 	case result := <-output:
-		newRow := serializer.DeserializeMsg(result).DynMaps[0]
+		newRow := result.DynMaps[0]
 		ts, err := newRow.GetAsInt("totalStopovers")
 		if err != nil {
 			t.Errorf("Error getting totalStopovers...")
@@ -170,25 +172,23 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 }
 
 func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.T) {
-	input := make(chan []byte, 3)
-	output := make(chan []byte, 3)
-	serializer := data_structures.NewSerializer()
+	input := make(chan *data_structures.Message, 3)
+	output := make(chan *data_structures.Message, 3)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]middleware.ProducerInterface, 1)
+	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -198,14 +198,14 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 		binary.BigEndian.PutUint32(dynMap["totalStopovers"], uint32(2+i))
 		row := data_structures.NewDynamicMap(dynMap)
 		msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
-		input <- serializer.SerializeMsg(msgToSend)
+		input <- msgToSend
 	}
 	close(input)
 	rowCountRecvd := 0
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-output:
-			newRow := serializer.DeserializeMsg(result).DynMaps[0]
+			newRow := result.DynMaps[0]
 			rowCountRecvd++
 			ts, err := newRow.GetAsInt("totalStopovers")
 			if err != nil {

@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Ex4Handler Struct containing the services of the exercise 4
 type Ex4Handler struct {
 	c                 *Ex4Config
 	journeyDispatcher *dispatcher.JourneyDispatcher
@@ -17,19 +18,26 @@ type Ex4Handler struct {
 	channels          []chan *dataStructures.Message
 }
 
+// NewEx4Handler Creates a new exercise 4 handler
 func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
+	// We create the input queue to the EX4 service
 	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	// We create the output queue to the saver of the end results
 	outputQueue := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 
+	// Creation of the queue to the average calculator
 	accumChannel := make(chan *dataStructures.Message)
-	channels = append(channels, accumChannel)
 	toAccumulatorChannelProducer := protocol.NewProducerChannel(accumChannel)
 	toAccumulatorChannelConsumer := protocol.NewConsumerChannel(accumChannel)
+	// We append the channels so that we can close all of them later
+	channels = append(channels, accumChannel)
 
+	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*JourneySaver
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
+	log.Infof("Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		internalServerChannel := make(chan *dataStructures.Message)
 		channels = append(channels, internalServerChannel)
@@ -39,10 +47,12 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 			outputQueue,
 		))
 		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalServerChannel))
+		log.Infof("Created Saver #%v correctly...", i)
 	}
-	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
 
-	// crear acumulador general --> tiene todos los canales de los savers individuales (resultado final)
+	// Creation of the dispatcher to the JourneySavers
+	log.Infof("Creating dispatcher...")
+	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
 
 	return &Ex4Handler{
 		c:                 c,
@@ -50,16 +60,24 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 		accumulator:       NewAvgCalculator(toInternalSaversChannels, toAccumulatorChannelConsumer),
 		qMiddleware:       qMiddleware,
 		channels:          channels,
+		savers:            internalSavers,
 	}
 }
 
+// StartHandler Starts the exercise 4 services as goroutines
 func (ex4h *Ex4Handler) StartHandler() {
-	for _, saver := range ex4h.savers {
+	log.Debugf("Number of savers is: %v", len(ex4h.savers))
+	for idx, saver := range ex4h.savers {
+		log.Infof("Spawning saver #%v", idx+1)
 		go saver.SavePricesForJourneys()
 	}
+	log.Infof("Spawning General Accumulator")
 	go ex4h.accumulator.CalculateAvgLoop()
+	log.Infof("Spawning Dispatcher")
+	go ex4h.journeyDispatcher.DispatchLoop()
 }
 
+// Close Closes the handler of the exercise 4
 func (ex4h *Ex4Handler) Close() {
 	ex4h.qMiddleware.Close()
 	for idx, channel := range ex4h.channels {

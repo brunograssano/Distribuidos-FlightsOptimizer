@@ -13,19 +13,20 @@ type Reducer struct {
 	c          *ReducerConfig
 	consumer   protocol.ConsumerProtocolInterface
 	producer   protocol.ProducerProtocolInterface
-	serializer *dataStructures.Serializer
+	prodToCons protocol.ProducerProtocolInterface
 }
 
 // NewReducer Creates a new reducer
-func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig, serializer *dataStructures.Serializer) *Reducer {
+func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig) *Reducer {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
+	prodToCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 	return &Reducer{
 		reducerId:  reducerId,
 		c:          c,
 		consumer:   consumer,
 		producer:   producer,
-		serializer: serializer,
+		prodToCons: prodToCons,
 	}
 }
 
@@ -38,20 +39,35 @@ func (r *Reducer) ReduceDims() {
 			log.Infof("Closing goroutine %v", r.reducerId)
 			return
 		}
-		var rows []*dataStructures.DynamicMap
-		for _, row := range msg.DynMaps {
-			reducedData, err := row.ReduceToColumns(r.c.ColumnsToKeep)
+		if msg.TypeMessage == dataStructures.EOFFlightRows {
+			log.Infof("DimReducer %v | Received EOF. Now handling...", r.reducerId)
+			err := protocol.HandleEOF(msg, r.consumer, r.prodToCons, []protocol.ProducerProtocolInterface{r.producer})
 			if err != nil {
-				log.Errorf("action: reduce_columns | reducer_id: %v | result: fail | skipping row | error: %v", r.reducerId, err)
-				continue
+				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}
-			rows = append(rows, reducedData)
+			return
+		} else if msg.TypeMessage == dataStructures.FlightRows {
+			log.Debugf("DimReducer %v | Received flight rows. Now handling...", r.reducerId)
+			r.handleFlightRows(msg)
+		} else {
+			log.Warnf("DimReducer %v | Received unknown type message. Skipping it...", r.reducerId)
+		}
+	}
+}
 
-		}
-		msg = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
-		err := r.producer.Send(msg)
+func (r *Reducer) handleFlightRows(msg *dataStructures.Message) {
+	var rows []*dataStructures.DynamicMap
+	for _, row := range msg.DynMaps {
+		reducedData, err := row.ReduceToColumns(r.c.ColumnsToKeep)
 		if err != nil {
-			log.Errorf("Error trying to send message to output queue")
+			log.Errorf("DimReducer %v | Error reducing column, skipping row | error: %v", r.reducerId, err)
+			continue
 		}
+		rows = append(rows, reducedData)
+	}
+	msg = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows}
+	err := r.producer.Send(msg)
+	if err != nil {
+		log.Errorf("DimReducer %v | Error trying to send message to output queue", r.reducerId)
 	}
 }

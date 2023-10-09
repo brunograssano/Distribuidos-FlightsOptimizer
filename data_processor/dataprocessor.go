@@ -77,13 +77,18 @@ func (d *DataProcessor) ProcessData() {
 			return
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
+			log.Infof("Received EOF from server. Now finishing...")
 			_ = protocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
 			return
+		} else if msg.TypeMessage == dataStructures.FlightRows {
+			log.Infof("Received Batch of Rows. Now processing...\n")
+			ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
+			log.Infof("Sending processed rows to next nodes...\n")
+			d.sendToEx123(ex123Rows)
+			d.sendToEx4(ex4Rows)
+		} else {
+			log.Warnf("Received unknown type of message. Skipping it...")
 		}
-		ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
-
-		d.sendToEx123(ex123Rows)
-		d.sendToEx4(ex4Rows)
 	}
 }
 
@@ -93,6 +98,7 @@ func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap) {
 	if err != nil {
 		log.Errorf("Error trying to send to exercise 4 the serialized row")
 	}
+	log.Infof("Ending send of batch for Ex4...")
 }
 
 func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
@@ -103,6 +109,7 @@ func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
 			log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
 		}
 	}
+	log.Infof("Ending send of batch for Ex 1,2,3...")
 
 }
 

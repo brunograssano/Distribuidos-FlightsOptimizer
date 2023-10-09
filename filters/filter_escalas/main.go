@@ -3,15 +3,12 @@ package main
 import (
 	"filters_config"
 	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM)
+	sigs := utils.CreateSignalListener()
 	env, err := filters_config.InitEnv()
 	if err != nil {
 		log.Fatalf("%s", err)

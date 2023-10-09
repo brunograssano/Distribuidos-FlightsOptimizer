@@ -59,6 +59,7 @@ func (as *AirportSaver) SaveAirports() {
 			return
 		}
 		msgStruct := as.serializer.DeserializeMsg(msg)
+		log.Debugf("Received message: {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
 		if msgStruct.TypeMessage == dataStructures.EOFAirports {
 			log.Infof("Received EOF. Signalizing completers to start completion...")
 			break
@@ -93,6 +94,7 @@ func (as *AirportSaver) SaveAirports() {
 }
 
 func (as *AirportSaver) closeFile() {
+	log.Infof("Closing file...")
 	err := as.fileSaver.FileManager.Close()
 	if err != nil {
 		log.Errorf("Error closing airports file...")

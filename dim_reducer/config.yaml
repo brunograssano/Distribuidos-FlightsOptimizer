@@ -1,6 +1,6 @@
 
 log:
-  level: "info"
+  level: "debug"
 reducer:
   goroutines: 4
 rabbitmq:
