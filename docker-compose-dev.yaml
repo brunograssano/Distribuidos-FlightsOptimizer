@@ -182,7 +182,7 @@ services:
     environment:
       - CLI_ID=10
       - CLI_LOG_LEVEL=DEBUG
-      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080
+      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080,saver-ex4:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
@@ -199,6 +199,8 @@ services:
       saver-ex2:
         condition: service_started
       saver-ex3:
+        condition: service_started
+      saver-ex4:
         condition: service_started
       distance_completer-1:
         condition: service_started
@@ -236,7 +238,6 @@ services:
     depends_on:
       server:
         condition: service_started
-
 
   saver-ex4:
     container_name: saver-ex4

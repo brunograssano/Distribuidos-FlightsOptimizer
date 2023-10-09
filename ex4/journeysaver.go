@@ -188,6 +188,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		dynMap := make(map[string][]byte)
 		dynMap[utils.Avg] = serializer.SerializeFloat(journeyAverage)
 		dynMap[utils.Max] = serializer.SerializeFloat(journeyMax)
+		dynMap[utils.Journey] = serializer.SerializeString(fileStr)
 		data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
 		msg := &dataStructure.Message{
 			TypeMessage: dataStructure.FlightRows,
