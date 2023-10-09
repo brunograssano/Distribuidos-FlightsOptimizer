@@ -61,12 +61,11 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -98,12 +97,11 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -143,12 +141,11 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -187,12 +184,11 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:   0,
-		config:     &filters_config.FilterConfig{},
-		consumer:   mockCons,
-		producers:  arrayProducers,
-		serializer: data_structures.NewSerializer(),
-		filter:     filters.NewFilter(),
+		filterId:  0,
+		config:    &filters_config.FilterConfig{},
+		consumer:  mockCons,
+		producers: arrayProducers,
+		filter:    filters.NewFilter(),
 	}
 	go filterEscalas.FilterStopovers()
 
