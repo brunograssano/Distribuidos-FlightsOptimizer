@@ -10,15 +10,18 @@ import (
 
 const maxBatchLines = 1500
 const defaultBatchLines = 300
+const maxSavers = 30
+const defaultSavers = 6
 
 // SaverConfig The configuration of the application
 type SaverConfig struct {
-	ID               string
-	InputQueueName   string
-	OutputFileNames  []string
-	RabbitAddress    string
-	GetterAddress    string
-	GetterBatchLines uint
+	ID                  string
+	InputQueueName      string
+	OutputFilePrefix    string
+	RabbitAddress       string
+	GetterAddress       string
+	GetterBatchLines    uint
+	InternalSaversCount uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -34,13 +37,15 @@ func InitEnv() (*viper.Viper, error) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// Add env variables supported
-	v.BindEnv("id")
-	v.BindEnv("log", "level")
-	v.BindEnv("rabbitmq", "address")
-	v.BindEnv("rabbitmq", "queue", "input")
-	v.BindEnv("saver", "output")
-	v.BindEnv("getter", "address")
-	v.BindEnv("getter", "batch", "lines")
+	_ = v.BindEnv("id")
+	_ = v.BindEnv("log", "level")
+	_ = v.BindEnv("rabbitmq", "address")
+	_ = v.BindEnv("rabbitmq", "queue", "input")
+	_ = v.BindEnv("saver", "output")
+	_ = v.BindEnv("saver", "count")
+	_ = v.BindEnv("getter", "address")
+	_ = v.BindEnv("getter", "batch", "lines")
+
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables, so we shouldn't
@@ -69,7 +74,6 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 	if inputQueueName == "" {
 		return nil, errors.New("missing output filename")
 	}
-	outputs := strings.Split(outputFilenamesStr, ",")
 
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
@@ -87,6 +91,12 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		getterBatchLines = defaultBatchLines
 	}
 
+	internalSaversCount := env.GetUint("saver.count")
+	if internalSaversCount > maxSavers || internalSaversCount == 0 {
+		log.Errorf("invalid getter batch lines. Setting to default")
+		internalSaversCount = defaultSavers
+	}
+
 	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
 		id,
 		env.GetString("log.level"),
@@ -97,11 +107,12 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		getterBatchLines)
 
 	return &SaverConfig{
-		ID:               id,
-		InputQueueName:   inputQueueName,
-		OutputFileNames:  outputs,
-		RabbitAddress:    rabbitAddress,
-		GetterAddress:    getterAddress,
-		GetterBatchLines: getterBatchLines,
+		ID:                  id,
+		InputQueueName:      inputQueueName,
+		OutputFilePrefix:    outputFilenamesStr,
+		RabbitAddress:       rabbitAddress,
+		GetterAddress:       getterAddress,
+		GetterBatchLines:    getterBatchLines,
+		InternalSaversCount: internalSaversCount,
 	}, nil
 }

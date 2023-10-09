@@ -12,6 +12,7 @@ docker-image:
 	docker build -f ./server/Dockerfile -t "server:latest" .
 	docker build -f ./client/Dockerfile -t "client:latest" .
 	docker build -f ./ex4/Dockerfile -t "ex4_handler:latest" .
+	docker build -f ./saver_ex_3/Dockerfile -t "saver_ex_3:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you
 	# want to avoid rebuilding client image every time the docker-compose-up command
