@@ -48,7 +48,6 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	reducerConfig := &ReducerConfig{ColumnsToKeep: []string{"col1"}}
 	input := make(chan *dataStructures.Message, 10)
 	output := make(chan *dataStructures.Message, 10)
-	serializer := dataStructures.NewSerializer()
 
 	mConsumer := &mockConsumerQueueProtocolHandler{
 		inputChannel: input,
@@ -59,11 +58,10 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	}
 
 	reducer := &Reducer{
-		reducerId:  0,
-		c:          reducerConfig,
-		consumer:   mConsumer,
-		producer:   mProducer,
-		serializer: serializer,
+		reducerId: 0,
+		c:         reducerConfig,
+		consumer:  mConsumer,
+		producer:  mProducer,
 	}
 
 	dynMap := make(map[string][]byte)
