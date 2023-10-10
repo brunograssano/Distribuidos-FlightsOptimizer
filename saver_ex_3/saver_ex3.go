@@ -26,9 +26,6 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	canSend := make(chan bool)
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
-	// We create the input queue to the EX4 service
-	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
@@ -51,12 +48,13 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	}
 
 	// Creation of the dispatcher to the JourneySavers
-	log.Infof("SaverEx3 | Creating dispatcher...")
-	jd := []*dispatcher.JourneyDispatcher{
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+	log.Infof("SaverEx3 | Creating dispatchers...")
+	var jds []*dispatcher.JourneyDispatcher
+	for i := uint(0); i < c.DispatchersCount; i++ {
+		// We create the input queue to the EX4 service
+		inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+		prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
@@ -67,7 +65,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 
 	return &SaverEx3{
 		c:                 c,
-		journeyDispatcher: jd,
+		journeyDispatcher: jds,
 		qMiddleware:       qMiddleware,
 		channels:          channels,
 		savers:            internalSavers,
@@ -97,8 +95,10 @@ func (se3 *SaverEx3) StartHandler() {
 		log.Infof("SaverEx3 | Spawning saver #%v", idx+1)
 		go saver.SaveData()
 	}
-	log.Infof("SaverEx3 | Spawning Dispatcher...")
-	for _, jd := range se3.journeyDispatcher {
+
+	log.Debugf("SaverEx3 | Number of Dispatchers: %v", len(se3.journeyDispatcher))
+	for idx, jd := range se3.journeyDispatcher {
+		log.Infof("SaverEx3 | Spawning Dispatcher #%v", idx)
 		go jd.DispatchLoop()
 	}
 
