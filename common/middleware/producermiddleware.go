@@ -13,7 +13,7 @@ type Producer struct {
 	queue           amqp.Queue
 }
 
-const TIMEOUTSECONDS = 5
+const TimeoutSeconds = 5
 
 func NewProducer(channel *amqp.Channel, name string, durable bool) *Producer {
 	queue := CreateQueue(channel, name, durable)
@@ -24,7 +24,7 @@ func NewProducer(channel *amqp.Channel, name string, durable bool) *Producer {
 }
 
 func (queue *Producer) Send(data []byte) error {
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUTSECONDS*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSeconds*time.Second)
 	defer cancel()
 	err := queue.rabbitMQChannel.PublishWithContext(ctx,
 		"",               // exchange
@@ -32,7 +32,7 @@ func (queue *Producer) Send(data []byte) error {
 		false,            // mandatory
 		false,            // immediate
 		amqp.Publishing{
-			ContentType:  "application/octet-stream",
+			ContentType:  BinaryDataMime,
 			Body:         data,
 			DeliveryMode: amqp.Persistent,
 		},

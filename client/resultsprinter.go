@@ -3,6 +3,7 @@ package main
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -10,7 +11,7 @@ import (
 func printResults(dynMaps []*dataStructures.DynamicMap) {
 	serializer := dataStructures.NewSerializer()
 	for _, row := range dynMaps {
-		line := strings.TrimRight(serializer.SerializeToString(row), "\n")
+		line := strings.TrimRight(serializer.SerializeToString(row), utils.NewLine)
 		log.Infof(line)
 	}
 

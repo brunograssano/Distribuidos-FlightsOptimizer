@@ -11,9 +11,6 @@ import (
 	"strings"
 )
 
-const commaSeparator = ","
-const newLine = "\n"
-
 type Serializer struct{}
 
 func NewSerializer() *Serializer {
@@ -118,16 +115,16 @@ func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
 			line.WriteString(fmt.Sprintf("%v=%v", key, string(value)))
 		}
 		if uint32(currCol) != colCount-1 {
-			line.WriteString(commaSeparator)
+			line.WriteString(utils.CommaSeparator)
 			currCol++
 		}
 	}
-	line.WriteString(newLine)
+	line.WriteString(utils.NewLine)
 	return line.String()
 }
 
 func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMap {
-	keyValuePairs := strings.Split(dynMapStr, commaSeparator)
+	keyValuePairs := strings.Split(dynMapStr, utils.CommaSeparator)
 	dynMapData := make(map[string][]byte)
 	for _, pair := range keyValuePairs {
 		keyValuePair := strings.Split(pair, "=")

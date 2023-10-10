@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -74,7 +75,7 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 	if outputQueueNameEx123 == "" {
 		return nil, errors.New("missing output queues for ex 1, 2, 3")
 	}
-	outputQueueNameEx123Array := strings.Split(outputQueueNameEx123, ValueListSeparator)
+	outputQueueNameEx123Array := strings.Split(outputQueueNameEx123, utils.CommaSeparator)
 
 	outputQueueNameEx4 := env.GetString("rabbitmq.queue.output.ex4")
 	if outputQueueNameEx4 == "" {
@@ -87,9 +88,9 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 	}
 
 	goroutinesCount := env.GetInt("processor.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("DataProcessorConfig | Warning Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
-		goroutinesCount = defaultGoroutines
+		goroutinesCount = utils.DefaultGoroutines
 	}
 
 	log.Infof("DataProcessorConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueNameEx123: %v | outputQueueNameEx4: %v | goroutinesCount: %v",

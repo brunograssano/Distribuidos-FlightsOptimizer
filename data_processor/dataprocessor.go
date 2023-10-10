@@ -5,11 +5,11 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
-const segmentSplitter = "||"
 const destinationAirport = 1
 
 // DataProcessor Structure that handles the initial row preprocessing by removing columns and creating auxiliary columns
@@ -41,8 +41,8 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 		producersEx123: producersEx123,
 		producersEx4:   producersEx4,
 		serializer:     serializer,
-		ex123Columns:   []string{"legId", "startingAirport", "destinationAirport", "travelDuration", "totalFare", "totalTravelDistance", "segmentsAirlineName", "totalStopovers", "route"},
-		ex4Columns:     []string{"startingAirport", "destinationAirport", "totalFare"},
+		ex123Columns:   []string{utils.LegId, utils.StartingAirport, utils.DestinationAirport, utils.TravelDuration, utils.TotalFare, utils.TotalTravelDistance, utils.SegmentsAirlineName, utils.TotalStopovers, utils.Route},
+		ex4Columns:     []string{utils.StartingAirport, utils.DestinationAirport, utils.TotalFare},
 		inputQueueProd: inputQProd,
 	}
 }
@@ -115,23 +115,25 @@ func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
 
 // processEx4Row Exercise 1,2 & 3 preprocessing. Removes columns, calculates total stopovers, and makes the route
 func (d *DataProcessor) processEx123Row(cols *dataStructures.DynamicMap) (*dataStructures.DynamicMap, error) {
-	segments, err := cols.GetAsString("segmentsArrivalAirportCode")
+	segments, err := cols.GetAsString(utils.SegmentsArrivalAirportCode)
 	if err != nil {
 		return nil, err
 	}
-	startingAirport, err := cols.GetAsString("startingAirport")
+	startingAirport, err := cols.GetAsString(utils.StartingAirport)
 	if err != nil {
 		return nil, err
 	}
-	splittedSegments := strings.Split(segments, segmentSplitter)
+	splittedSegments := strings.Split(segments, utils.DoublePipeSeparator)
 	splittedSegmentsLen := len(splittedSegments)
 	if splittedSegmentsLen == 0 {
 		return nil, errors.New("empty segment")
 	}
+
 	totalStopovers := uint32(splittedSegmentsLen) - destinationAirport
-	cols.AddColumn("totalStopovers", d.serializer.SerializeUint(totalStopovers))
-	route := startingAirport + segmentSplitter + segments
-	cols.AddColumn("route", d.serializer.SerializeString(route))
+	cols.AddColumn(utils.TotalStopovers, d.serializer.SerializeUint(totalStopovers))
+
+	route := startingAirport + utils.DoublePipeSeparator + segments
+	cols.AddColumn(utils.Route, d.serializer.SerializeString(route))
 	return cols.ReduceToColumns(d.ex123Columns)
 }
 

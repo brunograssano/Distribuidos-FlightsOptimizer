@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -17,12 +18,6 @@ type ReducerConfig struct {
 	GoroutinesCount int
 	RabbitAddress   string
 }
-
-// ValueListSeparator Separator of queue list in configuration
-const ValueListSeparator string = ","
-
-const maxGoroutines int = 32
-const defaultGoroutines int = 4
 
 // initEnv Initializes the configuration properties from a config file and environment
 func initEnv() (*viper.Viper, error) {
@@ -87,12 +82,12 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
-	columnsToKeep := strings.Split(columnsInList, ValueListSeparator)
+	columnsToKeep := strings.Split(columnsInList, utils.CommaSeparator)
 
 	goroutinesCount := env.GetInt("reducer.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("ReducerConfig | Not a valid value '%v' for goroutines count, using default.", goroutinesCount)
-		goroutinesCount = defaultGoroutines
+		goroutinesCount = utils.DefaultGoroutines
 	}
 
 	log.Infof("ReducerConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",

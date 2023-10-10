@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const BinaryDataMime = "application/octet-stream"
+
 type ExchangeProducer struct {
 	ProducerInterface
 	rabbitMQChannel *amqp.Channel
@@ -35,7 +37,7 @@ func NewExchangeProducer(channel *amqp.Channel, nameEx string, routingKey string
 }
 
 func (exProd *ExchangeProducer) Send(data []byte) error {
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUTSECONDS*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSeconds*time.Second)
 	defer cancel()
 	err := exProd.rabbitMQChannel.PublishWithContext(ctx,
 		exProd.name,       // exchange
@@ -43,7 +45,7 @@ func (exProd *ExchangeProducer) Send(data []byte) error {
 		false,             // mandatory
 		false,             // immediate
 		amqp.Publishing{
-			ContentType:  "application/octet-stream",
+			ContentType:  BinaryDataMime,
 			Body:         data,
 			DeliveryMode: amqp.Persistent,
 		},

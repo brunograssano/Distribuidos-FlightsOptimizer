@@ -35,3 +35,5 @@ const DefaultBatchLines = 300
 
 const MaxGoroutines = 32
 const DefaultGoroutines = 6
+
+const NewLine = "\n"

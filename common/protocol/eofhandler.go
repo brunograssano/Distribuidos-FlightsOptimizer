@@ -24,9 +24,9 @@ func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolIn
 func sendEOFToInput(localReceived int, received int, prevSent int, sent int, localSent int, prodInputQueue ProducerProtocolInterface) error {
 	serializer := dataStructures.NewSerializer()
 	dynMapData := make(map[string][]byte)
-	dynMapData["localReceived"] = serializer.SerializeUint(uint32(localReceived + received))
-	dynMapData["localSent"] = serializer.SerializeUint(uint32(sent + localSent))
-	dynMapData["prevSent"] = serializer.SerializeUint(uint32(prevSent))
+	dynMapData[utils.LocalReceived] = serializer.SerializeUint(uint32(localReceived + received))
+	dynMapData[utils.LocalSent] = serializer.SerializeUint(uint32(sent + localSent))
+	dynMapData[utils.PrevSent] = serializer.SerializeUint(uint32(prevSent))
 	err := prodInputQueue.Send(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
