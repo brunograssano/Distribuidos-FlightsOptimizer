@@ -13,12 +13,12 @@ func main() {
 
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Simple Saver | Error initializing env | %s", err)
 	}
 
 	saverConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Simple Saver | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
@@ -30,7 +30,7 @@ func main() {
 	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)
 	getter, err := getters.NewGetter(getterConf, canSend)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Simple Saver | Error initializing Getter | %s", err)
 	}
 	go getter.ReturnResults()
 	<-sigs

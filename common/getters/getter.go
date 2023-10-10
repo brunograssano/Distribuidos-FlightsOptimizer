@@ -21,7 +21,7 @@ type Getter struct {
 func NewGetter(getterConf *GetterConfig, canSend chan bool) (*Getter, error) {
 	server, err := communication.NewPassiveTCPSocket(getterConf.Address)
 	if err != nil {
-		log.Errorf("action: create_server | result: error | id: %v | address: %v | %v", getterConf.ID, getterConf.Address, err)
+		log.Errorf("Getter | action: create_server | result: error | id: %v | address: %v | %v", getterConf.ID, getterConf.Address, err)
 		return nil, err
 	}
 	return &Getter{c: getterConf, server: server, stop: make(chan bool), canSend: canSend}, nil
@@ -32,7 +32,7 @@ func (g *Getter) ReturnResults() {
 	for {
 		socket, err := g.server.Accept()
 		if err != nil {
-			log.Errorf("action: accept_connection | result: error | id: %v | address: %v | %v", g.c.ID, g.c.Address, err)
+			log.Errorf("Getter | action: accept_connection | result: error | id: %v | address: %v | %v", g.c.ID, g.c.Address, err)
 			return
 		}
 		sph := protocol.NewSocketProtocolHandler(socket)
@@ -68,7 +68,7 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 	for _, filename := range g.c.FileNames {
 		reader, err := filemanager.NewFileReader(filename)
 		if err != nil {
-			log.Errorf("Getter | Error trying to open file: %v. Skipping it...", filename)
+			log.Errorf("Getter | Error trying to open file: %v | %v | Skipping it...", filename, err)
 			continue
 		}
 		for reader.CanRead() {
@@ -105,7 +105,7 @@ func (g *Getter) sendEOF(sph *protocol.SocketProtocolHandler) {
 		DynMaps:     []*dataStructures.DynamicMap{},
 	})
 	if err != nil {
-		log.Errorf("Error trying to send EOF: %v", err)
+		log.Errorf("Getter | Error trying to send EOF | %v", err)
 	}
 }
 
@@ -116,7 +116,7 @@ func (g *Getter) sendBatch(sph *protocol.SocketProtocolHandler, batch []*dataStr
 		DynMaps:     batch,
 	})
 	if err != nil {
-		log.Errorf("Getter | Error sending batch from getter: %v", err)
+		log.Errorf("Getter | Error sending batch from getter | %v", err)
 	}
 }
 

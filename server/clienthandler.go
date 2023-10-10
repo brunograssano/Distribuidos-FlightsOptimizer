@@ -44,14 +44,14 @@ func (ch *ClientHandler) handleGetterMessage(
 	if msg.TypeMessage == data_structures.FlightRows {
 		err := cliSPH.Write(msg)
 		if err != nil {
-			log.Errorf("Error trying to send to client. Ending loop...")
+			log.Errorf("ClientHandler | Error trying to send to client | %v | Ending loop...", err)
 			_ = socketGetter.Close()
 			return false, false, err
 		}
 	} else if msg.TypeMessage == data_structures.EOFGetter {
 		err := cliSPH.Write(msg)
 		if err != nil {
-			log.Errorf("Error trying to send EOFGetter to client. Ending loop...")
+			log.Errorf("ClientHandler | Error trying to send EOFGetter to client | %v | Ending loop...", err)
 			_ = socketGetter.Close()
 			return true, false, err
 		}
@@ -60,7 +60,7 @@ func (ch *ClientHandler) handleGetterMessage(
 	} else if msg.TypeMessage == data_structures.Later {
 		return false, true, nil
 	} else {
-		log.Warnf("Received unexpected message. Ignoring it...")
+		log.Warnf("ClientHandler | Warning Message | Received unexpected message | Ignoring it...")
 	}
 	return false, false, nil
 }
@@ -70,7 +70,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 		currSleep := 2
 		socketGetter, err := communication.NewActiveTCPSocket(ch.GetterAddresses[i])
 		if err != nil {
-			log.Errorf("Error trying to connect to getter for exercise %v. Ending getter conn and returning error.", i+1)
+			log.Errorf("ClientHandler | Error trying to connect to getter for exercise %v | %v | Ending getter conn and returning error.", i+1, err)
 			_ = socketGetter.Close()
 			return err
 		}
@@ -78,7 +78,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 		for {
 			msg, err := getterSPH.Read()
 			if err != nil {
-				log.Errorf("Error trying to read from getter #%v: %v. Ending loop...", i+1, err)
+				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", i+1, err)
 				_ = socketGetter.Close()
 				return err
 			}
@@ -87,21 +87,21 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 				break
 			}
 			if shouldReconnect {
-				log.Infof("Sleeping for %v seconds so that response may be ready later...", currSleep)
+				log.Infof("ClientHandler | Sleeping for %v seconds so that response may be ready later...", currSleep)
 				time.Sleep(time.Duration(currSleep) * time.Second)
 				if currSleep < maxSleep {
 					currSleep = currSleep * 2
 				}
 				err := socketGetter.Reconnect()
 				if err != nil {
-					log.Errorf("Error trying to reconnect to getter... Ending...")
+					log.Errorf("ClientHandler | Error trying to reconnect to getter... Ending...")
 					_ = socketGetter.Close()
 					return err
 				}
 				getterSPH = protocol.NewSocketProtocolHandler(socketGetter)
 			}
 			if err != nil {
-				log.Errorf("Error handling getter message: %v", err)
+				log.Errorf("ClientHandler | Error handling getter message | %v", err)
 			}
 		}
 		_ = socketGetter.Close()
@@ -110,10 +110,10 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 }
 
 func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) error {
-	log.Infof("Sending airports to exchange...")
+	log.Infof("ClientHandler | Sending airports to exchange...")
 	err := ch.outQueueAirports.Send(ch.serializer.SerializeMsg(message))
 	if err != nil {
-		log.Infof("Error sending airports to exchange: %v", err)
+		log.Errorf("ClientHandler | Error sending airports to exchange | %v", err)
 		return err
 	}
 	return nil
@@ -135,12 +135,12 @@ func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) e
 	dynMap.AddColumn("localSent", ch.serializer.SerializeUint(uint32(0)))
 	dynMap.AddColumn("localReceived", ch.serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
-	log.Infof("Sending EOF. Batches sent: %v", ch.rowsSent)
+	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
 	return ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))
 }
 
 func (ch *ClientHandler) handleMessage(message *data_structures.Message, cliSPH *protocol.SocketProtocolHandler) error {
-	log.Infof("Received Message: {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
+	log.Infof("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
 	if message.TypeMessage == data_structures.Airports || message.TypeMessage == data_structures.EOFAirports {
 		return ch.handleAirportMessage(message)
 	}
@@ -162,13 +162,13 @@ func (ch *ClientHandler) StartClientLoop() {
 	for {
 		message, err := ch.conn.Read()
 		if err != nil {
-			log.Errorf("Error trying to receive message: %v. Ending client handle & Closing socket...", err)
+			log.Errorf("ClientHandler | Error trying to receive message | %v | Ending client handle & Closing socket...", err)
 			return
 		}
-		log.Debugf("Handling message from client %v", message)
+		log.Debugf("ClientHandler | Handling message from client | %v", message)
 		err = ch.handleMessage(message, ch.conn)
 		if err != nil {
-			log.Errorf("%v", err)
+			log.Errorf("ClientHandler | Error handling message | %v", err)
 			return
 		}
 	}

@@ -136,13 +136,13 @@ func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMa
 		if isIntColumn(key) {
 			intVal, err := strconv.Atoi(strVal)
 			if err != nil {
-				log.Errorf("Error casting column %v to integer.", intVal)
+				log.Errorf("Serializer | Error casting column %v to integer | %v", intVal, err)
 			}
 			dynMapData[key] = serializer.SerializeUint(uint32(intVal))
 		} else if isFloatColumn(key) {
 			floatVal, err := strconv.ParseFloat(strVal, 32)
 			if err != nil {
-				log.Errorf("Error casting column %v to float.", floatVal)
+				log.Errorf("Serializer | Error casting column %v to float | %v", floatVal, err)
 			}
 			dynMapData[key] = serializer.SerializeFloat(float32(floatVal))
 		} else {

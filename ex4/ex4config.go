@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -39,7 +38,7 @@ func InitEnv() (*viper.Viper, error) {
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("Ex4Config | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -73,7 +72,7 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 
 	internalSaversCount := env.GetUint("internal.savers.count")
 	if internalSaversCount <= 0 || internalSaversCount > maxSaversCount {
-		log.Warnf("Not a valid value '%v' for internal savers count, using default", internalSaversCount)
+		log.Warnf("Ex4Config | Not a valid value '%v' for internal savers count, using default", internalSaversCount)
 		internalSaversCount = defaultSaversCount
 	}
 
@@ -81,7 +80,7 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 		return nil, err
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
+	log.Infof("Ex4Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

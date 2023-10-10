@@ -52,17 +52,17 @@ func HandleEOF(
 	// "prevSent", "localReceived", "localSent"
 	prevSent, err := message.DynMaps[0].GetAsInt(utils.PrevSent)
 	if err != nil {
-		log.Errorf("%v", err)
+		log.Errorf("EOFHandler | Error getting prevSent | %v", err)
 		return err
 	}
 	localReceived, err := message.DynMaps[0].GetAsInt(utils.LocalReceived)
 	if err != nil {
-		log.Errorf("%v", err)
+		log.Errorf("EOFHandler | Error getting localReceived | %v", err)
 		return err
 	}
 	localSent, err := message.DynMaps[0].GetAsInt(utils.LocalSent)
 	if err != nil {
-		log.Errorf("%v", err)
+		log.Errorf("EOFHandler | Error getting localSent | %v", err)
 		return err
 	}
 	if received+localReceived >= prevSent {
@@ -72,7 +72,7 @@ func HandleEOF(
 			log.Infof("EOF Handler | Sending EOF to Next node with index %v", i)
 			err = sendEOFToOutput(localSent, sent, prodOutputQueues[i])
 			if err != nil {
-				log.Errorf("%v", err)
+				log.Errorf("EOFHandler | Error sending EOF to Output | %v", err)
 				return err
 			}
 		}

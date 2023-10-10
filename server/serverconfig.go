@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -40,7 +39,7 @@ func InitEnv() (*viper.Viper, error) {
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("ServerConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -93,7 +92,7 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 		return nil, errors.New("missing flight rows queue name")
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | getterAddresses: %v | serverAddress: %v ",
+	log.Infof("ServerConfig | action: config | result: success | id: %s | log_level: %s | getterAddresses: %v | serverAddress: %v ",
 		id,
 		env.GetString("log.level"),
 		getterAddresses,

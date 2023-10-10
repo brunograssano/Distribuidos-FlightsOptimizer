@@ -11,12 +11,12 @@ func main() {
 
 	env, err := initEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DimReducer | Error initializing env | %s", err)
 	}
 
 	reducerConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DimReducer | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)

@@ -14,12 +14,12 @@ func main() {
 
 	env, err := config.InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Distance Completer | Error initializing env | %s", err)
 	}
 
 	completerConfig, err := config.GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Distance Completer | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(completerConfig.RabbitAddress)

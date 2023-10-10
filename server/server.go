@@ -17,7 +17,7 @@ type Server struct {
 func NewServer(c *ServerConfig) *Server {
 	socket, err := communication.NewPassiveTCPSocket(c.ServerAddress)
 	if err != nil {
-		log.Fatalf("action: create_server | result: fail | server_id: %v | error: %v", c.ID, err)
+		log.Fatalf("Server | action: create_server | result: fail | server_id: %v | error: %v", c.ID, err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 	qA := qMiddleware.CreateExchangeProducer(c.ExchangeNameAirports, c.ExchangeRKAirports, c.ExchangeTypeAirports, true)
@@ -35,7 +35,7 @@ func (svr *Server) StartServerLoop() {
 	for {
 		accepted, err := svr.pSocket.Accept()
 		if err != nil {
-			log.Errorf("Error trying to accept connection: %v. Finishing loop...", err)
+			log.Errorf("Server | Error trying to accept connection | %v | Finishing loop...", err)
 			break
 		}
 		ch := NewClientHandler(

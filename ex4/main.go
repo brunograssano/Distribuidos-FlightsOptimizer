@@ -9,17 +9,17 @@ func main() {
 	sigs := utils.CreateSignalListener()
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Ex4 | Error initializing env | %s", err)
 	}
 	ex4Config, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Ex4 | Error initializing Config | %s", err)
 	}
 	ex4Handler := NewEx4Handler(ex4Config)
-	log.Infof("Spawned EX4 Handler...")
+	log.Infof("Main - Ex4 | Spawned EX4 Handler")
 	ex4Handler.StartHandler()
 	<-sigs
-	log.Infof("Ending EX4 Handler...")
+	log.Infof("Main - Ex4 | Ending EX4 Handler")
 	ex4Handler.Close()
 
 }

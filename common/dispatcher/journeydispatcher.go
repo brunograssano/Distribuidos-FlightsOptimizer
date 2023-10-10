@@ -44,7 +44,7 @@ func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 	if message.TypeMessage == dataStructures.EOFFlightRows {
 		err := protocol.HandleEOF(message, jd.input, jd.prodToInput, jd.channels)
 		if err != nil {
-			log.Errorf("Error handling EOF: %v", err)
+			log.Errorf("JourneyDispatcher | Error handling EOF | %v", err)
 		}
 		/*for idx, channel := range jd.channels {
 			log.Infof("Sending EOF to channel #%v", idx)
@@ -56,7 +56,7 @@ func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 	} else if message.TypeMessage == dataStructures.FlightRows {
 		jd.dispatchFlightRows(message)
 	} else {
-		log.Warnf("Unknown message received. Skipping it...")
+		log.Warnf("JourneyDispatcher | Warning Message | Unknown message received | Skipping it...")
 	}
 }
 
@@ -76,14 +76,14 @@ func (jd *JourneyDispatcher) dispatchFlightRows(message *dataStructures.Message)
 		bytesToHash = append(bytesToHash, startingAirport...)
 		bytesToHash = append(bytesToHash, destAirport...)
 		hasher := fnv.New32a()
-		hasher.Write(bytesToHash)
+		_, _ = hasher.Write(bytesToHash)
 		hashRes := int(hasher.Sum32())
-		log.Debugf("[DISPATCHER] Deciding where to dispatch. hashRes is: %v; Len of channels is: %v", hashRes, len(jd.channels))
+		log.Debugf("JourneyDispatcher | Deciding where to dispatch. hashRes is: %v; Len of channels is: %v", hashRes, len(jd.channels))
 		resultIndex := hashRes % len(jd.channels)
-		log.Debugf("[DISPATCHER] Dispatching to Node #%v...", resultIndex)
+		log.Debugf("JourneyDispatcher | Dispatching to Node #%v...", resultIndex)
 		err = jd.channels[resultIndex].Send(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}})
 		if err != nil {
-			log.Errorf("Error sending message to queue #%v. Skipping row...", resultIndex)
+			log.Errorf("JourneyDispatcher | Error sending message to queue #%v | %v | Skipping row...", resultIndex, err)
 		}
 	}
 }

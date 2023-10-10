@@ -21,7 +21,7 @@ const minutesInHour = 60
 func CloseFileAndNotifyError(file io.Closer) {
 	err := file.Close()
 	if err != nil {
-		log.Errorf("action: closing_file | status: error | %v", err)
+		log.Errorf("Utils.CloseFileAndNotifyError | action: closing_file | status: error | %v", err)
 	}
 }
 
@@ -29,7 +29,7 @@ func CloseFileAndNotifyError(file io.Closer) {
 func CloseSocketAndNotifyError(s communication.TCPSocketInterface) {
 	err := s.Close()
 	if err != nil {
-		log.Errorf("action: closing_socket | status: error | %v", err)
+		log.Errorf("Utils.CloseSocketAndNotifyError | action: closing_socket | status: error | %v", err)
 	}
 }
 

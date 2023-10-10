@@ -28,41 +28,41 @@ func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer 
 
 func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 	// May need optimization. Mix of memory and disk or only memory...
-	log.Debugf("Writing records to files")
+	log.Debugf("JourneySaver | Writing records to files")
 	for _, dynMap := range dynMaps {
 		stAirport, err := dynMap.GetAsString("startingAirport")
 		if err != nil {
-			log.Errorf("Error getting starting airport, skipping row...")
+			log.Errorf("JourneySaver | Error getting starting airport | %v | Skipping row...", err)
 			continue
 		}
 		destAirport, err := dynMap.GetAsString("destinationAirport")
 		if err != nil {
-			log.Errorf("Error getting destination airport, skipping row...")
+			log.Errorf("JourneySaver | Error getting destination airport | %v | Skipping row...", err)
 			continue
 		}
 		totalFare, err := dynMap.GetAsFloat("totalFare")
 		if err != nil {
-			log.Errorf("Error getting total fare, skipping row...")
+			log.Errorf("JourneySaver | Error getting total fare | %v | Skipping row...", err)
 			continue
 		}
 		journey := fmt.Sprintf("%v-%v", stAirport, destAirport)
 		fileWriter, err := filemanager.NewFileWriter(journey)
 		if err != nil {
-			log.Errorf("Error creating file writer for %v. Skipping row...", journey)
+			log.Errorf("JourneySaver | Error creating file writer for %v | %v | Skipping row...", journey, err)
 			continue
 		}
 		err = fileWriter.WriteLine(fmt.Sprintf("%v\n", totalFare))
 		if err != nil {
-			log.Errorf("Error writing total fare with file writer, skipping row...")
+			log.Errorf("JourneySaver | Error writing total fare with file writer | %v | Skipping row...", err)
 		}
-		log.Debugf("Added price %v to registry of journey: %v", totalFare, journey)
+		log.Debugf("JourneySaver | Added price %v to registry of journey: %v", totalFare, journey)
 		if !slices.Contains(js.filesToRead, journey) {
-			log.Infof("Adding journey: %v to the files that must be read.", journey)
+			log.Infof("JourneySaver | Adding journey: %v to the files that must be read.", journey)
 			js.filesToRead = append(js.filesToRead, journey)
 		}
 		err = fileWriter.FileManager.Close()
 		if err != nil {
-			log.Errorf("Error closing file manager for journey %v...", journey)
+			log.Errorf("JourneySaver | Error closing file manager for journey %v | %v", journey, err)
 		}
 		js.totalPrice += totalFare
 		js.quantities++
@@ -75,15 +75,15 @@ func (js *JourneySaver) readJourneyAsArrays(journeyStr string) ([]float32, error
 	for fileReader.CanRead() {
 		individualPrice, err := strconv.ParseFloat(fileReader.ReadLine(), 32)
 		if err != nil {
-			log.Errorf("Error reading price. Skipping row...")
+			log.Errorf("JourneySaver | Error reading price | %v | Skipping row...", err)
 			continue
 		}
-		log.Debugf("Read price: %v", individualPrice)
+		log.Debugf("JourneySaver | Read price: %v", individualPrice)
 		prices = append(prices, float32(individualPrice))
 	}
 	err = fileReader.FileManager.Close()
 	if err != nil {
-		log.Errorf("Error closing fileReader: %v", journeyStr)
+		log.Errorf("JourneySaver | Error closing fileReader: %v | %v", journeyStr, err)
 		return prices, err
 	}
 	return prices, nil
@@ -101,7 +101,7 @@ func (js *JourneySaver) sendToGeneralAccumulator() error {
 	}
 	err := js.accumProducer.Send(msgToSend)
 	if err != nil {
-		log.Errorf("Error trying to send to general accumulator: %v", err)
+		log.Errorf("JourneySaver | Error trying to send to general accumulator | %v", err)
 		return err
 	}
 	return nil
@@ -142,7 +142,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		log.Infof("JourneySaver | Reading file: %v", fileStr)
 		pricesForJourney, err := js.readJourneyAsArrays(fileStr)
 		if err != nil {
-			log.Errorf("JourneySaver | Error reading file: %v. Skipping file...", err)
+			log.Errorf("JourneySaver | Error reading file | %v | Skipping file...", err)
 		}
 		filteredPrices := js.filterGreaterThanAverage(pricesForJourney, finalAvg)
 		log.Infof("JourneySaver | Filtered prices. Original len: %v ; Filtered len: %v", len(pricesForJourney), len(filteredPrices))

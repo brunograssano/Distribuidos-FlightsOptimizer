@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -49,7 +48,7 @@ func initEnv() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("DataProcesssorConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -89,11 +88,11 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 
 	goroutinesCount := env.GetInt("processor.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
-		log.Warnf("Not a valid value '%v' for goroutines count, using default", goroutinesCount)
+		log.Warnf("DataProcessorConfig | Warning Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
 		goroutinesCount = defaultGoroutines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueNameEx123: %v | outputQueueNameEx4: %v | goroutinesCount: %v",
+	log.Infof("DataProcessorConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueNameEx123: %v | outputQueueNameEx4: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

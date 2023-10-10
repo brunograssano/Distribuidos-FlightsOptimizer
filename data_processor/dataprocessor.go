@@ -54,13 +54,13 @@ func (d *DataProcessor) processRows(rows []*dataStructures.DynamicMap) ([]*dataS
 	for _, cols := range rows {
 		cols, err := d.processEx123Row(cols)
 		if err != nil {
-			log.Errorf("action: reduce_columns_ex123 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
+			log.Errorf("DataProcesssor %v | action: reduce_columns_ex123 | result: fail | skipping row | error: %v", d.processorId, err)
 			continue
 		}
 		ex123Rows = append(ex123Rows, cols)
 		cols, err = d.processEx4Row(cols)
 		if err != nil {
-			log.Errorf("action: reduce_columns_ex4 | processor_id: %v | result: fail | skipping row | error: %v", d.processorId, err)
+			log.Errorf("DataProcessor %v | action: reduce_columns_ex4 | result: fail | skipping row | error: %v", d.processorId, err)
 			continue
 		}
 		ex4Rows = append(ex4Rows, cols)
@@ -70,24 +70,24 @@ func (d *DataProcessor) processRows(rows []*dataStructures.DynamicMap) ([]*dataS
 
 // ProcessData General loop that listens to the queue, preprocess the data, and passes it to the next steps
 func (d *DataProcessor) ProcessData() {
-	defer log.Infof("Closing goroutine %v", d.processorId)
+	defer log.Infof("DataProcessor %v | Closing goroutine...", d.processorId)
 	for {
 		msg, ok := d.consumer.Pop()
 		if !ok {
 			return
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("Received EOF from server. Now finishing...")
+			log.Infof("DataProcessor %v | Received EOF from server. Now finishing...", d.processorId)
 			_ = protocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
 			return
 		} else if msg.TypeMessage == dataStructures.FlightRows {
-			log.Infof("Received Batch of Rows. Now processing...\n")
+			log.Infof("DataProcessor %v | Received Batch of Rows. Now processing...", d.processorId)
 			ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
-			log.Infof("Sending processed rows to next nodes...\n")
+			log.Infof("DataProcessor %v | Sending processed rows to next nodes...", d.processorId)
 			d.sendToEx123(ex123Rows)
 			d.sendToEx4(ex4Rows)
 		} else {
-			log.Warnf("Received unknown type of message. Skipping it...")
+			log.Warnf("DataProcessor %v | Warning Messsage | Received unknown type of message. Skipping it...", d.processorId)
 		}
 	}
 }
@@ -96,9 +96,9 @@ func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap) {
 	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex4Rows}
 	err := d.producersEx4.Send(msg)
 	if err != nil {
-		log.Errorf("Error trying to send to exercise 4 the serialized row")
+		log.Errorf("DataProcessor %v | Error trying to send to exercise 4 the serialized row | %v", d.processorId, err)
 	}
-	log.Infof("Ending send of batch for Ex4...")
+	log.Infof("DataProcessor %v | Ending send of batch for Ex4...", d.processorId)
 }
 
 func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
@@ -106,10 +106,10 @@ func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap) {
 	for _, producer := range d.producersEx123 {
 		err := producer.Send(msg)
 		if err != nil {
-			log.Errorf("Error trying to send to exercises 1,2,3 the serialized row")
+			log.Errorf("DataProcessor %v | Error trying to send to exercises 1,2,3 the serialized row | %v", d.processorId, err)
 		}
 	}
-	log.Infof("Ending send of batch for Ex 1,2,3...")
+	log.Infof("DataProcessor %v | Ending send of batch for Ex 1,2,3...", d.processorId)
 
 }
 

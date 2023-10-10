@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -53,7 +52,7 @@ func InitEnv() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("Saver3Config | DataProcesssorConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -92,17 +91,17 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 
 	getterBatchLines := env.GetUint("getter.batch.lines")
 	if getterBatchLines > maxBatchLines || getterBatchLines == 0 {
-		log.Errorf("invalid getter batch lines. Setting to default")
+		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
 		getterBatchLines = defaultBatchLines
 	}
 
 	internalSaversCount := env.GetUint("saver.count")
 	if internalSaversCount > maxSavers || internalSaversCount == 0 {
-		log.Errorf("invalid getter batch lines. Setting to default")
+		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
 		internalSaversCount = defaultSavers
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
+	log.Infof("Saver3Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

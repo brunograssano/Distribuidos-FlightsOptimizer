@@ -51,14 +51,14 @@ func (fe *FilterStopovers) FilterStopovers() {
 			log.Infof("FilterStopovers %v | Received EOF. Now handling...", fe.filterId)
 			err := protocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
 			if err != nil {
-				log.Errorf("FilterStopovers %v | Error handling EOF: %v", fe.filterId, err)
+				log.Errorf("FilterStopovers %v | Error handling EOF | %v", fe.filterId, err)
 			}
 			break
 		} else if msg.TypeMessage == dataStructures.FlightRows {
 			log.Infof("FilterStopovers %v | Received flight rows. Now filtering...", fe.filterId)
 			fe.handleFlightRows(msg)
 		} else {
-			log.Warnf("FilterStopovers %v | Unknonw message type received. Skipping it...", fe.filterId)
+			log.Warnf("FilterStopovers %v | Warn Message | Unknonw message type received. Skipping it...", fe.filterId)
 		}
 	}
 }
@@ -68,21 +68,21 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 	for _, row := range msg.DynMaps {
 		passesFilter, err := fe.filter.GreaterOrEquals(row, MinStopovers, utils.TotalStopovers)
 		if err != nil {
-			log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fe.filterId, err)
+			log.Errorf("FilterStopovers %v | action: filter_stopovers | result: fail | skipping row | error: %v", fe.filterId, err)
 		}
 		if passesFilter {
 			filteredRows = append(filteredRows, row)
 		}
 	}
 	if len(filteredRows) > 0 {
-		log.Infof("Sending filtered rows to next nodes. Input length: %v, output length: %v", len(msg.DynMaps), len(filteredRows))
+		log.Infof("FilterStopovers %v | Sending filtered rows to next nodes. Input length: %v, output length: %v", fe.filterId, len(msg.DynMaps), len(filteredRows))
 		for _, producer := range fe.producers {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,
 				DynMaps:     filteredRows,
 			})
 			if err != nil {
-				log.Errorf("Error trying to send message that passed filter...")
+				log.Errorf("FilterStopovers %v | Error trying to send message that passed filter...", fe.filterId)
 			}
 		}
 	}

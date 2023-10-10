@@ -34,10 +34,10 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 
 func (queue *Consumer) Pop() ([]byte, bool) {
 	msg, ok := <-queue.messageChannel
-	log.Debugf("Sending ACK to RabbitMQ.")
+	log.Debugf("Consumer | Sending ACK to RabbitMQ.")
 	err := msg.Ack(false)
 	if err != nil {
-		log.Errorf("Error sending ACK to RabbitMQ.")
+		log.Errorf("Consumer | Error sending ACK to RabbitMQ.")
 		return msg.Body, ok
 	}
 	return msg.Body, ok

@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -35,20 +34,20 @@ func InitEnv() (*viper.Viper, error) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// Add env variables supported
-	v.BindEnv("id")
-	v.BindEnv("log", "level")
-	v.BindEnv("rabbitmq", "address")
-	v.BindEnv("rabbitmq", "queue", "input")
-	v.BindEnv("saver", "output")
-	v.BindEnv("getter", "address")
-	v.BindEnv("getter", "batch", "lines")
+	_ = v.BindEnv("id")
+	_ = v.BindEnv("log", "level")
+	_ = v.BindEnv("rabbitmq", "address")
+	_ = v.BindEnv("rabbitmq", "queue", "input")
+	_ = v.BindEnv("saver", "output")
+	_ = v.BindEnv("getter", "address")
+	_ = v.BindEnv("getter", "batch", "lines")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables, so we shouldn't
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("SaverConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -87,11 +86,11 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 
 	getterBatchLines := env.GetUint("getter.batch.lines")
 	if getterBatchLines > maxBatchLines || getterBatchLines == 0 {
-		log.Errorf("invalid getter batch lines. Setting to default")
+		log.Errorf("SaverConfig | invalid getter batch lines. Setting to default")
 		getterBatchLines = defaultBatchLines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
+	log.Infof("SaverConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

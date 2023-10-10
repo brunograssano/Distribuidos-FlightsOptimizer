@@ -12,12 +12,12 @@ func main() {
 
 	env, err := initEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DataProcessor | Error initializing env | %s", err)
 	}
 
 	processorConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DataProcessor | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(processorConfig.RabbitAddress)

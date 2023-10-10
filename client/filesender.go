@@ -34,7 +34,7 @@ func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHand
 			msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows}
 			err = conn.Write(msg)
 			if err != nil {
-				log.Errorf("%v", err)
+				log.Errorf("FileSend | Error trying to send file | %v", err)
 				return err
 			}
 			addedToMsg = 0
@@ -42,7 +42,7 @@ func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHand
 		}
 		dynMap, err := parser.LineToDynMap(line)
 		if err != nil {
-			log.Errorf("Skipping line: %v", err)
+			log.Errorf("FileSend | %v | Skipping line", err)
 			continue
 		}
 		rows = append(rows, dynMap)
@@ -50,7 +50,7 @@ func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHand
 	}
 	err = reader.Err()
 	if err != nil {
-		log.Errorf("%v", err)
+		log.Errorf("FileSend | %v", err)
 		return err
 	}
 	if addedToMsg > 0 {

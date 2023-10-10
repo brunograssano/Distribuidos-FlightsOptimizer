@@ -10,12 +10,12 @@ func main() {
 	sigs := utils.CreateSignalListener()
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Saver Ex3 | Error initializing env | %s", err)
 	}
 
 	saverConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Saver Ex3 | Error initializing config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
 

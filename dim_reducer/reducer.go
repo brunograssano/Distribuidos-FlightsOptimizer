@@ -36,7 +36,7 @@ func (r *Reducer) ReduceDims() {
 	for {
 		msg, ok := r.consumer.Pop()
 		if !ok {
-			log.Infof("Closing goroutine %v", r.reducerId)
+			log.Infof("DimReducer %v | Closing goroutine...", r.reducerId)
 			return
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {

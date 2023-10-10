@@ -77,9 +77,9 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 
 // StartHandler Starts the exercise 4 services as goroutines
 func (ex4h *Ex4Handler) StartHandler() {
-	log.Debugf("Number of savers is: %v", len(ex4h.savers))
+	log.Debugf("Ex4Handler | Number of savers is: %v", len(ex4h.savers))
 	for idx, saver := range ex4h.savers {
-		log.Infof("Spawning saver #%v", idx+1)
+		log.Infof("Ex4Handler | Spawning saver #%v", idx+1)
 		go saver.SavePricesForJourneys()
 	}
 	log.Infof("Ex4Handler | Spawning General Accumulator")
@@ -97,7 +97,7 @@ func (ex4h *Ex4Handler) StartHandler() {
 func (ex4h *Ex4Handler) Close() {
 	ex4h.qMiddleware.Close()
 	for idx, channel := range ex4h.channels {
-		log.Infof("Closing channel #%v", idx)
+		log.Infof("Ex4Handler | Closing channel #%v", idx)
 		close(channel)
 	}
 }

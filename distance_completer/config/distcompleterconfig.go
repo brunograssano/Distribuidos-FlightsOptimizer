@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -46,7 +45,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("queues", "airports", "exchange", "type")
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("DistCompleterConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -94,7 +93,7 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 
 	goroutinesCount := env.GetInt("completer.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
-		log.Warnf("Not a valid value '%v' for goroutines count, using default", goroutinesCount)
+		log.Warnf("DistCompleterConfig | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
 		goroutinesCount = defaultGoroutines
 	}
 
@@ -108,7 +107,7 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		return nil, errors.New("missing filename")
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputQueueAirportName: %v | inputQueueFlightName: %v | outputQueueNames: %v | goroutinesCount: %v | airportsFilename: %v | exchangeName: %v | routingKey: %v",
+	log.Infof("DistCompleterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueAirportName: %v | inputQueueFlightName: %v | outputQueueNames: %v | goroutinesCount: %v | airportsFilename: %v | exchangeName: %v | routingKey: %v",
 		id,
 		env.GetString("log.level"),
 		inputQueueAirportsName,

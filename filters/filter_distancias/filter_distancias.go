@@ -41,21 +41,21 @@ func (fd *FilterDistances) FilterDistances() {
 	for {
 		msgStruct, ok := fd.consumer.Pop()
 		if !ok {
-			log.Infof("Closing FilterStopovers Goroutine...")
+			log.Infof("FilterDistances %v | Closing Goroutine...", fd.filterId)
 			break
 		}
 		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("Received EOF. Handling...")
+			log.Infof("FilterDistances %v | Received EOF. Handling...", fd.filterId)
 			err := protocol.HandleEOF(msgStruct, fd.consumer, fd.prodToCons, fd.producers)
 			if err != nil {
-				log.Errorf("Error handling EOF: %v", err)
+				log.Errorf("FilterDistances %v | Error handling EOF | %v", fd.filterId, err)
 			}
 			break
 		} else if msgStruct.TypeMessage == dataStructures.FlightRows {
-			log.Infof("Received FlightRows. Filtering...")
+			log.Infof("FilterDistances %v | Received FlightRows. Filtering...", fd.filterId)
 			fd.handleFlightRows(msgStruct)
 		} else {
-			log.Warnf("Received unknown message type. Skipping...")
+			log.Warnf("FilterDistances %v | Received unknown message type | Skipping...", fd.filterId)
 		}
 	}
 }
@@ -65,12 +65,12 @@ func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
 	for _, row := range msgStruct.DynMaps {
 		directDistance, errCast := row.GetAsFloat("directDistance")
 		if errCast != nil {
-			log.Errorf("action: filter_stopovers | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, errCast)
+			log.Errorf("FilterDistances %v | action: filter_distances | result: fail | skipping row | error: %v", fd.filterId, errCast)
 			continue
 		}
 		passesFilter, err := fd.filter.Greater(row, 4*directDistance, "totalTravelDistance")
 		if err != nil {
-			log.Errorf("action: filter_distances | filter_id: %v | result: fail | skipping row | error: %v", fd.filterId, err)
+			log.Errorf("FilterDistances %v | action: filter_distances | result: fail | skipping row | error: %v", fd.filterId, err)
 			continue
 		}
 		if passesFilter {
@@ -78,14 +78,14 @@ func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
 		}
 	}
 	if len(filteredRows) > 0 {
-		log.Infof("Sending filtered rows to next nodes. Input length: %v, output length: %v", len(msgStruct.DynMaps), len(filteredRows))
+		log.Infof("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msgStruct.DynMaps), len(filteredRows))
 		for _, producer := range fd.producers {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,
 				DynMaps:     filteredRows,
 			})
 			if err != nil {
-				log.Errorf("Error trying to send message that passed filter...")
+				log.Errorf("FilterDistances %v | Error trying to send message that passed filter | %v", fd.filterId, err)
 			}
 		}
 	}

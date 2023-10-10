@@ -37,7 +37,7 @@ func DecideWhichRowsToKeep(
 	if rowsKept[1] == nil && rowsKept[0] != nil {
 		return [2]*dataStructures.DynamicMap{rowsKept[0], flightRow}
 	} else if rowsKept[1] == nil && rowsKept[0] == nil {
-		log.Warnf("[SAVER %v] Journey should not already exist as both parts are nil. Replacing index 0 anyways...", saverId)
+		log.Warnf("Saver %v | Journey should not already exist as both parts are nil | Replacing index 0 anyways...", saverId)
 		return [2]*dataStructures.DynamicMap{flightRow, nil}
 	}
 	//Create an array with the rows to facilitate indexation at last step
@@ -49,12 +49,12 @@ func DecideWhichRowsToKeep(
 
 	travelDurIdx0, err := rowsKept[0].GetAsInt(utils.ConvertedTravelDuration)
 	if err != nil {
-		log.Errorf("[SAVER %v] Error trying to get travelDuration of index 0 in compare. Journey map was: %v", saverId, rowsKept)
+		log.Errorf("Saver %v | Error trying to get travelDuration of index 0 in compare | Journey map was: %v | %v", saverId, rowsKept, err)
 		return [2]*dataStructures.DynamicMap{rowsKept[0], rowsKept[1]}
 	}
 	travelDurIdx1, err := rowsKept[1].GetAsInt(utils.ConvertedTravelDuration)
 	if err != nil {
-		log.Errorf("[SAVER %v] Error trying to get travelDuration of index 1 in compare. Journey map was: %v", saverId, rowsKept)
+		log.Errorf("Saver %v | Error trying to get travelDuration of index 1 in compare | Journey map was: %v | %v", saverId, rowsKept, err)
 		return [2]*dataStructures.DynamicMap{rowsKept[0], rowsKept[1]}
 	}
 	compareTravelDur, err := flightRow.GetAsInt(utils.ConvertedTravelDuration)

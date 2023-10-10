@@ -16,12 +16,12 @@ func main() {
 
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Client | Error initializing env | %s", err)
 	}
 
 	clientConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Client | Error initializing config | %s", err)
 	}
 	client := NewClient(clientConfig)
 	go handleSignals(sigs, client)

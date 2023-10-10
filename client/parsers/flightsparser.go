@@ -44,7 +44,7 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 	if fields[totalTravelDistancePos] != "" {
 		totalTravelDistance, err = strconv.ParseFloat(fields[totalTravelDistancePos], 32)
 		if err != nil {
-			log.Warnf("Error converting totalTravelDistance, will be sent as zero")
+			log.Warnf("FlightsParser | Error converting totalTravelDistance | %v | Will be sent as zero", err)
 		}
 	}
 

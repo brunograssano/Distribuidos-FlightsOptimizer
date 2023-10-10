@@ -26,7 +26,7 @@ func NewExchangeProducer(channel *amqp.Channel, nameEx string, routingKey string
 		nil,
 	)
 	FailOnError(err, fmt.Sprintf("Failed to declare the Exchange %v in RabbitMQ", nameEx))
-	log.Infof("Created new exchange %v in RabbitMQ", nameEx)
+	log.Infof("ExchangeProducer | Created new exchange %v in RabbitMQ", nameEx)
 	return &ExchangeProducer{
 		rabbitMQChannel: channel,
 		name:            nameEx,
@@ -49,7 +49,7 @@ func (exProd *ExchangeProducer) Send(data []byte) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to Publish content into exchange: %v", err)
+		return fmt.Errorf("failed to publish content into exchange: %v", err)
 	}
 	return nil
 }

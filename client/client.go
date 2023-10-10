@@ -17,9 +17,9 @@ type Client struct {
 func NewClient(c *ClientConfig) *Client {
 	socket, err := communication.NewActiveTCPSocket(c.ServerAddress)
 	if err != nil {
-		log.Fatalf("action: connect | result: fail | client_id: %v | error: %v", c.ID, err)
+		log.Fatalf("Client | action: connect | result: fail | client_id: %v | error: %v", c.ID, err)
 	}
-	log.Infof("Connected to server")
+	log.Infof("Client | Connected to server")
 	return &Client{conn: protocol.NewSocketProtocolHandler(socket), conf: c}
 }
 
@@ -29,13 +29,13 @@ func (c *Client) StartClientLoop() {
 
 	defer c.Close()
 
-	log.Infof("Sending airports file...")
+	log.Infof("Client | Sending airports file...")
 	err := SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.AirportsParser{})
 	if err != nil {
 		return
 	}
 
-	log.Infof("Sending flight rows file...")
+	log.Infof("Client | Sending flight rows file...")
 	err = SendFile(c.conf.InputFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
 	if err != nil {
 		return

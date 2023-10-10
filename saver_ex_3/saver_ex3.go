@@ -35,7 +35,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	var outputFileNames []string
 	finishSignal := make(chan bool)
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
-	log.Infof("Creating %v savers...", int(c.InternalSaversCount))
+	log.Infof("SaverEx3 | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		internalSaverChannel := make(chan *dataStructures.Message)
 		channels = append(channels, internalSaverChannel)
@@ -47,11 +47,11 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 		))
 		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v.csv", c.OutputFilePrefix, i))
 		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalSaverChannel))
-		log.Infof("Created Saver #%v correctly...", i)
+		log.Infof("SaverEx3 | Created Saver #%v correctly...", i)
 	}
 
 	// Creation of the dispatcher to the JourneySavers
-	log.Infof("Creating dispatcher...")
+	log.Infof("SaverEx3 | Creating dispatcher...")
 	jd := []*dispatcher.JourneyDispatcher{
 		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
 		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
@@ -62,7 +62,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
 	getter, err := getters.NewGetter(getterConf, canSend)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("SaverEx3 | Error initializing Getter | %s", err)
 	}
 
 	return &SaverEx3{
@@ -83,7 +83,7 @@ func (se3 *SaverEx3) handleFinishSignals() {
 		<-se3.finishedSignals
 		quantityFinished++
 		if quantityFinished == se3.c.InternalSaversCount {
-			log.Infof("All savers finished. Notifying getter that it is able to send results...")
+			log.Infof("SaverEx3 | All savers finished | Notifying getter that it is able to send results...")
 			se3.canSendGetter <- true
 			return
 		}
@@ -92,28 +92,28 @@ func (se3 *SaverEx3) handleFinishSignals() {
 
 // StartHandler Starts the exercise 4 services as goroutines
 func (se3 *SaverEx3) StartHandler() {
-	log.Debugf("Number of savers is: %v", len(se3.savers))
+	log.Debugf("SaverEx3 | Number of savers: %v", len(se3.savers))
 	for idx, saver := range se3.savers {
-		log.Infof("Spawning saver #%v", idx+1)
+		log.Infof("SaverEx3 | Spawning saver #%v", idx+1)
 		go saver.SaveData()
 	}
-	log.Infof("Spawning Dispatcher...")
+	log.Infof("SaverEx3 | Spawning Dispatcher...")
 	for _, jd := range se3.journeyDispatcher {
 		go jd.DispatchLoop()
 	}
 
-	log.Infof("Spawning Getter...")
+	log.Infof("SaverEx3 | Spawning Getter...")
 	go se3.getter.ReturnResults()
-	log.Infof("Spawning task to handle when all savers finish...")
+	log.Infof("SaverEx3 | Spawning task to handle when all savers finish...")
 	go se3.handleFinishSignals()
 }
 
 // Close Closes the handler of the exercise 4
 func (se3 *SaverEx3) Close() {
 	for idx, channel := range se3.channels {
-		log.Infof("Closing channel #%v", idx)
+		log.Infof("SaverEx3 | Closing channel #%v", idx)
 		close(channel)
 	}
-	log.Infof("Closing getter")
+	log.Infof("SaverEx3 | Closing getter")
 	se3.getter.Close()
 }

@@ -2,7 +2,6 @@ package filters_config
 
 import (
 	"errors"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -35,7 +34,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("filter", "goroutines")
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("FilterConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -69,11 +68,11 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 
 	goroutinesCount := env.GetInt("filter.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
-		log.Warnf("Not a valid value '%v' for goroutines count, using default", goroutinesCount)
+		log.Warnf("FilterConfig | Warn Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
 		goroutinesCount = defaultGoroutines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | goroutinesCount: %v",
+	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		inputQueueName,
