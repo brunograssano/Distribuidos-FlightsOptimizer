@@ -45,6 +45,10 @@ func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 			log.Errorf("JourneySaver | Error getting total fare | %v | Skipping row...", err)
 			continue
 		}
+		if totalFare <= 0 {
+			log.Errorf("JourneySaver | Total fare <= 0 | Skipping row...")
+			continue
+		}
 		journey := fmt.Sprintf("%v-%v", stAirport, destAirport)
 		fileWriter, err := filemanager.NewFileWriter(journey)
 		if err != nil {
@@ -143,9 +147,14 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		pricesForJourney, err := js.readJourneyAsArrays(fileStr)
 		if err != nil {
 			log.Errorf("JourneySaver | Error reading file | %v | Skipping file...", err)
+			continue
 		}
 		filteredPrices := js.filterGreaterThanAverage(pricesForJourney, finalAvg)
 		log.Infof("JourneySaver | Filtered prices. Original len: %v ; Filtered len: %v", len(pricesForJourney), len(filteredPrices))
+		if len(filteredPrices) == 0 {
+			log.Infof("JourneySaver | Filtered Prices Length is 0 | Skipping...")
+			continue
+		}
 		journeyAverage, journeyMax := js.getMaxAndAverage(filteredPrices)
 		log.Infof("JourneySaver | Average: %v, Maximum: %v", journeyAverage, journeyMax)
 
@@ -161,8 +170,8 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		log.Infof("JourneySaver | Sending max and avg to next step...")
 		err = js.avgAndMaxProducer.Send(msg)
 		if err != nil {
-			log.Errorf("JourneySaver | Error sending to saver the journey %v | %v", fileStr, err)
-			return
+			log.Errorf("JourneySaver | Error sending to saver the journey %v | %v | Skipping...", fileStr, err)
+			continue
 		}
 	}
 	err := js.avgAndMaxProducer.Send(&dataStructure.Message{TypeMessage: dataStructure.EOFFlightRows})
