@@ -11,7 +11,7 @@ import (
 // Ex4Handler Struct containing the services of the exercise 4
 type Ex4Handler struct {
 	c                 *Ex4Config
-	journeyDispatcher *dispatcher.JourneyDispatcher
+	journeyDispatcher []*dispatcher.JourneyDispatcher
 	savers            []*JourneySaver
 	accumulator       *AvgCalculator
 	qMiddleware       *middleware.QueueMiddleware
@@ -23,8 +23,6 @@ type Ex4Handler struct {
 func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
-	// We create the input queue to the EX4 service
-	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	// We create the output queue to the saver of the end results
 	outputQueue := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 
@@ -58,7 +56,13 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 
 	// Creation of the dispatcher to the JourneySavers
 	log.Infof("Ex4Handler | Creating dispatcher...")
-	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
+	var jd []*dispatcher.JourneyDispatcher
+	for i := 0; i < 6; i++ {
+		// We create the input queue to the EX4 service
+		inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+		prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		jd = append(jd, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
+	}
 
 	return &Ex4Handler{
 		c:                 c,
@@ -84,7 +88,9 @@ func (ex4h *Ex4Handler) StartHandler() {
 	go ex4h.journeySink.HandleJourneys()
 
 	log.Infof("Ex4Handler | Spawning Dispatcher")
-	go ex4h.journeyDispatcher.DispatchLoop()
+	for _, jd := range ex4h.journeyDispatcher {
+		go jd.DispatchLoop()
+	}
 }
 
 // Close Closes the handler of the exercise 4

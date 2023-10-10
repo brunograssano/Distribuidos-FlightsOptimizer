@@ -12,7 +12,7 @@ import (
 
 type SaverEx3 struct {
 	c                 *SaverConfig
-	journeyDispatcher *dispatcher.JourneyDispatcher
+	journeyDispatcher []*dispatcher.JourneyDispatcher
 	savers            []*SaverForEx3
 	getter            *getters.Getter
 	qMiddleware       *middleware.QueueMiddleware
@@ -28,6 +28,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 	// We create the input queue to the EX4 service
 	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
@@ -51,7 +52,12 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 
 	// Creation of the dispatcher to the JourneySavers
 	log.Infof("Creating dispatcher...")
-	jd := dispatcher.NewJourneyDispatcher(inputQueue, toInternalSaversChannels)
+	jd := []*dispatcher.JourneyDispatcher{
+		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
 	getter, err := getters.NewGetter(getterConf, canSend)
@@ -92,7 +98,10 @@ func (se3 *SaverEx3) StartHandler() {
 		go saver.SaveData()
 	}
 	log.Infof("Spawning Dispatcher...")
-	go se3.journeyDispatcher.DispatchLoop()
+	for _, jd := range se3.journeyDispatcher {
+		go jd.DispatchLoop()
+	}
+
 	log.Infof("Spawning Getter...")
 	go se3.getter.ReturnResults()
 	log.Infof("Spawning task to handle when all savers finish...")
