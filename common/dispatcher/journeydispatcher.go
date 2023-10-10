@@ -1,26 +1,26 @@
 package dispatcher
 
 import (
-	"crypto/sha256"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"math"
-	"math/big"
+	"hash/fnv"
 )
 
 // JourneyDispatcher Struct that dispatches journey messages
 type JourneyDispatcher struct {
-	channels []protocol.ProducerProtocolInterface
-	input    protocol.ConsumerProtocolInterface
+	channels    []protocol.ProducerProtocolInterface
+	input       protocol.ConsumerProtocolInterface
+	prodToInput protocol.ProducerProtocolInterface
 }
 
 // NewJourneyDispatcher Creates a new dispatcher
-func NewJourneyDispatcher(input protocol.ConsumerProtocolInterface, outputChannels []protocol.ProducerProtocolInterface) *JourneyDispatcher {
+func NewJourneyDispatcher(input protocol.ConsumerProtocolInterface, prodToInput protocol.ProducerProtocolInterface, outputChannels []protocol.ProducerProtocolInterface) *JourneyDispatcher {
 	return &JourneyDispatcher{
-		input:    input,
-		channels: outputChannels,
+		input:       input,
+		channels:    outputChannels,
+		prodToInput: prodToInput,
 	}
 }
 
@@ -42,13 +42,17 @@ func (jd *JourneyDispatcher) DispatchLoop() {
 // on the starting airport and destination airport on each row of the message
 func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 	if message.TypeMessage == dataStructures.EOFFlightRows {
-		for idx, channel := range jd.channels {
+		err := protocol.HandleEOF(message, jd.input, jd.prodToInput, jd.channels)
+		if err != nil {
+			log.Errorf("Error handling EOF: %v", err)
+		}
+		/*for idx, channel := range jd.channels {
 			log.Infof("Sending EOF to channel #%v", idx)
 			err := channel.Send(message)
 			if err != nil {
 				log.Errorf("Error sending EOF to channel #%v: %v", idx, err)
 			}
-		}
+		}*/
 	} else if message.TypeMessage == dataStructures.FlightRows {
 		jd.dispatchFlightRows(message)
 	} else {
@@ -71,13 +75,9 @@ func (jd *JourneyDispatcher) dispatchFlightRows(message *dataStructures.Message)
 		var bytesToHash []byte
 		bytesToHash = append(bytesToHash, startingAirport...)
 		bytesToHash = append(bytesToHash, destAirport...)
-
-		hasher := sha256.New()
+		hasher := fnv.New32a()
 		hasher.Write(bytesToHash)
-		hashResult := hasher.Sum(nil)
-		hashInt := new(big.Int)
-		hashInt.SetBytes(hashResult)
-		hashRes := int(math.Abs(float64(hashInt.Int64())))
+		hashRes := int(hasher.Sum32())
 		log.Debugf("[DISPATCHER] Deciding where to dispatch. hashRes is: %v; Len of channels is: %v", hashRes, len(jd.channels))
 		resultIndex := hashRes % len(jd.channels)
 		log.Debugf("[DISPATCHER] Dispatching to Node #%v...", resultIndex)
