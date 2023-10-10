@@ -192,7 +192,7 @@ func (js *JourneySaver) SavePricesForJourneys() {
 		} else if msg.TypeMessage == dataStructure.FlightRows {
 			log.Debugf("JourneySaver | Received flight row. Now saving...")
 			js.saveRowsInFiles(msg.DynMaps)
-		} else if msg.TypeMessage == dataStructure.FinalAvg {
+		} else if msg.TypeMessage == dataStructure.FinalAvgMsg {
 			finalAvg, err := msg.DynMaps[0].GetAsFloat("finalAvg")
 			if err != nil {
 				log.Errorf("JourneySaver | Error getting finalAvg")

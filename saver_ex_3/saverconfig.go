@@ -2,14 +2,14 @@ package main
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
-const maxBatchLines = 1500
-const defaultBatchLines = 300
 const maxSavers = 30
 const defaultSavers = 6
 
@@ -90,15 +90,15 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 	}
 
 	getterBatchLines := env.GetUint("getter.batch.lines")
-	if getterBatchLines > maxBatchLines || getterBatchLines == 0 {
+	if getterBatchLines > utils.MaxBatchLines || getterBatchLines == 0 {
 		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
-		getterBatchLines = defaultBatchLines
+		getterBatchLines = utils.DefaultBatchLines
 	}
 
 	internalSaversCount := env.GetUint("saver.count")
-	if internalSaversCount > maxSavers || internalSaversCount == 0 {
+	if internalSaversCount > utils.MaxGoroutines || internalSaversCount == 0 {
 		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
-		internalSaversCount = defaultSavers
+		internalSaversCount = utils.DefaultGoroutines
 	}
 
 	log.Infof("Saver3Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",

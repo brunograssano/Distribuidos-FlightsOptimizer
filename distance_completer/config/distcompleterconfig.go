@@ -2,10 +2,12 @@ package config
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 type CompleterConfig struct {
@@ -92,9 +94,9 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 	}
 
 	goroutinesCount := env.GetInt("completer.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("DistCompleterConfig | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
-		goroutinesCount = defaultGoroutines
+		goroutinesCount = utils.DefaultGoroutines
 	}
 
 	exchangeType := env.GetString("queues.airports.exchange.type")

@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 // Ex4Config The configuration of the application
@@ -71,9 +73,9 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 	}
 
 	internalSaversCount := env.GetUint("internal.savers.count")
-	if internalSaversCount <= 0 || internalSaversCount > maxSaversCount {
+	if internalSaversCount <= 0 || internalSaversCount > utils.MaxGoroutines {
 		log.Warnf("Ex4Config | Not a valid value '%v' for internal savers count, using default", internalSaversCount)
-		internalSaversCount = defaultSaversCount
+		internalSaversCount = utils.DefaultGoroutines
 	}
 
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {

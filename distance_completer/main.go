@@ -1,7 +1,7 @@
 package main
 
 import (
-	config "distance_completer/config"
+	"distance_completer/config"
 	"distance_completer/controllers"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"

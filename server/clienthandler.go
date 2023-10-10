@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -131,9 +132,9 @@ func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message
 
 func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) error {
 	dynMap := data_structures.NewDynamicMap(make(map[string][]byte))
-	dynMap.AddColumn("prevSent", ch.serializer.SerializeUint(uint32(ch.rowsSent)))
-	dynMap.AddColumn("localSent", ch.serializer.SerializeUint(uint32(0)))
-	dynMap.AddColumn("localReceived", ch.serializer.SerializeUint(uint32(0)))
+	dynMap.AddColumn(utils.PrevSent, ch.serializer.SerializeUint(uint32(ch.rowsSent)))
+	dynMap.AddColumn(utils.LocalSent, ch.serializer.SerializeUint(uint32(0)))
+	dynMap.AddColumn(utils.LocalReceived, ch.serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
 	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
 	return ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))

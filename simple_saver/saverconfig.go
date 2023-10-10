@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 // SaverConfig The configuration of the application
@@ -17,9 +19,6 @@ type SaverConfig struct {
 	GetterAddress    string
 	GetterBatchLines uint
 }
-
-const maxBatchLines = 1500
-const defaultBatchLines = 300
 
 // InitEnv Initializes the configuration properties from a config file and environment
 func InitEnv() (*viper.Viper, error) {
@@ -85,9 +84,9 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 	}
 
 	getterBatchLines := env.GetUint("getter.batch.lines")
-	if getterBatchLines > maxBatchLines || getterBatchLines == 0 {
+	if getterBatchLines > utils.MaxBatchLines || getterBatchLines == 0 {
 		log.Errorf("SaverConfig | invalid getter batch lines. Setting to default")
-		getterBatchLines = defaultBatchLines
+		getterBatchLines = utils.DefaultBatchLines
 	}
 
 	log.Infof("SaverConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",

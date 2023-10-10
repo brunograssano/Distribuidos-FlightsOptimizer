@@ -2,10 +2,12 @@ package filters_config
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 type FilterConfig struct {
@@ -15,10 +17,6 @@ type FilterConfig struct {
 	GoroutinesCount  int
 	RabbitAddress    string
 }
-
-const ValueListSeparator string = ","
-const maxGoroutines int = 32
-const defaultGoroutines int = 4
 
 func InitEnv() (*viper.Viper, error) {
 	v := viper.New()
@@ -59,7 +57,7 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	if outputQueueNames == "" {
 		return nil, errors.New("missing output queue")
 	}
-	outputQueueNamesArray := strings.Split(outputQueueNames, ValueListSeparator)
+	outputQueueNamesArray := strings.Split(outputQueueNames, utils.CommaSeparator)
 
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
@@ -67,9 +65,9 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	}
 
 	goroutinesCount := env.GetInt("filter.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("FilterConfig | Warn Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
-		goroutinesCount = defaultGoroutines
+		goroutinesCount = utils.DefaultGoroutines
 	}
 
 	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | goroutinesCount: %v",

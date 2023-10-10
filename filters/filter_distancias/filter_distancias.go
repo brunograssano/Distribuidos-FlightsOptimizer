@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,12 +64,12 @@ func (fd *FilterDistances) FilterDistances() {
 func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
 	var filteredRows []*dataStructures.DynamicMap
 	for _, row := range msgStruct.DynMaps {
-		directDistance, errCast := row.GetAsFloat("directDistance")
+		directDistance, errCast := row.GetAsFloat(utils.DirectDistance)
 		if errCast != nil {
 			log.Errorf("FilterDistances %v | action: filter_distances | result: fail | skipping row | error: %v", fd.filterId, errCast)
 			continue
 		}
-		passesFilter, err := fd.filter.Greater(row, 4*directDistance, "totalTravelDistance")
+		passesFilter, err := fd.filter.Greater(row, 4*directDistance, utils.TotalTravelDistance)
 		if err != nil {
 			log.Errorf("FilterDistances %v | action: filter_distances | result: fail | skipping row | error: %v", fd.filterId, err)
 			continue

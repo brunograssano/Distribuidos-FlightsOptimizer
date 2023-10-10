@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -70,7 +71,7 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 	if getterAddressesStr == "" {
 		return nil, errors.New("missing getter address")
 	}
-	getterAddresses := strings.Split(getterAddressesStr, ",")
+	getterAddresses := strings.Split(getterAddressesStr, utils.CommaSeparator)
 
 	typeExchangeAirports := env.GetString("queues.airports.exchange.type")
 	if typeExchangeAirports == "" {

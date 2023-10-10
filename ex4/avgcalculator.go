@@ -3,6 +3,7 @@ package main
 import (
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,14 +36,14 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 			continue
 		}
 
-		prices, err := msg.DynMaps[0].GetAsFloat("localPrice")
+		prices, err := msg.DynMaps[0].GetAsFloat(utils.LocalPrice)
 		if err != nil {
 			log.Errorf("AvgCalculator | Error getting localPrice | %v", err)
 			continue
 		}
 		sumOfPrices += prices
 
-		rows, err := msg.DynMaps[0].GetAsInt("localQuantity")
+		rows, err := msg.DynMaps[0].GetAsInt(utils.LocalQuantity)
 		if err != nil {
 			log.Errorf("AvgCalculator | Error getting localQuantity | %v", err)
 			continue
@@ -62,9 +63,9 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 func (a *AvgCalculator) sendToJourneySavers(avg float32) {
 	avgBytes := dataStructure.NewSerializer().SerializeFloat(avg)
 	dynMap := make(map[string][]byte)
-	dynMap["finalAvg"] = avgBytes
+	dynMap[utils.FinalAvg] = avgBytes
 	data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
-	msg := &dataStructure.Message{TypeMessage: dataStructure.FinalAvg, DynMaps: data}
+	msg := &dataStructure.Message{TypeMessage: dataStructure.FinalAvgMsg, DynMaps: data}
 	for i, channel := range a.toInternalSaversChannels {
 		log.Infof("AvgCalculator | Sending average to saver %v", i)
 		err := channel.Send(msg)

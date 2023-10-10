@@ -7,6 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -48,7 +49,7 @@ func NewDistanceCompleter(
 
 func (dc *DistanceCompleter) calculateDirectDistance(flightRow *dataStructures.DynamicMap) (float32, error) {
 
-	originId, errOri := flightRow.GetAsString("startingAirport")
+	originId, errOri := flightRow.GetAsString(utils.StartingAirport)
 	if errOri != nil {
 		log.Errorf("DistanceCompleter %v | Error when trying to get originId | %v", dc.completerId, errOri)
 	}
@@ -56,7 +57,7 @@ func (dc *DistanceCompleter) calculateDirectDistance(flightRow *dataStructures.D
 	if !exists {
 		return -1, fmt.Errorf("row does not have correctly the origin airport. Skipping")
 	}
-	destinationId, errDest := flightRow.GetAsString("destinationAirport")
+	destinationId, errDest := flightRow.GetAsString(utils.DestinationAirport)
 	if errDest != nil {
 		log.Errorf("DistanceCompleter %v | Error when trying to get destinationId | %v", dc.completerId, errDest)
 	}
@@ -74,11 +75,11 @@ func (dc *DistanceCompleter) addColumnToRow(key string, value float32, row *data
 }
 
 func (dc *DistanceCompleter) calculateTotalTravelDistance(flightRow *dataStructures.DynamicMap) (float32, error) {
-	route, err := flightRow.GetAsString("route")
+	route, err := flightRow.GetAsString(utils.Route)
 	if err != nil {
 		log.Errorf("DistanceCompleter %v | Could not get the Route | %v", dc.completerId, err)
 	}
-	idsArray := strings.Split(route, "||")
+	idsArray := strings.Split(route, utils.DoublePipeSeparator)
 	totalTravelDistance := 0.0
 	for i := 0; i < len(idsArray)-1; i++ {
 		initialAirport, exists := dc.airportsMap[idsArray[i]]
@@ -124,7 +125,7 @@ func (dc *DistanceCompleter) loadAirports() {
 	}
 	for reader.CanRead() {
 		csvAirport := reader.ReadLine()
-		idLatLong := strings.Split(csvAirport, ",")
+		idLatLong := strings.Split(csvAirport, utils.CommaSeparator)
 		id := idLatLong[0]
 		lat, err := strconv.ParseFloat(idLatLong[1], 32)
 		if err != nil {
