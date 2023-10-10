@@ -53,7 +53,7 @@ func handleHoursAndMinutes(hoursStr string, minutesStr string) (int, error) {
 	if found {
 		minutes, err = strconv.Atoi(minutesString)
 		if err != nil {
-			log.Warnf("Error converting minutes duration, will be sent as zero")
+			log.Warnf("TravelDurationConversion | Error converting minutes duration, will be sent as zero")
 		}
 	}
 
