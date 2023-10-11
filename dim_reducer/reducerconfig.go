@@ -2,7 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -17,12 +18,6 @@ type ReducerConfig struct {
 	GoroutinesCount int
 	RabbitAddress   string
 }
-
-// ValueListSeparator Separator of queue list in configuration
-const ValueListSeparator string = ","
-
-const maxGoroutines int = 32
-const defaultGoroutines int = 4
 
 // initEnv Initializes the configuration properties from a config file and environment
 func initEnv() (*viper.Viper, error) {
@@ -50,7 +45,7 @@ func initEnv() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("ReducerConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -58,6 +53,10 @@ func initEnv() (*viper.Viper, error) {
 
 // GetConfig Validates and returns the configuration of the application
 func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")
@@ -83,15 +82,15 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
-	columnsToKeep := strings.Split(columnsInList, ValueListSeparator)
+	columnsToKeep := strings.Split(columnsInList, utils.CommaSeparator)
 
 	goroutinesCount := env.GetInt("reducer.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > maxGoroutines {
-		log.Warnf("Not a valid value '%v' for goroutines count, using default", goroutinesCount)
-		goroutinesCount = defaultGoroutines
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
+		log.Warnf("ReducerConfig | Not a valid value '%v' for goroutines count, using default.", goroutinesCount)
+		goroutinesCount = utils.DefaultGoroutines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
+	log.Infof("ReducerConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

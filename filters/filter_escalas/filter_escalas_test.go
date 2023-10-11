@@ -17,6 +17,10 @@ type (
 	}
 )
 
+func (m *mockConsumer) ClearData() {
+	return
+}
+
 func (m *mockConsumer) GetReceivedMessages() int {
 	return 0
 }
@@ -38,6 +42,10 @@ type (
 		outputChannel chan *data_structures.Message
 	}
 )
+
+func (m *mockProducer) ClearData() {
+	return
+}
 
 func (m *mockProducer) GetSentMessages() int {
 	return 0

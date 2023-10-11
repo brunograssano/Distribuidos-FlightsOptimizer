@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const BinaryDataMime = "application/octet-stream"
+
 type ExchangeProducer struct {
 	ProducerInterface
 	rabbitMQChannel *amqp.Channel
@@ -26,7 +28,7 @@ func NewExchangeProducer(channel *amqp.Channel, nameEx string, routingKey string
 		nil,
 	)
 	FailOnError(err, fmt.Sprintf("Failed to declare the Exchange %v in RabbitMQ", nameEx))
-	log.Infof("Created new exchange %v in RabbitMQ", nameEx)
+	log.Infof("ExchangeProducer | Created new exchange %v in RabbitMQ", nameEx)
 	return &ExchangeProducer{
 		rabbitMQChannel: channel,
 		name:            nameEx,
@@ -35,7 +37,7 @@ func NewExchangeProducer(channel *amqp.Channel, nameEx string, routingKey string
 }
 
 func (exProd *ExchangeProducer) Send(data []byte) error {
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUTSECONDS*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSeconds*time.Second)
 	defer cancel()
 	err := exProd.rabbitMQChannel.PublishWithContext(ctx,
 		exProd.name,       // exchange
@@ -43,13 +45,13 @@ func (exProd *ExchangeProducer) Send(data []byte) error {
 		false,             // mandatory
 		false,             // immediate
 		amqp.Publishing{
-			ContentType:  "application/octet-stream",
+			ContentType:  BinaryDataMime,
 			Body:         data,
 			DeliveryMode: amqp.Persistent,
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to Publish content into exchange: %v", err)
+		return fmt.Errorf("failed to publish content into exchange: %v", err)
 	}
 	return nil
 }

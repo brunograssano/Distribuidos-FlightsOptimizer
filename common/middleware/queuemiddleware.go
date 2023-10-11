@@ -11,13 +11,13 @@ type QueueMiddleware struct {
 }
 
 func NewQueueMiddleware(address string) *QueueMiddleware {
-	log.Infof("Connecting to RabbitMQ")
+	log.Infof("QueueMiddleware | Connecting to RabbitMQ")
 	conn, err := amqp.Dial(address)
 	FailOnError(err, "Failed to connect via Dial to RabbitMQ.")
-	log.Infof("Connected to RabbitMQ")
+	log.Infof("QueueMiddleware | Connected to RabbitMQ")
 	ch, err := conn.Channel()
 	FailOnError(err, "Failed to create RabbitMQ Channel.")
-	log.Infof("Created RabbitMQ Channel")
+	log.Infof("QueueMiddleware | Created RabbitMQ Channel")
 	return &QueueMiddleware{
 		channel: ch,
 		conn:    conn,
@@ -38,7 +38,11 @@ func (qm *QueueMiddleware) CreateExchangeProducer(nameExchange string, routingKe
 
 func (qm *QueueMiddleware) Close() {
 	err := qm.channel.Close()
-	FailOnError(err, "Error closing QueueMiddleware Channel")
+	if err != nil {
+		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Channel | %v", err)
+	}
 	err = qm.conn.Close()
-	FailOnError(err, "Error closing QueueMiddleware Connection")
+	if err != nil {
+		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Connection | %v", err)
+	}
 }

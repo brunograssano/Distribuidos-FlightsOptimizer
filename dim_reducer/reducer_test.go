@@ -13,6 +13,8 @@ type (
 	}
 )
 
+func (m *mockConsumerQueueProtocolHandler) ClearData() {}
+
 func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages() int {
 	return 0
 }
@@ -34,6 +36,8 @@ type (
 		outputChannel chan *dataStructures.Message
 	}
 )
+
+func (m *mockProducerQueueProtocolHandler) ClearData() {}
 
 func (m *mockProducerQueueProtocolHandler) Send(msg *dataStructures.Message) error {
 	m.outputChannel <- msg

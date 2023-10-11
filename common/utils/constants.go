@@ -2,6 +2,7 @@ package utils
 
 const CommaSeparator = ","
 const DotCommaSeparator = ";"
+const DoublePipeSeparator = "||"
 
 const AirportCode = "Airport Code"
 const Latitude = "Latitude"
@@ -20,9 +21,20 @@ const SegmentsAirlineName = "segmentsAirlineName"
 const LocalPrice = "localPrice"
 const LocalQuantity = "localQuantity"
 const Avg = "avg"
+const FinalAvg = "finalAvg"
 const Max = "max"
 const PrevSent = "prevSent"
 const LocalReceived = "localReceived"
 const LocalSent = "localSent"
 const ConvertedTravelDuration = "convertedTravelDuration"
 const Journey = "journey"
+const Route = "route"
+
+const BufferSizeChannels = 300
+const MaxBatchLines = 1500
+const DefaultBatchLines = 300
+
+const MaxGoroutines = 32
+const DefaultGoroutines = 6
+
+const NewLine = "\n"

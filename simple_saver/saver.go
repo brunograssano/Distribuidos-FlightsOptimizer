@@ -5,26 +5,27 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 // SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
-	c          *SaverConfig
-	consumer   protocol.ConsumerProtocolInterface
-	serializer *dataStructures.Serializer
-	canSend    chan bool
+	c        *SaverConfig
+	consumer protocol.ConsumerProtocolInterface
+	canSend  chan string
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.Serializer, canSend chan bool) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, canSend chan string) *SimpleSaver {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
+	return &SimpleSaver{c: c, consumer: consumer, canSend: canSend}
 }
 
 // SaveData Saves the results from the queue in a file
 func (s *SimpleSaver) SaveData() {
+	log.Infof("SimpleSaver | Goroutine started")
 	for {
 		msgStruct, ok := s.consumer.Pop()
 		if !ok {
@@ -33,9 +34,12 @@ func (s *SimpleSaver) SaveData() {
 		}
 		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("SimpleSaver | Received all results. Closing saver...")
-			s.canSend <- true
-			close(s.canSend)
-			return
+			folder, err := filemanager.MoveFiles([]string{s.c.OutputFileName})
+			if err != nil {
+				log.Errorf("SimpleSaver | Error moving to file to folder | %v", err)
+				return
+			}
+			s.canSend <- folder
 		} else if msgStruct.TypeMessage == dataStructures.FlightRows {
 			err := s.handleFlightRows(msgStruct)
 			if err != nil {
@@ -53,7 +57,7 @@ func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error 
 		return err
 	}
 	for _, row := range msgStruct.DynMaps {
-		line := s.serializer.SerializeToString(row)
+		line := serializer.SerializeToString(row)
 		log.Debugf("SimpleSaver | Saving line: %v", line)
 		err = writer.WriteLine(line)
 		if err != nil {

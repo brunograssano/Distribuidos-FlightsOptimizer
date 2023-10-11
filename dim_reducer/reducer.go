@@ -33,10 +33,11 @@ func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Reduc
 // ReduceDims Loop that waits for input from the queue, reduces the rows by removing columns
 // and sends the result to the next step
 func (r *Reducer) ReduceDims() {
+	log.Infof("DimReducer %v | Started goroutine", r.reducerId)
 	for {
 		msg, ok := r.consumer.Pop()
 		if !ok {
-			log.Infof("Closing goroutine %v", r.reducerId)
+			log.Infof("DimReducer %v | Closing goroutine...", r.reducerId)
 			return
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
@@ -45,7 +46,6 @@ func (r *Reducer) ReduceDims() {
 			if err != nil {
 				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}
-			return
 		} else if msg.TypeMessage == dataStructures.FlightRows {
 			log.Debugf("DimReducer %v | Received flight rows. Now handling...", r.reducerId)
 			r.handleFlightRows(msg)

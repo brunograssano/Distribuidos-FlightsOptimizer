@@ -27,11 +27,11 @@ type FileWriter struct {
 func NewFileReader(filename string) (*FileReader, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		log.Errorf("action: open_file | result: fail | file_name: %v | error: %v", filename, err)
+		log.Errorf("FileReader | action: open_file | result: fail | file_name: %v | error: %v", filename, err)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(f)
-	log.Debugf("action: opened_file | file_name: %v", filename)
+	log.Debugf("FileReader | action: opened_file | file_name: %v", filename)
 	reader := &FileReader{
 		FileManager: FileManager{file: f, filename: filename},
 		scanner:     scanner,
@@ -45,7 +45,7 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 	const openFileInWriteModePerm = 0644
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, openFileInWriteModePerm)
 	if err != nil {
-		log.Errorf("action: open_file | result: fail | file_name: %v | error: %v", filename, err)
+		log.Errorf("FileWriter | action: open_file | result: fail | file_name: %v | error: %v", filename, err)
 		return nil, err
 	}
 	writer := &FileWriter{
@@ -56,7 +56,7 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 
 // Close Closes the file
 func (f FileManager) Close() error {
-	log.Debugf("action: closing_file | file_name: %v", f.filename)
+	log.Debugf("FileManager | action: closing_file | file_name: %v", f.filename)
 	return f.file.Close()
 }
 

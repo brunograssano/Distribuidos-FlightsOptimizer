@@ -22,7 +22,7 @@ services:
     image: dim_reducer:latest
     environment:
       - CLI_ID=1
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
       - CLI_REDUCER_COLUMNS=legId,route,totalFare
@@ -39,7 +39,7 @@ services:
     image: dim_reducer:latest
     environment:
       - CLI_ID=2
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
@@ -56,7 +56,7 @@ services:
     image: filter_escalas:latest
     environment:
       - CLI_ID=3
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
       - CLI_RABBITMQ_QUEUES_OUTPUT=saver_3,dim_reducer_saver_1
     networks:
@@ -72,7 +72,7 @@ services:
     image: data_processor:latest
     environment:
       - CLI_ID=4
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
@@ -89,7 +89,7 @@ services:
     image: filter_distancias:latest
     environment:
       - CLI_ID=5
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
     networks:
@@ -105,7 +105,7 @@ services:
     image: distance_completer:latest
     environment:
       - CLI_ID=6
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
       - CLI_RABBITMQ_QUEUES_OUTPUT=filters_distances
@@ -127,7 +127,7 @@ services:
     image: simple_saver:latest
     environment:
       - CLI_ID=7
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
       - CLI_SAVER_OUTPUT=results_ex1.csv
       - CLI_GETTER_BATCH_LINES=100
@@ -145,7 +145,7 @@ services:
     image: simple_saver:latest
     environment:
       - CLI_ID=8
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
       - CLI_SAVER_OUTPUT=results_ex2.csv
       - CLI_GETTER_BATCH_LINES=100
@@ -163,7 +163,7 @@ services:
     image: saver_ex_3:latest
     environment:
       - CLI_ID=9
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver_3
       - CLI_SAVER_OUTPUT=results_ex3
       - CLI_GETTER_BATCH_LINES=100
@@ -171,7 +171,7 @@ services:
     networks:
       - testing_net
     volumes:
-      - ./simple_saver/config.yaml:/config.yaml
+      - ./saver_ex_3/config.yaml:/config.yaml
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -181,7 +181,7 @@ services:
     image: server:latest
     environment:
       - CLI_ID=10
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080,saver-ex4:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
@@ -210,7 +210,7 @@ services:
     image: ex4_handler:latest
     environment:
       - CLI_ID=11
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
     networks:
@@ -226,7 +226,7 @@ services:
     image: client:latest
     environment:
       - CLI_ID=12
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
       - CLI_INPUT_FILE=/data/flightrows.csv # configurar localmente
@@ -244,7 +244,7 @@ services:
     image: simple_saver:latest
     environment:
       - CLI_ID=13
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
       - CLI_SAVER_OUTPUT=results_ex4.csv
       - CLI_GETTER_BATCH_LINES=100

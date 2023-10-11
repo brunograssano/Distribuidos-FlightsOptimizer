@@ -1,26 +1,17 @@
-package data_structures
+package serializer
 
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"math"
-	"slices"
 	"strconv"
 	"strings"
 )
 
-const commaSeparator = ","
-const newLine = "\n"
-
-type Serializer struct{}
-
-func NewSerializer() *Serializer {
-	return &Serializer{}
-}
-
-func (serializer *Serializer) SerializeMsg(msg *Message) []byte {
+func SerializeMsg(msg *data_structures.Message) []byte {
 	serializedMsg := []byte{}
 	typeBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(typeBytes, uint32(msg.TypeMessage))
@@ -29,31 +20,31 @@ func (serializer *Serializer) SerializeMsg(msg *Message) []byte {
 	serializedMsg = append(serializedMsg, typeBytes...)
 	serializedMsg = append(serializedMsg, nRows...)
 	for _, row := range msg.DynMaps {
-		serializedRow := serializer.SerializeDynMap(row)
+		serializedRow := SerializeDynMap(row)
 		serializedMsg = append(serializedMsg, serializedRow...)
 	}
 	return serializedMsg
 }
 
-func (serializer *Serializer) DeserializeMsg(bytesMsg []byte) *Message {
+func DeserializeMsg(bytesMsg []byte) *data_structures.Message {
 	offset := 0
 	typeMsg := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
 	offset = 4
 	nRows := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
 	offset = 8
-	var dynMaps []*DynamicMap
+	var dynMaps []*data_structures.DynamicMap
 	for i := 0; i < nRows; i++ {
-		dynMap, bytesRead := serializer.DeserializeDynMap(bytesMsg[offset:])
+		dynMap, bytesRead := DeserializeDynMap(bytesMsg[offset:])
 		dynMaps = append(dynMaps, dynMap)
 		offset += bytesRead
 	}
-	return &Message{
+	return &data_structures.Message{
 		TypeMessage: typeMsg,
 		DynMaps:     dynMaps,
 	}
 }
 
-func (serializer *Serializer) SerializeDynMap(dynamicMap *DynamicMap) []byte {
+func SerializeDynMap(dynamicMap *data_structures.DynamicMap) []byte {
 	var rowBytes []byte
 	mapLength := dynamicMap.GetColumnCount()
 	bytesNCols := make([]byte, 4)
@@ -74,7 +65,7 @@ func (serializer *Serializer) SerializeDynMap(dynamicMap *DynamicMap) []byte {
 	return rowBytes
 }
 
-func (serializer *Serializer) DeserializeDynMap(dynamicMapBytes []byte) (*DynamicMap, int) {
+func DeserializeDynMap(dynamicMapBytes []byte) (*data_structures.DynamicMap, int) {
 	nCols := int(binary.BigEndian.Uint32(dynamicMapBytes[0:4]))
 	currOffset := 4
 	mapForDynMap := make(map[string][]byte)
@@ -89,20 +80,10 @@ func (serializer *Serializer) DeserializeDynMap(dynamicMapBytes []byte) (*Dynami
 		currOffset += lenValue
 		mapForDynMap[key] = value
 	}
-	return NewDynamicMap(mapForDynMap), currOffset
+	return data_structures.NewDynamicMap(mapForDynMap), currOffset
 }
 
-func (serializer *Serializer) SerializeUint(value uint32) []byte {
-	byteValue := make([]byte, 4)
-	binary.BigEndian.PutUint32(byteValue, value)
-	return byteValue
-}
-
-func (serializer *Serializer) SerializeString(value string) []byte {
-	return []byte(value)
-}
-
-func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
+func SerializeToString(dynMap *data_structures.DynamicMap) string {
 	line := strings.Builder{}
 	currMap := dynMap.GetCurrentMap()
 	currCol := 0
@@ -118,16 +99,16 @@ func (serializer *Serializer) SerializeToString(dynMap *DynamicMap) string {
 			line.WriteString(fmt.Sprintf("%v=%v", key, string(value)))
 		}
 		if uint32(currCol) != colCount-1 {
-			line.WriteString(commaSeparator)
+			line.WriteString(utils.CommaSeparator)
 			currCol++
 		}
 	}
-	line.WriteString(newLine)
+	line.WriteString(utils.NewLine)
 	return line.String()
 }
 
-func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMap {
-	keyValuePairs := strings.Split(dynMapStr, commaSeparator)
+func DeserializeFromString(dynMapStr string) *data_structures.DynamicMap {
+	keyValuePairs := strings.Split(dynMapStr, utils.CommaSeparator)
 	dynMapData := make(map[string][]byte)
 	for _, pair := range keyValuePairs {
 		keyValuePair := strings.Split(pair, "=")
@@ -136,45 +117,18 @@ func (serializer *Serializer) DeserializeFromString(dynMapStr string) *DynamicMa
 		if isIntColumn(key) {
 			intVal, err := strconv.Atoi(strVal)
 			if err != nil {
-				log.Errorf("Error casting column %v to integer.", intVal)
+				log.Errorf("Serializer | Error casting column %v to integer | %v", intVal, err)
 			}
-			dynMapData[key] = serializer.SerializeUint(uint32(intVal))
+			dynMapData[key] = SerializeUint(uint32(intVal))
 		} else if isFloatColumn(key) {
 			floatVal, err := strconv.ParseFloat(strVal, 32)
 			if err != nil {
-				log.Errorf("Error casting column %v to float.", floatVal)
+				log.Errorf("Serializer | Error casting column %v to float | %v", floatVal, err)
 			}
-			dynMapData[key] = serializer.SerializeFloat(float32(floatVal))
+			dynMapData[key] = SerializeFloat(float32(floatVal))
 		} else {
 			dynMapData[key] = []byte(strVal)
 		}
 	}
-	return NewDynamicMap(dynMapData)
-}
-
-func (serializer *Serializer) SerializeFloat(value float32) []byte {
-	bytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(bytes, math.Float32bits(value))
-	return bytes
-}
-
-func isFloatColumn(key string) bool {
-	floatColumnKeys := []string{
-		utils.Latitude,
-		utils.Longitude,
-		utils.TotalFare,
-		utils.TotalTravelDistance,
-		utils.DirectDistance,
-		utils.Max,
-		utils.Avg,
-	}
-	return slices.Contains(floatColumnKeys, key)
-}
-
-func isIntColumn(key string) bool {
-	intColumnKeys := []string{
-		utils.TotalStopovers,
-		utils.ConvertedTravelDuration,
-	}
-	return slices.Contains(intColumnKeys, key)
+	return data_structures.NewDynamicMap(dynMapData)
 }

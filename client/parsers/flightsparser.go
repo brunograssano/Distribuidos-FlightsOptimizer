@@ -3,6 +3,7 @@ package parsers
 import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -24,7 +25,6 @@ type FlightsParser struct{}
 
 // LineToDynMap Parses a line from the flights file
 func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, error) {
-	serializer := dataStructures.Serializer{}
 	fields := strings.Split(line, utils.CommaSeparator)
 	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
 	if len(fields) != flightFileColumnCount {
@@ -44,7 +44,7 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 	if fields[totalTravelDistancePos] != "" {
 		totalTravelDistance, err = strconv.ParseFloat(fields[totalTravelDistancePos], 32)
 		if err != nil {
-			log.Warnf("Error converting totalTravelDistance, will be sent as zero")
+			log.Warnf("FlightsParser | Error converting totalTravelDistance | %v | Will be sent as zero", err)
 		}
 	}
 

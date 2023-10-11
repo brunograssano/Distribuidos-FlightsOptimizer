@@ -11,17 +11,17 @@ func main() {
 	sigs := utils.CreateSignalListener()
 	env, err := filters_config.InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Filter Stopovers | Error initializing env | %s", err)
 	}
 	filterEscalasConfig, err := filters_config.GetConfigFilters(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Filter Stopovers | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(filterEscalasConfig.RabbitAddress)
 	for i := 0; i < filterEscalasConfig.GoroutinesCount; i++ {
 		fe := NewFilterStopovers(i, qMiddleware, filterEscalasConfig)
-		log.Infof("Spawning GoRoutine #%v - Filter Escalas", i)
+		log.Infof("Main - Filter Stopovers | Spawning GoRoutine - Filter #%v", i)
 		go fe.FilterStopovers()
 	}
 	<-sigs

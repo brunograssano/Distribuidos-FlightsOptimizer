@@ -18,12 +18,18 @@ func NewConsumerChannel(consumerChan chan *dataStructures.Message) *ConsumerChan
 
 func (c *ConsumerChannel) Pop() (*dataStructures.Message, bool) {
 	msg, ok := <-c.consumerChan
-	if msg.TypeMessage == dataStructures.FlightRows {
-		c.recvCount += len(msg.DynMaps)
+	if ok {
+		if msg.TypeMessage == dataStructures.FlightRows {
+			c.recvCount += len(msg.DynMaps)
+		}
 	}
 	return msg, ok
 }
 
 func (c *ConsumerChannel) GetReceivedMessages() int {
 	return c.recvCount
+}
+
+func (c *ConsumerChannel) ClearData() {
+	c.recvCount = 0
 }

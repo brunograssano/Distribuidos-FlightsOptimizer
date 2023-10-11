@@ -9,16 +9,16 @@ func main() {
 	sigs := utils.CreateSignalListener()
 	env, err := InitEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Server | Error initializing env | %s", err)
 	}
 	serverConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - Server | Error initializing config | %s", err)
 	}
 	server := NewServer(serverConfig)
 	go server.StartServerLoop()
-	log.Infof("Spawned Server...")
+	log.Infof("Main - Server | Spawned Server...")
 	<-sigs
-	log.Infof("Ending Server...")
+	log.Infof("Main - Server | Ending Server...")
 	_ = server.End()
 }

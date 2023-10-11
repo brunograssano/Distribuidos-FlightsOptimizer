@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"strings"
+
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 // Ex4Config The configuration of the application
@@ -38,7 +40,7 @@ func InitEnv() (*viper.Viper, error) {
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("Ex4Config | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -46,6 +48,10 @@ func InitEnv() (*viper.Viper, error) {
 
 // GetConfig Validates and returns the configuration of the application
 func GetConfig(env *viper.Viper) (*Ex4Config, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")
@@ -67,12 +73,16 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 	}
 
 	internalSaversCount := env.GetUint("internal.savers.count")
-	if internalSaversCount <= 0 || internalSaversCount > maxSaversCount {
-		log.Warnf("Not a valid value '%v' for internal savers count, using default", internalSaversCount)
-		internalSaversCount = defaultSaversCount
+	if internalSaversCount <= 0 || internalSaversCount > utils.MaxGoroutines {
+		log.Warnf("Ex4Config | Not a valid value '%v' for internal savers count, using default", internalSaversCount)
+		internalSaversCount = utils.DefaultGoroutines
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
+	log.Infof("Ex4Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,

@@ -3,21 +3,22 @@ package main
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
 func printResults(dynMaps []*dataStructures.DynamicMap) {
-	serializer := dataStructures.NewSerializer()
 	for _, row := range dynMaps {
-		line := strings.TrimRight(serializer.SerializeToString(row), "\n")
+		line := strings.TrimRight(serializer.SerializeToString(row), utils.NewLine)
 		log.Infof(line)
 	}
 
 }
 
 func RequestResults(err error, conn *protocol.SocketProtocolHandler) {
-	log.Infof("Requesting results")
+	log.Infof("Results printer | Requesting results")
 	msg := &dataStructures.Message{TypeMessage: dataStructures.GetResults}
 	err = conn.Write(msg)
 	if err != nil {

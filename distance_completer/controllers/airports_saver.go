@@ -6,97 +6,108 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 type AirportSaver struct {
 	c             *config.CompleterConfig
-	serializer    *dataStructures.Serializer
 	consumer      middleware.ConsumerInterface
-	loadedSignals []chan bool
+	loadedSignals []chan string
 	fileSaver     *filemanager.FileWriter
 }
 
 func NewAirportSaver(
 	conf *config.CompleterConfig,
 	qMiddleware *middleware.QueueMiddleware,
-	s *dataStructures.Serializer,
-	fileLoadedSignals []chan bool,
+	fileLoadedSignals []chan string,
 ) *AirportSaver {
 	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
 	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports)
 	if err != nil {
-		log.Fatalf("Error trying to bind the consumer's queue to the exchange: %v", err)
+		log.Fatalf("AirportsSaver | Error trying to bind the consumer's queue to the exchange | %v", err)
 	}
 	fileWriter, err := filemanager.NewFileWriter(conf.AirportsFilename)
 	if err != nil {
-		log.Fatalf("Error trying to initialize FileWriter in saver: %v", err)
+		log.Fatalf("AirportsSaver | Error trying to initialize FileWriter in saver | %v", err)
 	}
 	return &AirportSaver{
 		c:             conf,
-		serializer:    s,
 		consumer:      consumer,
 		loadedSignals: fileLoadedSignals,
 		fileSaver:     fileWriter,
 	}
 }
 
-func (as *AirportSaver) signalCompleters() {
+func (as *AirportSaver) signalCompleters(folder string) {
 	for i := 0; i < len(as.loadedSignals); i++ {
-		log.Infof("Sending signal to completer #%v...", i)
-		as.loadedSignals[i] <- true
-		close(as.loadedSignals[i])
+		log.Infof("AirportsSaver | Sending signal to completer #%v...", i)
+		as.loadedSignals[i] <- folder
 	}
 }
 
 func (as *AirportSaver) SaveAirports() {
-	defer as.closeFile()
 	for {
 		msg, ok := as.consumer.Pop()
 		if !ok {
-			log.Infof("Closing goroutine SaverAirports")
+			log.Infof("AirportsSaver | Closing goroutine...")
 			return
 		}
-		msgStruct := as.serializer.DeserializeMsg(msg)
-		log.Debugf("Received message: {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
+		msgStruct := serializer.DeserializeMsg(msg)
+		log.Debugf("AirportsSaver | Received message | {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
 		if msgStruct.TypeMessage == dataStructures.EOFAirports {
-			log.Infof("Received EOF. Signalizing completers to start completion...")
-			break
+			log.Infof("AirportsSaver | Received EOF. Signalizing completers to start completion...")
+			as.closeFile()
+			folder, err := filemanager.MoveFiles([]string{as.c.AirportsFilename})
+			if err != nil {
+				log.Errorf("AirportsSaver | Error moving file to folder, closing | %v", err)
+				return
+			}
+			as.signalCompleters(folder)
+			as.openNewFile()
+			continue
 		}
 		rows := msgStruct.DynMaps
 		for _, row := range rows {
 			airportCode, err := row.GetAsString(utils.AirportCode)
 			if err != nil {
-				log.Errorf("Error trying to get airport code: %v. Skipping row...", err)
+				log.Errorf("AirportsSaver | Error trying to get airport code | %v | Skipping row...", err)
 				continue
 			}
 			lat, err := row.GetAsFloat(utils.Latitude)
 			if err != nil {
-				log.Errorf("Error trying to get latitude: %v. Skipping row...", err)
+				log.Errorf("AirportsSaver | Error trying to get latitude | %v | Skipping row...", err)
 				continue
 			}
 			long, err := row.GetAsFloat(utils.Longitude)
 			if err != nil {
-				log.Errorf("Error trying to get longitude: %v. Skipping row...", err)
+				log.Errorf("AirportsSaver | Error trying to get longitude | %v | Skipping row...", err)
 				continue
 			}
 			stringToSave := fmt.Sprintf("%v,%v,%v\n", airportCode, lat, long)
 			err = as.fileSaver.WriteLine(stringToSave)
 			if err != nil {
-				log.Errorf("Error trying to write line: %v. Skipping row...", err)
+				log.Errorf("AirportsSaver | Error trying to write line | %v | Skipping row...", err)
 				continue
 			}
 		}
 	}
-	as.signalCompleters()
 
 }
 
 func (as *AirportSaver) closeFile() {
-	log.Infof("Closing file...")
+	log.Infof("AirportsSaver | Closing file...")
 	err := as.fileSaver.FileManager.Close()
 	if err != nil {
-		log.Errorf("Error closing airports file...")
+		log.Errorf("AirportsSaver | Error closing airports file | %v", err)
 	}
+}
+
+func (as *AirportSaver) openNewFile() {
+	fileWriter, err := filemanager.NewFileWriter(as.c.AirportsFilename)
+	if err != nil {
+		log.Fatalf("AirportsSaver | Error trying to initialize FileWriter in saver | %v", err)
+	}
+	as.fileSaver = fileWriter
 }

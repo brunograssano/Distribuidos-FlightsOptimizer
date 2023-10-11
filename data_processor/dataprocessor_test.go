@@ -18,6 +18,8 @@ func (m *mockConsumer) GetReceivedMessages() int {
 	return 0
 }
 
+func (m *mockConsumer) ClearData() {}
+
 func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
 		return nil, m.ok
@@ -45,13 +47,14 @@ func (m *mockProducer) Send(data *dataStructures.Message) error {
 	return nil
 }
 
+func (m *mockProducer) ClearData() {}
+
 func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	pConfig := &ProcessorConfig{}
 	input := make(chan *dataStructures.Message, 10)
 	outputEx13 := make(chan *dataStructures.Message, 10)
 	outputEx2 := make(chan *dataStructures.Message, 10)
 	outputEx4 := make(chan *dataStructures.Message, 10)
-	serializer := dataStructures.NewSerializer()
 
 	mConsumer := &mockConsumer{
 		inputChannel: input,
@@ -73,7 +76,6 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		consumer:       mConsumer,
 		producersEx123: []protocol.ProducerProtocolInterface{mProducer2, mProducer13},
 		producersEx4:   mProducer4,
-		serializer:     serializer,
 		ex123Columns:   []string{"startingAirport", "segmentsArrivalAirportCode", "totalStopovers", "route"},
 		ex4Columns:     []string{"route"},
 	}
@@ -124,10 +126,8 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 }
 
 func TestShouldProcessTheDataOfEx123(t *testing.T) {
-	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
-		serializer:   serializer,
 		ex123Columns: []string{"totalStopovers", "route"},
 	}
 	dynMap := make(map[string][]byte)
@@ -161,10 +161,8 @@ func TestShouldProcessTheDataOfEx123(t *testing.T) {
 }
 
 func TestShouldReturnAnErrorIfTheSegmentsColDoesNotExist(t *testing.T) {
-	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
-		serializer:   serializer,
 		ex123Columns: []string{"totalStopovers", "route"},
 	}
 	dynMap := make(map[string][]byte)
@@ -179,10 +177,8 @@ func TestShouldReturnAnErrorIfTheSegmentsColDoesNotExist(t *testing.T) {
 }
 
 func TestShouldReturnAnErrorIfTheStartingAirportColDoesNotExist(t *testing.T) {
-	serializer := dataStructures.NewSerializer()
 	processor := &DataProcessor{
 		processorId:  0,
-		serializer:   serializer,
 		ex123Columns: []string{"totalStopovers", "route"},
 	}
 	dynMap := make(map[string][]byte)

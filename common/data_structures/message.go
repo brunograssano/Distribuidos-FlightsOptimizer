@@ -12,4 +12,4 @@ const EOFFlightRows = 3
 const GetResults = 4
 const Later = 5
 const EOFGetter = 6
-const FinalAvg = 7
+const FinalAvgMsg = 7

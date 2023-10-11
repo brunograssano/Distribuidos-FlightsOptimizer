@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -44,7 +44,7 @@ func InitEnv() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("Client Config | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
@@ -52,6 +52,10 @@ func InitEnv() (*viper.Viper, error) {
 
 // GetConfig Validates and returns the configuration of the application
 func GetConfig(env *viper.Viper) (*ClientConfig, error) {
+	if err := config.InitLogger(env.GetString("log.level")); err != nil {
+		return nil, err
+	}
+
 	id := env.GetString("id")
 	if id == "" {
 		return nil, errors.New("missing id")
@@ -74,11 +78,11 @@ func GetConfig(env *viper.Viper) (*ClientConfig, error) {
 
 	batch := env.GetUint("input.batch")
 	if batch == 0 {
-		log.Warnf("Missing batch size, using default")
+		log.Warnf("Client Config | Warning Message | Missing batch size, using default")
 		batch = DefaultBatchSize
 	}
 
-	log.Infof("action: config | result: success | id: %s | log_level: %s | inputFile: %v | serverAddress: %v | inputAirports: %v | batch: %v",
+	log.Infof("Client Config | action: config | result: success | id: %s | log_level: %s | inputFile: %v | serverAddress: %v | inputAirports: %v | batch: %v",
 		id,
 		env.GetString("log.level"),
 		inputFile,

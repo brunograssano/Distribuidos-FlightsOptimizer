@@ -3,6 +3,8 @@ package protocol_test
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"testing"
 	"time"
 )
@@ -31,6 +33,10 @@ func (m *mockConsumerQueueProtocolHandler) BindTo(_ string, _ string) error {
 	return nil
 }
 
+func (m *mockConsumerQueueProtocolHandler) ClearData() {
+	m.count = 0
+}
+
 type (
 	mockProducerQueueProtocolHandler struct {
 		outputChannel chan *dataStructures.Message
@@ -47,15 +53,18 @@ func (m *mockProducerQueueProtocolHandler) GetSentMessages() int {
 	return m.count
 }
 
+func (m *mockProducerQueueProtocolHandler) ClearData() {
+	m.count = 0
+}
+
 func TestShouldSendEOFToTheNextStepOnGreaterThanPrevSent(t *testing.T) {
-	outNext := make(chan *dataStructures.Message)
-	outSame := make(chan *dataStructures.Message)
+	outNext := make(chan *dataStructures.Message, 1)
+	outSame := make(chan *dataStructures.Message, 1)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
-	dynMap["prevSent"] = serializer.SerializeUint(4)
+	dynMap[utils.PrevSent] = serializer.SerializeUint(4)
 	localSent := 2
-	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))
-	dynMap["localReceived"] = serializer.SerializeUint(3)
+	dynMap[utils.LocalSent] = serializer.SerializeUint(uint32(localSent))
+	dynMap[utils.LocalReceived] = serializer.SerializeUint(3)
 	msg := &dataStructures.Message{
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMap)},
@@ -73,23 +82,23 @@ func TestShouldSendEOFToTheNextStepOnGreaterThanPrevSent(t *testing.T) {
 	select {
 	case messageReceivedInNextStep := <-outNext:
 
-		prevSent, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("prevSent")
+		prevSent, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.PrevSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting prevSent in next step.")
 		}
-		realPrevSent := nextStep.GetSentMessages() + localSent
+		realPrevSent := 5 + localSent
 		if prevSent != realPrevSent {
 			t.Errorf("Expected to get %v as prevSent, but got %v", realPrevSent, prevSent)
 		}
 
-		localSentChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localSent")
+		localSentChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localSent in next step.")
 		}
 		if localSentChan != 0 {
 			t.Errorf("Expected localSent to be %v. It was: %v", 0, localSentChan)
 		}
-		localReceivedChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localReceived")
+		localReceivedChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalReceived)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localReceived in next step.")
 		}
@@ -106,7 +115,6 @@ func TestShouldSendEOFToTheNextStepOnEqualToPrevSent(t *testing.T) {
 	outNext := make(chan *dataStructures.Message)
 	outSame := make(chan *dataStructures.Message)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
 	dynMap["prevSent"] = serializer.SerializeUint(13)
 	localSent := 2
 	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))
@@ -128,23 +136,23 @@ func TestShouldSendEOFToTheNextStepOnEqualToPrevSent(t *testing.T) {
 	select {
 	case messageReceivedInNextStep := <-outNext:
 
-		prevSent, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("prevSent")
+		prevSent, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.PrevSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting prevSent in next step.")
 		}
-		realPrevSent := nextStep.GetSentMessages() + localSent
+		realPrevSent := 5 + localSent
 		if prevSent != realPrevSent {
 			t.Errorf("Expected to get %v as prevSent, but got %v", realPrevSent, prevSent)
 		}
 
-		localSentChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localSent")
+		localSentChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localSent in next step.")
 		}
 		if localSentChan != 0 {
 			t.Errorf("Expected localSent to be %v. It was: %v", 0, localSentChan)
 		}
-		localReceivedChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localReceived")
+		localReceivedChan, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalReceived)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localReceived in next step.")
 		}
@@ -161,7 +169,6 @@ func TestShouldSendEOFToTheSameStepOnLessThanPrevSent(t *testing.T) {
 	outNext := make(chan *dataStructures.Message)
 	outSame := make(chan *dataStructures.Message)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
 	dynMap["prevSent"] = serializer.SerializeUint(204)
 	localSent := 2
 	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))
@@ -183,16 +190,16 @@ func TestShouldSendEOFToTheSameStepOnLessThanPrevSent(t *testing.T) {
 	select {
 	case messageReceivedInNextStep := <-outSame:
 
-		localSentReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localSent")
+		localSentReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localSent in same step.")
 		}
-		realLocalSent := nextStep.GetSentMessages() + localSent
+		realLocalSent := 5 + localSent
 		if realLocalSent != localSentReceived {
 			t.Errorf("Expected to get %v as prevSent, but got %v", realLocalSent, localSentReceived)
 		}
 
-		prevSentReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("prevSent")
+		prevSentReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.PrevSent)
 		if err != nil {
 			t.Errorf("Should not have thrown error getting prevSent in same step.")
 		}
@@ -200,8 +207,8 @@ func TestShouldSendEOFToTheSameStepOnLessThanPrevSent(t *testing.T) {
 			t.Errorf("prevSentReceived should be 204 but got %v", prevSentReceived)
 		}
 
-		localReceivedReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt("localReceived")
-		realLocalReceived := consumer.GetReceivedMessages() + 3
+		localReceivedReceived, err := messageReceivedInNextStep.DynMaps[0].GetAsInt(utils.LocalReceived)
+		realLocalReceived := 10 + 3
 		if err != nil {
 			t.Errorf("Should not have thrown error getting localReceived in same step.")
 		}

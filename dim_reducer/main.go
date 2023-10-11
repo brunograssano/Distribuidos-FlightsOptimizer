@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -12,16 +11,12 @@ func main() {
 
 	env, err := initEnv()
 	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	if err := config.InitLogger(env.GetString("log.level")); err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DimReducer | Error initializing env | %s", err)
 	}
 
 	reducerConfig, err := GetConfig(env)
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatalf("Main - DimReducer | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
