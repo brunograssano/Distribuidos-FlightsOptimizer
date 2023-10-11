@@ -171,7 +171,7 @@ services:
     networks:
       - testing_net
     volumes:
-      - ./simple_saver/config.yaml:/config.yaml
+      - ./saver_ex_3/config.yaml:/config.yaml
     depends_on:
       rabbitmq:
         condition: service_healthy
