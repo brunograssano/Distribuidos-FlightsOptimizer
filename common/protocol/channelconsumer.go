@@ -29,3 +29,7 @@ func (c *ConsumerChannel) Pop() (*dataStructures.Message, bool) {
 func (c *ConsumerChannel) GetReceivedMessages() int {
 	return c.recvCount
 }
+
+func (c *ConsumerChannel) ClearData() {
+	c.recvCount = 0
+}

@@ -27,3 +27,7 @@ func (c *ProducerChannel) Send(msg *dataStructures.Message) error {
 func (c *ProducerChannel) GetSentMessages() int {
 	return c.totalSent
 }
+
+func (c *ProducerChannel) ClearData() {
+	c.totalSent = 0
+}

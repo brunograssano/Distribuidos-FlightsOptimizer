@@ -7,6 +7,7 @@ import (
 )
 
 type ProducerProtocolInterface interface {
+	DataCleaner
 	Send(msg *data_structures.Message) error
 	GetSentMessages() int
 }
@@ -33,4 +34,8 @@ func (q *ProducerQueueProtocolHandler) Send(msg *data_structures.Message) error 
 
 func (q *ProducerQueueProtocolHandler) GetSentMessages() int {
 	return q.totalSent
+}
+
+func (q *ProducerQueueProtocolHandler) ClearData() {
+	q.totalSent = 0
 }

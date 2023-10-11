@@ -18,6 +18,7 @@ func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolIn
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
 	})
+	prodOutputQueue.ClearData()
 	return err
 }
 
@@ -30,6 +31,7 @@ func sendEOFToInput(localReceived int, received int, prevSent int, sent int, loc
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
 	})
+	prodInputQueue.ClearData()
 	return err
 }
 
@@ -46,6 +48,7 @@ func HandleEOF(
 	// Zero is arbitrary for any case... Array of producers should have sent the same amount for every listener.
 	sent := prodOutputQueues[0].GetSentMessages()
 	received := consInputQueue.GetReceivedMessages()
+	consInputQueue.ClearData()
 	// We get the total sent messages from the EOF queue, the total that were processed by the controllers,
 	// and the total sent by this controller to the next step
 	// "prevSent", "localReceived", "localSent"

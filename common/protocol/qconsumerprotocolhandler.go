@@ -7,6 +7,7 @@ import (
 )
 
 type ConsumerProtocolInterface interface {
+	DataCleaner
 	Pop() (*data_structures.Message, bool)
 	GetReceivedMessages() int
 }
@@ -37,4 +38,8 @@ func (q *ConsumerQueueProtocolHandler) Pop() (*data_structures.Message, bool) {
 
 func (q *ConsumerQueueProtocolHandler) GetReceivedMessages() int {
 	return q.recvCount
+}
+
+func (q *ConsumerQueueProtocolHandler) ClearData() {
+	q.recvCount = 0
 }
