@@ -7,6 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,18 +24,18 @@ type SaverEx3 struct {
 
 // NewSaverEx3 Creates a new exercise 4 handler
 func NewSaverEx3(c *SaverConfig) *SaverEx3 {
-	canSend := make(chan bool)
+	canSend := make(chan bool, 1)
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
 	var outputFileNames []string
-	finishSignal := make(chan bool)
+	finishSignal := make(chan bool, 1)
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
 	log.Infof("SaverEx3 | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
-		internalSaverChannel := make(chan *dataStructures.Message)
+		internalSaverChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 		channels = append(channels, internalSaverChannel)
 		internalSavers = append(internalSavers, NewSaverForEx3(
 			protocol.NewConsumerChannel(internalSaverChannel),

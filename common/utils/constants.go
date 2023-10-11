@@ -30,6 +30,7 @@ const ConvertedTravelDuration = "convertedTravelDuration"
 const Journey = "journey"
 const Route = "route"
 
+const BufferSizeChannels = 300
 const MaxBatchLines = 1500
 const DefaultBatchLines = 300
 
