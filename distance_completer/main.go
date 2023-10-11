@@ -3,7 +3,6 @@ package main
 import (
 	"distance_completer/config"
 	"distance_completer/controllers"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -32,7 +31,6 @@ func main() {
 			i,
 			qMiddleware,
 			completerConfig,
-			data_structures.NewSerializer(),
 			startProcessing,
 		)
 		go distCompleter.CompleteDistances()
@@ -41,7 +39,6 @@ func main() {
 	airportsSaver := controllers.NewAirportSaver(
 		completerConfig,
 		qMiddleware,
-		data_structures.NewSerializer(),
 		startChannels,
 	)
 	go airportsSaver.SaveAirports()

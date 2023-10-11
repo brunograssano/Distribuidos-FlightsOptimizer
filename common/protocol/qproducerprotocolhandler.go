@@ -3,6 +3,7 @@ package protocol
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 )
 
 type ProducerProtocolInterface interface {
@@ -11,21 +12,19 @@ type ProducerProtocolInterface interface {
 }
 
 type ProducerQueueProtocolHandler struct {
-	producer   middleware.ProducerInterface
-	serializer *data_structures.Serializer
-	totalSent  int
+	producer  middleware.ProducerInterface
+	totalSent int
 }
 
 func NewProducerQueueProtocolHandler(producer middleware.ProducerInterface) *ProducerQueueProtocolHandler {
 	return &ProducerQueueProtocolHandler{
-		producer:   producer,
-		serializer: data_structures.NewSerializer(),
-		totalSent:  0,
+		producer:  producer,
+		totalSent: 0,
 	}
 }
 
 func (q *ProducerQueueProtocolHandler) Send(msg *data_structures.Message) error {
-	bytes := q.serializer.SerializeMsg(msg)
+	bytes := serializer.SerializeMsg(msg)
 	if msg.TypeMessage == data_structures.FlightRows {
 		q.totalSent += len(msg.DynMaps)
 	}

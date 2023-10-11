@@ -67,7 +67,6 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()
@@ -118,7 +117,6 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()
@@ -169,7 +167,6 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 		c:                &config.CompleterConfig{},
 		consumer:         mockCons,
 		producer:         mockProd,
-		serializer:       data_structures.NewSerializer(),
 		fileLoadedSignal: signalChan,
 	}
 	go distCompleter.CompleteDistances()

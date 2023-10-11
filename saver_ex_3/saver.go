@@ -5,6 +5,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,7 +17,6 @@ type SaverForEx3 struct {
 	finishSig     chan bool
 	regsToPersist map[string][2]*dataStructures.DynamicMap
 	id            int
-	serializer    *dataStructures.Serializer
 }
 
 // NewSaverForEx3 Creates a new saver for the results
@@ -31,7 +31,6 @@ func NewSaverForEx3(
 		consumer:      consumer,
 		finishSig:     finishSig,
 		id:            id,
-		serializer:    dataStructures.NewSerializer(),
 		regsToPersist: make(map[string][2]*dataStructures.DynamicMap),
 	}
 }
@@ -75,7 +74,7 @@ func (s *SaverForEx3) handleFlightRow(flightRow *dataStructures.DynamicMap) {
 	}
 	journeyStr := fmt.Sprintf("%v-%v", stAirport, destAirport)
 	journeyMap, existsJM := s.regsToPersist[journeyStr]
-	flightRow.AddColumn(utils.ConvertedTravelDuration, s.serializer.SerializeUint(uint32(convertedTravelDuration)))
+	flightRow.AddColumn(utils.ConvertedTravelDuration, serializer.SerializeUint(uint32(convertedTravelDuration)))
 	if existsJM {
 		newRows := DecideWhichRowsToKeep(journeyMap, flightRow, s.id)
 		s.regsToPersist[journeyStr] = newRows
@@ -98,7 +97,6 @@ func (s *SaverForEx3) persistToFile() {
 		log.Errorf("Saver %v | Error opening file | %v | Closing saver", s.id, err)
 		return
 	}
-	serializer := dataStructures.NewSerializer()
 	for journey, rows := range s.regsToPersist {
 		line := fmt.Sprintf("journey=%v\n", journey)
 		err := writer.WriteLine(line)

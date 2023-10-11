@@ -3,6 +3,7 @@ package protocol_test
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"testing"
 	"time"
 )
@@ -51,7 +52,6 @@ func TestShouldSendEOFToTheNextStepOnGreaterThanPrevSent(t *testing.T) {
 	outNext := make(chan *dataStructures.Message)
 	outSame := make(chan *dataStructures.Message)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
 	dynMap["prevSent"] = serializer.SerializeUint(4)
 	localSent := 2
 	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))
@@ -106,7 +106,6 @@ func TestShouldSendEOFToTheNextStepOnEqualToPrevSent(t *testing.T) {
 	outNext := make(chan *dataStructures.Message)
 	outSame := make(chan *dataStructures.Message)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
 	dynMap["prevSent"] = serializer.SerializeUint(13)
 	localSent := 2
 	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))
@@ -161,7 +160,6 @@ func TestShouldSendEOFToTheSameStepOnLessThanPrevSent(t *testing.T) {
 	outNext := make(chan *dataStructures.Message)
 	outSame := make(chan *dataStructures.Message)
 	dynMap := make(map[string][]byte)
-	serializer := dataStructures.NewSerializer()
 	dynMap["prevSent"] = serializer.SerializeUint(204)
 	localSent := 2
 	dynMap["localSent"] = serializer.SerializeUint(uint32(localSent))

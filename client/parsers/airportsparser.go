@@ -3,6 +3,7 @@ package parsers
 import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"strconv"
 	"strings"
@@ -17,7 +18,6 @@ type AirportsParser struct{}
 
 // LineToDynMap converts a row from the airports file to a dynamic map
 func (a AirportsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, error) {
-	serializer := dataStructures.Serializer{}
 	fields := strings.Split(line, utils.DotCommaSeparator)
 	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
 	if len(fields) != airportFileColumnCount {

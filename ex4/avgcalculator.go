@@ -3,6 +3,7 @@ package main
 import (
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -61,7 +62,7 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 
 // sendToJourneySavers Sends the average to the journey savers
 func (a *AvgCalculator) sendToJourneySavers(avg float32) {
-	avgBytes := dataStructure.NewSerializer().SerializeFloat(avg)
+	avgBytes := serializer.SerializeFloat(avg)
 	dynMap := make(map[string][]byte)
 	dynMap[utils.FinalAvg] = avgBytes
 	data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}

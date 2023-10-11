@@ -5,22 +5,22 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 // SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
-	c          *SaverConfig
-	consumer   protocol.ConsumerProtocolInterface
-	serializer *dataStructures.Serializer
-	canSend    chan bool
+	c        *SaverConfig
+	consumer protocol.ConsumerProtocolInterface
+	canSend  chan bool
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, serializer *dataStructures.Serializer, canSend chan bool) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, canSend chan bool) *SimpleSaver {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	return &SimpleSaver{c: c, consumer: consumer, serializer: serializer, canSend: canSend}
+	return &SimpleSaver{c: c, consumer: consumer, canSend: canSend}
 }
 
 // SaveData Saves the results from the queue in a file
@@ -53,7 +53,7 @@ func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error 
 		return err
 	}
 	for _, row := range msgStruct.DynMaps {
-		line := s.serializer.SerializeToString(row)
+		line := serializer.SerializeToString(row)
 		log.Debugf("SimpleSaver | Saving line: %v", line)
 		err = writer.WriteLine(line)
 		if err != nil {

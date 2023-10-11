@@ -6,13 +6,13 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 type AirportSaver struct {
 	c             *config.CompleterConfig
-	serializer    *dataStructures.Serializer
 	consumer      middleware.ConsumerInterface
 	loadedSignals []chan bool
 	fileSaver     *filemanager.FileWriter
@@ -21,7 +21,6 @@ type AirportSaver struct {
 func NewAirportSaver(
 	conf *config.CompleterConfig,
 	qMiddleware *middleware.QueueMiddleware,
-	s *dataStructures.Serializer,
 	fileLoadedSignals []chan bool,
 ) *AirportSaver {
 	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
@@ -35,7 +34,6 @@ func NewAirportSaver(
 	}
 	return &AirportSaver{
 		c:             conf,
-		serializer:    s,
 		consumer:      consumer,
 		loadedSignals: fileLoadedSignals,
 		fileSaver:     fileWriter,
@@ -58,7 +56,7 @@ func (as *AirportSaver) SaveAirports() {
 			log.Infof("AirportsSaver | Closing goroutine...")
 			return
 		}
-		msgStruct := as.serializer.DeserializeMsg(msg)
+		msgStruct := serializer.DeserializeMsg(msg)
 		log.Debugf("AirportsSaver | Received message | {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
 		if msgStruct.TypeMessage == dataStructures.EOFAirports {
 			log.Infof("AirportsSaver | Received EOF. Signalizing completers to start completion...")

@@ -1,7 +1,6 @@
 package main
 
 import (
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -22,9 +21,8 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	serializer := dataStructures.NewSerializer()
 	canSend := make(chan bool, 1)
-	saver := NewSimpleSaver(qMiddleware, saverConfig, serializer, canSend)
+	saver := NewSimpleSaver(qMiddleware, saverConfig, canSend)
 	go saver.SaveData()
 
 	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)

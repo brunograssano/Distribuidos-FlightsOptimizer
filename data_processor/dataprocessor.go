@@ -5,6 +5,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -19,14 +20,13 @@ type DataProcessor struct {
 	consumer       protocol.ConsumerProtocolInterface
 	producersEx123 []protocol.ProducerProtocolInterface
 	producersEx4   protocol.ProducerProtocolInterface
-	serializer     *dataStructures.Serializer
 	ex123Columns   []string
 	ex4Columns     []string
 	inputQueueProd protocol.ProducerProtocolInterface
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
-func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig, serializer *dataStructures.Serializer) *DataProcessor {
+func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig) *DataProcessor {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	var producersEx123 []protocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
@@ -40,7 +40,6 @@ func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Proces
 		consumer:       consumer,
 		producersEx123: producersEx123,
 		producersEx4:   producersEx4,
-		serializer:     serializer,
 		ex123Columns:   []string{utils.LegId, utils.StartingAirport, utils.DestinationAirport, utils.TravelDuration, utils.TotalFare, utils.TotalTravelDistance, utils.SegmentsAirlineName, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.StartingAirport, utils.DestinationAirport, utils.TotalFare},
 		inputQueueProd: inputQProd,
@@ -130,10 +129,10 @@ func (d *DataProcessor) processEx123Row(cols *dataStructures.DynamicMap) (*dataS
 	}
 
 	totalStopovers := uint32(splittedSegmentsLen) - destinationAirport
-	cols.AddColumn(utils.TotalStopovers, d.serializer.SerializeUint(totalStopovers))
+	cols.AddColumn(utils.TotalStopovers, serializer.SerializeUint(totalStopovers))
 
 	route := startingAirport + utils.DoublePipeSeparator + segments
-	cols.AddColumn(utils.Route, d.serializer.SerializeString(route))
+	cols.AddColumn(utils.Route, serializer.SerializeString(route))
 	return cols.ReduceToColumns(d.ex123Columns)
 }
 

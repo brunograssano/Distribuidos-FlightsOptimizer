@@ -1,7 +1,6 @@
 package main
 
 import (
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -21,9 +20,8 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(processorConfig.RabbitAddress)
-	serializer := dataStructures.NewSerializer()
 	for i := 0; i < processorConfig.GoroutinesCount; i++ {
-		r := NewDataProcessor(i, qMiddleware, processorConfig, serializer)
+		r := NewDataProcessor(i, qMiddleware, processorConfig)
 		go r.ProcessData()
 	}
 	<-sigs

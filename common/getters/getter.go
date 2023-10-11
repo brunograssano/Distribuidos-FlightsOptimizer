@@ -5,6 +5,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -65,7 +66,6 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
 	log.Infof("Getter | Sending results to client")
 	var currBatch []*dataStructures.DynamicMap
 	curLengthOfBatch := 0
-	serializer := dataStructures.NewSerializer()
 	for _, filename := range g.c.FileNames {
 		reader, err := filemanager.NewFileReader(filename)
 		if err != nil {

@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
@@ -13,14 +14,12 @@ import (
 const sizeOfLen = 4
 
 type SocketProtocolHandler struct {
-	sock       communication.TCPSocketInterface
-	serializer *data_structures.Serializer
+	sock communication.TCPSocketInterface
 }
 
 func NewSocketProtocolHandler(sock communication.TCPSocketInterface) *SocketProtocolHandler {
 	return &SocketProtocolHandler{
-		sock:       sock,
-		serializer: data_structures.NewSerializer(),
+		sock: sock,
 	}
 }
 
@@ -37,7 +36,7 @@ func (sph *SocketProtocolHandler) receiveMessage(length int) (*data_structures.M
 	if err != nil {
 		return nil, fmt.Errorf("error receiving message of length %v: %v. Skipping client", length, err)
 	}
-	return sph.serializer.DeserializeMsg(msg), nil
+	return serializer.DeserializeMsg(msg), nil
 }
 
 func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
@@ -54,7 +53,7 @@ func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
 
 func (sph *SocketProtocolHandler) sendLength(msgBytes []byte) error {
 	lengthOfBytes := len(msgBytes)
-	msgSize := sph.serializer.SerializeUint(uint32(lengthOfBytes))
+	msgSize := serializer.SerializeUint(uint32(lengthOfBytes))
 	log.Debugf("SocketProtocolHandler | Length to send is %v | Msg size bytes: %v", lengthOfBytes, msgSize)
 	write, err := sph.sock.Write(msgSize)
 	if err != nil {
@@ -80,7 +79,7 @@ func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
 }
 
 func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
-	bytesToSend := sph.serializer.SerializeMsg(msg)
+	bytesToSend := serializer.SerializeMsg(msg)
 	err := sph.sendLength(bytesToSend)
 	if err != nil {
 		return fmt.Errorf("sending length: %v", err)

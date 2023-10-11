@@ -6,6 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -19,19 +20,16 @@ type ClientHandler struct {
 	outQueueAirports   middleware.ProducerInterface
 	outQueueFlightRows middleware.ProducerInterface
 	GetterAddresses    []string
-	serializer         *data_structures.Serializer
 }
 
 func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses []string) *ClientHandler {
 	sph := protocol.NewSocketProtocolHandler(conn)
-	serializer := data_structures.NewSerializer()
 	return &ClientHandler{
 		conn:               sph,
 		rowsSent:           0,
 		outQueueAirports:   outQueueAirports,
 		outQueueFlightRows: outQueueFlightRows,
 		GetterAddresses:    GetterAddresses,
-		serializer:         serializer,
 	}
 }
 
@@ -112,7 +110,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 
 func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) error {
 	log.Infof("ClientHandler | Sending airports to exchange...")
-	err := ch.outQueueAirports.Send(ch.serializer.SerializeMsg(message))
+	err := ch.outQueueAirports.Send(serializer.SerializeMsg(message))
 	if err != nil {
 		log.Errorf("ClientHandler | Error sending airports to exchange | %v", err)
 		return err
@@ -121,7 +119,7 @@ func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) 
 }
 
 func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message) error {
-	err := ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))
+	err := ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
 	ch.rowsSent += uint(len(message.DynMaps))
 	if err != nil {
 		return err
@@ -132,12 +130,12 @@ func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message
 
 func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) error {
 	dynMap := data_structures.NewDynamicMap(make(map[string][]byte))
-	dynMap.AddColumn(utils.PrevSent, ch.serializer.SerializeUint(uint32(ch.rowsSent)))
-	dynMap.AddColumn(utils.LocalSent, ch.serializer.SerializeUint(uint32(0)))
-	dynMap.AddColumn(utils.LocalReceived, ch.serializer.SerializeUint(uint32(0)))
+	dynMap.AddColumn(utils.PrevSent, serializer.SerializeUint(uint32(ch.rowsSent)))
+	dynMap.AddColumn(utils.LocalSent, serializer.SerializeUint(uint32(0)))
+	dynMap.AddColumn(utils.LocalReceived, serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
 	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
-	return ch.outQueueFlightRows.Send(ch.serializer.SerializeMsg(message))
+	return ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
 }
 
 func (ch *ClientHandler) handleMessage(message *data_structures.Message, cliSPH *protocol.SocketProtocolHandler) error {

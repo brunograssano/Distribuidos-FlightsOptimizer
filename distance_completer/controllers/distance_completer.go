@@ -7,6 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -20,7 +21,6 @@ type DistanceCompleter struct {
 	consumer         protocol.ConsumerProtocolInterface
 	producer         protocol.ProducerProtocolInterface
 	prodForCons      protocol.ProducerProtocolInterface
-	serializer       *dataStructures.Serializer
 	fileLoadedSignal chan bool
 }
 
@@ -28,7 +28,6 @@ func NewDistanceCompleter(
 	id int,
 	qMiddleware *middleware.QueueMiddleware,
 	c *config.CompleterConfig,
-	s *dataStructures.Serializer,
 	fileLoadedSignal chan bool,
 ) *DistanceCompleter {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
@@ -42,7 +41,6 @@ func NewDistanceCompleter(
 		consumer:         consumer,
 		producer:         producer,
 		prodForCons:      producerForCons,
-		serializer:       s,
 		fileLoadedSignal: fileLoadedSignal,
 	}
 }
@@ -70,7 +68,7 @@ func (dc *DistanceCompleter) calculateDirectDistance(flightRow *dataStructures.D
 }
 
 func (dc *DistanceCompleter) addColumnToRow(key string, value float32, row *dataStructures.DynamicMap) {
-	bytes := dc.serializer.SerializeFloat(value)
+	bytes := serializer.SerializeFloat(value)
 	row.AddColumn(key, bytes)
 }
 

@@ -5,6 +5,7 @@ import (
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"slices"
@@ -96,7 +97,6 @@ func (js *JourneySaver) readJourneyAsArrays(journeyStr string) ([]float32, error
 // sendToGeneralAccumulator Sends to the accumulator the values that the JourneySaver managed
 func (js *JourneySaver) sendToGeneralAccumulator() error {
 	dynMapData := make(map[string][]byte)
-	serializer := dataStructure.NewSerializer()
 	dynMapData[utils.LocalPrice] = serializer.SerializeFloat(js.totalPrice)
 	dynMapData[utils.LocalQuantity] = serializer.SerializeUint(uint32(js.quantities))
 	msgToSend := &dataStructure.Message{
@@ -141,7 +141,6 @@ func (js *JourneySaver) getMaxAndAverage(prices []float32) (float32, float32) {
 }
 
 func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
-	serializer := dataStructure.NewSerializer()
 	for _, fileStr := range js.filesToRead {
 		log.Infof("JourneySaver | Reading file: %v", fileStr)
 		pricesForJourney, err := js.readJourneyAsArrays(fileStr)

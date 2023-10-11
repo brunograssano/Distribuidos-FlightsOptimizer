@@ -3,12 +3,12 @@ package protocol
 import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolInterface) error {
-	serializer := dataStructures.NewSerializer()
 	dynMapData := make(map[string][]byte)
 	dynMapData[utils.LocalReceived] = serializer.SerializeUint(uint32(0))
 	dynMapData[utils.LocalSent] = serializer.SerializeUint(uint32(0))
@@ -22,7 +22,6 @@ func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolIn
 }
 
 func sendEOFToInput(localReceived int, received int, prevSent int, sent int, localSent int, prodInputQueue ProducerProtocolInterface) error {
-	serializer := dataStructures.NewSerializer()
 	dynMapData := make(map[string][]byte)
 	dynMapData[utils.LocalReceived] = serializer.SerializeUint(uint32(localReceived + received))
 	dynMapData[utils.LocalSent] = serializer.SerializeUint(uint32(sent + localSent))
