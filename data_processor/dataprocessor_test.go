@@ -18,6 +18,8 @@ func (m *mockConsumer) GetReceivedMessages() int {
 	return 0
 }
 
+func (m *mockConsumer) ClearData() {}
+
 func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
 		return nil, m.ok
@@ -44,6 +46,8 @@ func (m *mockProducer) Send(data *dataStructures.Message) error {
 	m.outputChannel <- data
 	return nil
 }
+
+func (m *mockProducer) ClearData() {}
 
 func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	pConfig := &ProcessorConfig{}
