@@ -60,7 +60,13 @@ func (as *AirportSaver) SaveAirports() {
 		log.Debugf("AirportsSaver | Received message | {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
 		if msgStruct.TypeMessage == dataStructures.EOFAirports {
 			log.Infof("AirportsSaver | Received EOF. Signalizing completers to start completion...")
-			break
+			as.signalCompleters()
+			continue
+		}
+		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
+			log.Infof("AirportsSaver | Received EOF FlightRows. Moving airport file")
+			filemanager.MoveFiles([]string{as.c.AirportsFilename})
+			continue
 		}
 		rows := msgStruct.DynMaps
 		for _, row := range rows {
@@ -87,7 +93,6 @@ func (as *AirportSaver) SaveAirports() {
 			}
 		}
 	}
-	as.signalCompleters()
 
 }
 
