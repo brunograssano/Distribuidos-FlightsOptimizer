@@ -31,7 +31,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
 	var outputFileNames []string
-	finishSignal := make(chan bool, 1)
+	finishSignal := make(chan bool, c.InternalSaversCount)
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
 	log.Infof("SaverEx3 | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
@@ -111,10 +111,13 @@ func (se3 *SaverEx3) StartHandler() {
 
 // Close Closes the handler of the exercise 4
 func (se3 *SaverEx3) Close() {
+	log.Infof("SaverEx3 | Closing resources...")
+	log.Infof("SaverEx3 | Starting channel closing...")
 	for idx, channel := range se3.channels {
 		log.Infof("SaverEx3 | Closing channel #%v", idx)
 		close(channel)
 	}
-	log.Infof("SaverEx3 | Closing getter")
+	log.Infof("SaverEx3 | Closing Getter")
 	se3.getter.Close()
+	log.Infof("SaverEx3 | Ended closing resources")
 }
