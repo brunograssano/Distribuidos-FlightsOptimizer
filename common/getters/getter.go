@@ -24,11 +24,12 @@ func NewGetter(getterConf *GetterConfig, canSend chan bool) (*Getter, error) {
 		log.Errorf("Getter | action: create_server | result: error | id: %v | address: %v | %v", getterConf.ID, getterConf.Address, err)
 		return nil, err
 	}
-	return &Getter{c: getterConf, server: server, stop: make(chan bool), canSend: canSend}, nil
+	return &Getter{c: getterConf, server: server, stop: make(chan bool, 1), canSend: canSend}, nil
 }
 
 func (g *Getter) ReturnResults() {
 	defer utils.CloseSocketAndNotifyError(g.server)
+	defer log.Infof("Getter | Finishing Return Loop...")
 	for {
 		socket, err := g.server.Accept()
 		if err != nil {
@@ -122,7 +123,11 @@ func (g *Getter) sendBatch(sph *protocol.SocketProtocolHandler, batch []*dataStr
 
 // Close Stops the execution of the getter server
 func (g *Getter) Close() {
+	log.Infof("Getter | Sending signal to stop...")
 	g.stop <- true
+	log.Infof("Getter | Closing stop channel...")
 	close(g.stop)
+	log.Infof("Getter | Closing server socket...")
 	utils.CloseSocketAndNotifyError(g.server)
+	log.Infof("Getter | Ended closing resources...")
 }

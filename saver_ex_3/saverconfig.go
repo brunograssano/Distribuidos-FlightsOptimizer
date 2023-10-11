@@ -22,6 +22,7 @@ type SaverConfig struct {
 	GetterAddress       string
 	GetterBatchLines    uint
 	InternalSaversCount uint
+	DispatchersCount    uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -43,6 +44,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "input")
 	_ = v.BindEnv("saver", "output")
 	_ = v.BindEnv("saver", "count")
+	_ = v.BindEnv("dispatchers", "count")
 	_ = v.BindEnv("getter", "address")
 	_ = v.BindEnv("getter", "batch", "lines")
 
@@ -97,18 +99,25 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 
 	internalSaversCount := env.GetUint("saver.count")
 	if internalSaversCount > utils.MaxGoroutines || internalSaversCount == 0 {
-		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
+		log.Errorf("Saver3Config | invalid savers count | Setting to default")
 		internalSaversCount = utils.DefaultGoroutines
 	}
 
-	log.Infof("Saver3Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v",
+	dispatchersCount := env.GetUint("dispatchers.count")
+	if dispatchersCount > utils.MaxGoroutines || dispatchersCount == 0 {
+		log.Errorf("Saver3Config | invalid dispatchers count | Setting to default")
+		dispatchersCount = utils.DefaultGoroutines
+	}
+
+	log.Infof("Saver3Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputFilename: %v | getterAddress: %v | getterBatchLines: %v | dispatchers: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,
 		inputQueueName,
 		outputFilenamesStr,
 		getterAddress,
-		getterBatchLines)
+		getterBatchLines,
+		dispatchersCount)
 
 	return &SaverConfig{
 		ID:                  id,
@@ -118,5 +127,6 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		GetterAddress:       getterAddress,
 		GetterBatchLines:    getterBatchLines,
 		InternalSaversCount: internalSaversCount,
+		DispatchersCount:    dispatchersCount,
 	}, nil
 }

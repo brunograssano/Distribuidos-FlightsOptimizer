@@ -5,6 +5,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,14 +28,14 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	outputQueue := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 
 	// Creation of the queue to the average calculator
-	accumChannel := make(chan *dataStructures.Message)
+	accumChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 	toAccumulatorChannelProducer := protocol.NewProducerChannel(accumChannel)
 	toAccumulatorChannelConsumer := protocol.NewConsumerChannel(accumChannel)
 	// We append the channels so that we can close all of them later
 	channels = append(channels, accumChannel)
 
 	// Creation of the JourneySink, it will redirect and handle EOF to saver
-	journeySinkChannel := make(chan *dataStructures.Message)
+	journeySinkChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 	toJourneySinkChannelProducer := protocol.NewProducerChannel(journeySinkChannel)
 	channels = append(channels, journeySinkChannel)
 
@@ -43,7 +44,7 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
 	log.Infof("Ex4Handler | Creating %v journey savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
-		internalServerChannel := make(chan *dataStructures.Message)
+		internalServerChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 		channels = append(channels, internalServerChannel)
 		internalSavers = append(internalSavers, NewJourneySaver(
 			protocol.NewConsumerChannel(internalServerChannel),

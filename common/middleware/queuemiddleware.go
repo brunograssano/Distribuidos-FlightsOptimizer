@@ -38,7 +38,11 @@ func (qm *QueueMiddleware) CreateExchangeProducer(nameExchange string, routingKe
 
 func (qm *QueueMiddleware) Close() {
 	err := qm.channel.Close()
-	FailOnError(err, "Error closing QueueMiddleware Channel")
+	if err != nil {
+		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Channel | %v", err)
+	}
 	err = qm.conn.Close()
-	FailOnError(err, "Error closing QueueMiddleware Connection")
+	if err != nil {
+		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Connection | %v", err)
+	}
 }

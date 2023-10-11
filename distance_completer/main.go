@@ -26,7 +26,7 @@ func main() {
 
 	var startChannels []chan bool
 	for i := 0; i < completerConfig.GoroutinesCount; i++ {
-		startProcessing := make(chan bool)
+		startProcessing := make(chan bool, 1)
 		startChannels = append(startChannels, startProcessing)
 		distCompleter := controllers.NewDistanceCompleter(
 			i,

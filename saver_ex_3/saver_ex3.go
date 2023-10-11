@@ -7,6 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,21 +24,18 @@ type SaverEx3 struct {
 
 // NewSaverEx3 Creates a new exercise 4 handler
 func NewSaverEx3(c *SaverConfig) *SaverEx3 {
-	canSend := make(chan bool)
+	canSend := make(chan bool, 1)
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
-	// We create the input queue to the EX4 service
-	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
 	var outputFileNames []string
-	finishSignal := make(chan bool)
+	finishSignal := make(chan bool, c.InternalSaversCount)
 	var toInternalSaversChannels []protocol.ProducerProtocolInterface
 	log.Infof("SaverEx3 | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
-		internalSaverChannel := make(chan *dataStructures.Message)
+		internalSaverChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 		channels = append(channels, internalSaverChannel)
 		internalSavers = append(internalSavers, NewSaverForEx3(
 			protocol.NewConsumerChannel(internalSaverChannel),
@@ -51,12 +49,13 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 	}
 
 	// Creation of the dispatcher to the JourneySavers
-	log.Infof("SaverEx3 | Creating dispatcher...")
-	jd := []*dispatcher.JourneyDispatcher{
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
-		dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels),
+	log.Infof("SaverEx3 | Creating dispatchers...")
+	var jds []*dispatcher.JourneyDispatcher
+	for i := uint(0); i < c.DispatchersCount; i++ {
+		// We create the input queue to the EX4 service
+		inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+		prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
@@ -67,7 +66,7 @@ func NewSaverEx3(c *SaverConfig) *SaverEx3 {
 
 	return &SaverEx3{
 		c:                 c,
-		journeyDispatcher: jd,
+		journeyDispatcher: jds,
 		qMiddleware:       qMiddleware,
 		channels:          channels,
 		savers:            internalSavers,
@@ -97,8 +96,10 @@ func (se3 *SaverEx3) StartHandler() {
 		log.Infof("SaverEx3 | Spawning saver #%v", idx+1)
 		go saver.SaveData()
 	}
-	log.Infof("SaverEx3 | Spawning Dispatcher...")
-	for _, jd := range se3.journeyDispatcher {
+
+	log.Debugf("SaverEx3 | Number of Dispatchers: %v", len(se3.journeyDispatcher))
+	for idx, jd := range se3.journeyDispatcher {
+		log.Infof("SaverEx3 | Spawning Dispatcher #%v", idx)
 		go jd.DispatchLoop()
 	}
 
@@ -110,10 +111,13 @@ func (se3 *SaverEx3) StartHandler() {
 
 // Close Closes the handler of the exercise 4
 func (se3 *SaverEx3) Close() {
+	log.Infof("SaverEx3 | Closing resources...")
+	log.Infof("SaverEx3 | Starting channel closing...")
 	for idx, channel := range se3.channels {
 		log.Infof("SaverEx3 | Closing channel #%v", idx)
 		close(channel)
 	}
-	log.Infof("SaverEx3 | Closing getter")
+	log.Infof("SaverEx3 | Closing Getter")
 	se3.getter.Close()
+	log.Infof("SaverEx3 | Ended closing resources")
 }
