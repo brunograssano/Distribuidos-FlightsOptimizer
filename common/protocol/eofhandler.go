@@ -49,6 +49,9 @@ func HandleEOF(
 	sent := prodOutputQueues[0].GetSentMessages()
 	received := consInputQueue.GetReceivedMessages()
 	consInputQueue.ClearData()
+	for _, prodOQ := range prodOutputQueues {
+		prodOQ.ClearData()
+	}
 	// We get the total sent messages from the EOF queue, the total that were processed by the controllers,
 	// and the total sent by this controller to the next step
 	// "prevSent", "localReceived", "localSent"

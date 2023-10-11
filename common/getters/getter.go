@@ -1,6 +1,7 @@
 package getters
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
@@ -15,11 +16,11 @@ type Getter struct {
 	c       *GetterConfig
 	server  *communication.PassiveTCPSocket
 	stop    chan bool
-	canSend chan bool
+	canSend chan string
 }
 
 // NewGetter Creates a new results getter server
-func NewGetter(getterConf *GetterConfig, canSend chan bool) (*Getter, error) {
+func NewGetter(getterConf *GetterConfig, canSend chan string) (*Getter, error) {
 	server, err := communication.NewPassiveTCPSocket(getterConf.Address)
 	if err != nil {
 		log.Errorf("Getter | action: create_server | result: error | id: %v | address: %v | %v", getterConf.ID, getterConf.Address, err)
@@ -39,8 +40,8 @@ func (g *Getter) ReturnResults() {
 		}
 		sph := protocol.NewSocketProtocolHandler(socket)
 		select {
-		case <-g.canSend:
-			g.sendResults(sph)
+		case folder := <-g.canSend:
+			g.sendResults(sph, folder)
 		default:
 			g.askLaterForResults(sph)
 		}
@@ -62,12 +63,12 @@ func (g *Getter) askLaterForResults(sph *protocol.SocketProtocolHandler) {
 }
 
 // sendResults Sends the saved results to the client
-func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler) {
+func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler, folder string) {
 	log.Infof("Getter | Sending results to client")
 	var currBatch []*dataStructures.DynamicMap
 	curLengthOfBatch := 0
 	for _, filename := range g.c.FileNames {
-		reader, err := filemanager.NewFileReader(filename)
+		reader, err := filemanager.NewFileReader(fmt.Sprintf("%v/%v", folder, filename))
 		if err != nil {
 			log.Errorf("Getter | Error trying to open file: %v | %v | Skipping it...", filename, err)
 			continue

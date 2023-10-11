@@ -33,7 +33,7 @@ func (jd *JourneyDispatcher) DispatchLoop() {
 			log.Infof("JourneyDispatcher | Input queue closed, stopping...")
 			return
 		}
-		log.Infof("JourneyDispatcher | Received message, dispatching its rows to Journey Savers")
+		log.Debugf("JourneyDispatcher | Received message, dispatching its rows to Journey Savers")
 		jd.dispatch(msg)
 	}
 }
@@ -46,13 +46,6 @@ func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error handling EOF | %v", err)
 		}
-		/*for idx, channel := range jd.channels {
-			log.Infof("Sending EOF to channel #%v", idx)
-			err := channel.Send(message)
-			if err != nil {
-				log.Errorf("Error sending EOF to channel #%v: %v", idx, err)
-			}
-		}*/
 	} else if message.TypeMessage == dataStructures.FlightRows {
 		jd.dispatchFlightRows(message)
 	} else {

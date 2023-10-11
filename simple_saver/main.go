@@ -21,7 +21,7 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	canSend := make(chan bool, 1)
+	canSend := make(chan string, 1)
 	saver := NewSimpleSaver(qMiddleware, saverConfig, canSend)
 	go saver.SaveData()
 

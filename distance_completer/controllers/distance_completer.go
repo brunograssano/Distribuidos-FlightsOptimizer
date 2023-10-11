@@ -21,14 +21,14 @@ type DistanceCompleter struct {
 	consumer         protocol.ConsumerProtocolInterface
 	producer         protocol.ProducerProtocolInterface
 	prodForCons      protocol.ProducerProtocolInterface
-	fileLoadedSignal chan bool
+	fileLoadedSignal chan string
 }
 
 func NewDistanceCompleter(
 	id int,
 	qMiddleware *middleware.QueueMiddleware,
 	c *config.CompleterConfig,
-	fileLoadedSignal chan bool,
+	fileLoadedSignal chan string,
 ) *DistanceCompleter {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
 	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
@@ -82,12 +82,12 @@ func (dc *DistanceCompleter) calculateTotalTravelDistance(flightRow *dataStructu
 	for i := 0; i < len(idsArray)-1; i++ {
 		initialAirport, exists := dc.airportsMap[idsArray[i]]
 		if !exists {
-			log.Errorf("DistanceCompleter %v | Row does not have correctly the route | Skipping...", dc.completerId)
+			log.Errorf("DistanceCompleter %v | Row does not have correctly the route '%v' in '%v' | Skipping...", dc.completerId, idsArray[i], route)
 			return -1, fmt.Errorf("row does not have correctly the route. Skipping")
 		}
 		nextAirport, exists := dc.airportsMap[idsArray[i+1]]
 		if !exists {
-			log.Errorf("DistanceCompleter %v | Row does not have correctly the route | Skipping...", dc.completerId)
+			log.Errorf("DistanceCompleter %v | Row does not have correctly the route '%v' in '%v'  | Skipping...", dc.completerId, idsArray[i+1], route)
 			return -1, fmt.Errorf("row does not have correctly the route. Skipping")
 		}
 
@@ -104,13 +104,11 @@ func (dc *DistanceCompleter) sendNext(message *dataStructures.Message) {
 	err := dc.producer.Send(message)
 	if err != nil {
 		log.Errorf("DistanceCompleter %v | Error trying to send to the next service | %v", dc.completerId, err)
-	} else {
-		log.Infof("DistanceCompleter %v | Message sent correctly to the consumer...", dc.completerId)
 	}
 }
 
-func (dc *DistanceCompleter) loadAirports() {
-	reader, err := filemanager.NewFileReader(dc.c.AirportsFilename)
+func (dc *DistanceCompleter) loadAirports(folder string) {
+	reader, err := filemanager.NewFileReader(fmt.Sprintf("%v/%v", folder, dc.c.AirportsFilename))
 	if err != nil {
 		log.Errorf("DistanceCompleter %v | Error trying to read the airports | %v", dc.completerId, err)
 		if reader != nil {
@@ -142,9 +140,7 @@ func (dc *DistanceCompleter) loadAirports() {
 }
 
 func (dc *DistanceCompleter) CompleteDistances() {
-	<-dc.fileLoadedSignal
-	log.Infof("DistanceCompleter %v | Received signal to load file | Loading airports and initializing completer...", dc.completerId)
-	dc.loadAirports()
+	dc.waitForAirportsSignal()
 	for {
 		msg, ok := dc.consumer.Pop()
 		if !ok {
@@ -158,9 +154,10 @@ func (dc *DistanceCompleter) CompleteDistances() {
 			if err != nil {
 				log.Errorf("DistanceCompleter %v | Error handling EOF | %v", dc.completerId, err)
 			}
-			return
+			dc.clearInternalState()
+			dc.waitForAirportsSignal()
 		} else if msg.TypeMessage == dataStructures.FlightRows {
-			log.Infof("DistanceCompleter %v | Received Batch. Handling rows to be completed...", dc.completerId)
+			log.Debugf("DistanceCompleter %v | Received Batch. Handling rows to be completed...", dc.completerId)
 			dc.handleFlightRows(msg)
 		} else {
 			log.Warnf("DistanceCompleter %v | Warning Message | Unknown type of message: %v. Skipping it...", dc.completerId, msg.TypeMessage)
@@ -168,11 +165,21 @@ func (dc *DistanceCompleter) CompleteDistances() {
 	}
 }
 
+func (dc *DistanceCompleter) clearInternalState() {
+	dc.airportsMap = make(map[string][2]float32)
+}
+
+func (dc *DistanceCompleter) waitForAirportsSignal() {
+	folder := <-dc.fileLoadedSignal
+	log.Infof("DistanceCompleter %v | Received signal to load file | Loading airports and initializing completer...", dc.completerId)
+	dc.loadAirports(folder)
+}
+
 func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
 	rows := msg.DynMaps
 	var nextBatch []*dataStructures.DynamicMap
 	for _, row := range rows {
-		totalTravelDistance, err := row.GetAsFloat("totalTravelDistance")
+		totalTravelDistance, err := row.GetAsFloat(utils.TotalTravelDistance)
 		if err != nil || shouldCompleteCol(totalTravelDistance) {
 			log.Debugf("DistanceCompleter %v | Row needs totalTravelDistance to be completed. Calculating...", dc.completerId)
 			totalTravelDistance, err = dc.calculateTotalTravelDistance(row)
@@ -180,7 +187,7 @@ func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
 				log.Errorf("DistanceCompleter %v | Error adding totalTravelDistance | %v | Skipping row...", dc.completerId, err)
 				continue
 			}
-			dc.addColumnToRow("totalTravelDistance", totalTravelDistance, row)
+			dc.addColumnToRow(utils.TotalTravelDistance, totalTravelDistance, row)
 			log.Debugf("DistanceCompleter %v | totalTravelDistance added correctly!", dc.completerId)
 		}
 		log.Debugf("DistanceCompleter %v | Row needs directDistance to be completed. Calculating...", dc.completerId)
@@ -189,11 +196,11 @@ func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
 			log.Errorf("DistanceCompleter %v | Error adding directDistance | %v | Skipping row...", dc.completerId, err)
 			continue
 		}
-		dc.addColumnToRow("directDistance", directDistance, row)
+		dc.addColumnToRow(utils.DirectDistance, directDistance, row)
 		log.Debugf("DistanceCompleter %v | directDistance added correctly!", dc.completerId)
 		nextBatch = append(nextBatch, row)
 	}
-	log.Infof("DistanceCompleter %v | Finished processing batch. Sending to next queue...", dc.completerId)
+	log.Debugf("DistanceCompleter %v | Finished processing batch. Sending to next queue...", dc.completerId)
 	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch}
 	dc.sendNext(msgToSend)
 }

@@ -51,9 +51,8 @@ func (fd *FilterDistances) FilterDistances() {
 			if err != nil {
 				log.Errorf("FilterDistances %v | Error handling EOF | %v", fd.filterId, err)
 			}
-			break
 		} else if msgStruct.TypeMessage == dataStructures.FlightRows {
-			log.Infof("FilterDistances %v | Received FlightRows. Filtering...", fd.filterId)
+			log.Debugf("FilterDistances %v | Received FlightRows. Filtering...", fd.filterId)
 			fd.handleFlightRows(msgStruct)
 		} else {
 			log.Warnf("FilterDistances %v | Received unknown message type | Skipping...", fd.filterId)
@@ -79,7 +78,7 @@ func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
 		}
 	}
 	if len(filteredRows) > 0 {
-		log.Infof("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msgStruct.DynMaps), len(filteredRows))
+		log.Debugf("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msgStruct.DynMaps), len(filteredRows))
 		for _, producer := range fd.producers {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,

@@ -14,14 +14,14 @@ import (
 type AirportSaver struct {
 	c             *config.CompleterConfig
 	consumer      middleware.ConsumerInterface
-	loadedSignals []chan bool
+	loadedSignals []chan string
 	fileSaver     *filemanager.FileWriter
 }
 
 func NewAirportSaver(
 	conf *config.CompleterConfig,
 	qMiddleware *middleware.QueueMiddleware,
-	fileLoadedSignals []chan bool,
+	fileLoadedSignals []chan string,
 ) *AirportSaver {
 	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
 	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports)
@@ -40,16 +40,14 @@ func NewAirportSaver(
 	}
 }
 
-func (as *AirportSaver) signalCompleters() {
+func (as *AirportSaver) signalCompleters(folder string) {
 	for i := 0; i < len(as.loadedSignals); i++ {
 		log.Infof("AirportsSaver | Sending signal to completer #%v...", i)
-		as.loadedSignals[i] <- true
-		close(as.loadedSignals[i])
+		as.loadedSignals[i] <- folder
 	}
 }
 
 func (as *AirportSaver) SaveAirports() {
-	defer as.closeFile()
 	for {
 		msg, ok := as.consumer.Pop()
 		if !ok {
@@ -60,12 +58,14 @@ func (as *AirportSaver) SaveAirports() {
 		log.Debugf("AirportsSaver | Received message | {type: %v, rowCount: %v}", msgStruct.TypeMessage, len(msgStruct.DynMaps))
 		if msgStruct.TypeMessage == dataStructures.EOFAirports {
 			log.Infof("AirportsSaver | Received EOF. Signalizing completers to start completion...")
-			as.signalCompleters()
-			continue
-		}
-		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("AirportsSaver | Received EOF FlightRows. Moving airport file")
-			filemanager.MoveFiles([]string{as.c.AirportsFilename})
+			as.closeFile()
+			folder, err := filemanager.MoveFiles([]string{as.c.AirportsFilename})
+			if err != nil {
+				log.Errorf("AirportsSaver | Error moving file to folder, closing | %v", err)
+				return
+			}
+			as.signalCompleters(folder)
+			as.openNewFile()
 			continue
 		}
 		rows := msgStruct.DynMaps
@@ -102,4 +102,12 @@ func (as *AirportSaver) closeFile() {
 	if err != nil {
 		log.Errorf("AirportsSaver | Error closing airports file | %v", err)
 	}
+}
+
+func (as *AirportSaver) openNewFile() {
+	fileWriter, err := filemanager.NewFileWriter(as.c.AirportsFilename)
+	if err != nil {
+		log.Fatalf("AirportsSaver | Error trying to initialize FileWriter in saver | %v", err)
+	}
+	as.fileSaver = fileWriter
 }

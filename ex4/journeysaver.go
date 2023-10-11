@@ -142,20 +142,20 @@ func (js *JourneySaver) getMaxAndAverage(prices []float32) (float32, float32) {
 
 func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 	for _, fileStr := range js.filesToRead {
-		log.Infof("JourneySaver | Reading file: %v", fileStr)
+		log.Debugf("JourneySaver | Reading file: %v", fileStr)
 		pricesForJourney, err := js.readJourneyAsArrays(fileStr)
 		if err != nil {
 			log.Errorf("JourneySaver | Error reading file | %v | Skipping file...", err)
 			continue
 		}
 		filteredPrices := js.filterGreaterThanAverage(pricesForJourney, finalAvg)
-		log.Infof("JourneySaver | Filtered prices. Original len: %v ; Filtered len: %v", len(pricesForJourney), len(filteredPrices))
+		log.Debugf("JourneySaver | Filtered prices. Original len: %v ; Filtered len: %v", len(pricesForJourney), len(filteredPrices))
 		if len(filteredPrices) == 0 {
-			log.Infof("JourneySaver | Filtered Prices Length is 0 | Skipping...")
+			log.Warnf("JourneySaver | Filtered Prices Length is 0 | Skipping...")
 			continue
 		}
 		journeyAverage, journeyMax := js.getMaxAndAverage(filteredPrices)
-		log.Infof("JourneySaver | Average: %v, Maximum: %v", journeyAverage, journeyMax)
+		log.Debugf("JourneySaver | Average: %v, Maximum: %v", journeyAverage, journeyMax)
 
 		dynMap := make(map[string][]byte)
 		dynMap[utils.Avg] = serializer.SerializeFloat(journeyAverage)
@@ -166,7 +166,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 			TypeMessage: dataStructure.FlightRows,
 			DynMaps:     data,
 		}
-		log.Infof("JourneySaver | Sending max and avg to next step...")
+		log.Debugf("JourneySaver | Sending max and avg to next step...")
 		err = js.avgAndMaxProducer.Send(msg)
 		if err != nil {
 			log.Errorf("JourneySaver | Error sending to saver the journey %v | %v | Skipping...", fileStr, err)
@@ -207,6 +207,17 @@ func (js *JourneySaver) SavePricesForJourneys() {
 			}
 			log.Infof("JourneySaver | Received Final Avg: %v. Now sending Average for Journeys...", finalAvg)
 			js.sendAverageForJourneys(finalAvg)
+			_, err = filemanager.MoveFiles(js.filesToRead)
+			if err != nil {
+				log.Errorf("JourneySaver | Error trying to move files | %v", err)
+			}
+			js.clearInternalState()
 		}
 	}
+}
+
+func (js *JourneySaver) clearInternalState() {
+	js.filesToRead = []string{}
+	js.totalPrice = 0
+	js.quantities = 0
 }

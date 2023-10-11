@@ -37,6 +37,7 @@ func NewSaverForEx3(
 
 // SaveData Saves the results from the queue in a file
 func (s *SaverForEx3) SaveData() {
+	log.Infof("Saver %v | Started goroutine", s.id)
 	for {
 		msg, ok := s.consumer.Pop()
 		if !ok {
@@ -47,7 +48,6 @@ func (s *SaverForEx3) SaveData() {
 		log.Debugf("Saver %v | Received message: %v", s.id, msg)
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			s.handleEOF()
-			return
 		} else if msg.TypeMessage == dataStructures.FlightRows {
 			s.handleFlightRow(msg.DynMaps[0])
 		}
@@ -87,6 +87,7 @@ func (s *SaverForEx3) handleFlightRow(flightRow *dataStructures.DynamicMap) {
 func (s *SaverForEx3) handleEOF() {
 	log.Infof("Saver %v | Received all results | Persisting to file...", s.id)
 	s.persistToFile()
+	s.regsToPersist = make(map[string][2]*dataStructures.DynamicMap)
 	log.Infof("Saver %v | Sending finish signal...", s.id)
 	s.finishSig <- true
 }

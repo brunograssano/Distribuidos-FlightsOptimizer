@@ -74,7 +74,7 @@ func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
 	if write < len(msgBytes) {
 		return fmt.Errorf("send wrote less than %v bytes, instead size sent was %v", len(msgBytes), write)
 	}
-	log.Infof("SocketProtocolHandler | Sent message")
+	log.Debugf("SocketProtocolHandler | Sent message")
 	return nil
 }
 

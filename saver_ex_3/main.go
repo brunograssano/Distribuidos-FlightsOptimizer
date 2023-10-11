@@ -19,7 +19,7 @@ func main() {
 	}
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
 
-	saverEx3 := NewSaverEx3(saverConfig)
+	saverEx3 := NewEx3Handler(saverConfig)
 	go saverEx3.StartHandler()
 
 	<-sigs

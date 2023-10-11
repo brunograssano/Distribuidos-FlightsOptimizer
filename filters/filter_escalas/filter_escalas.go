@@ -53,9 +53,8 @@ func (fe *FilterStopovers) FilterStopovers() {
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error handling EOF | %v", fe.filterId, err)
 			}
-			break
 		} else if msg.TypeMessage == dataStructures.FlightRows {
-			log.Infof("FilterStopovers %v | Received flight rows. Now filtering...", fe.filterId)
+			log.Debugf("FilterStopovers %v | Received flight rows. Now filtering...", fe.filterId)
 			fe.handleFlightRows(msg)
 		} else {
 			log.Warnf("FilterStopovers %v | Warn Message | Unknonw message type received. Skipping it...", fe.filterId)
@@ -75,7 +74,7 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 		}
 	}
 	if len(filteredRows) > 0 {
-		log.Infof("FilterStopovers %v | Sending filtered rows to next nodes. Input length: %v, output length: %v", fe.filterId, len(msg.DynMaps), len(filteredRows))
+		log.Debugf("FilterStopovers %v | Sending filtered rows to next nodes. Input length: %v, output length: %v", fe.filterId, len(msg.DynMaps), len(filteredRows))
 		for _, producer := range fe.producers {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,

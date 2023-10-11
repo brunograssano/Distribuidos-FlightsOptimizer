@@ -23,9 +23,9 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(completerConfig.RabbitAddress)
 
-	var startChannels []chan bool
+	var startChannels []chan string
 	for i := 0; i < completerConfig.GoroutinesCount; i++ {
-		startProcessing := make(chan bool, 1)
+		startProcessing := make(chan string, 1)
 		startChannels = append(startChannels, startProcessing)
 		distCompleter := controllers.NewDistanceCompleter(
 			i,

@@ -86,18 +86,11 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 				break
 			}
 			if shouldReconnect {
-				log.Infof("ClientHandler | Sleeping for %v seconds so that response may be ready later...", currSleep)
-				time.Sleep(time.Duration(currSleep) * time.Second)
-				if currSleep < maxSleep {
-					currSleep = currSleep * 2
-				}
-				err := socketGetter.Reconnect()
+				newSPH, err := exponentialBackoffConnection(currSleep, socketGetter)
 				if err != nil {
-					log.Errorf("ClientHandler | Error trying to reconnect to getter... Ending...")
-					_ = socketGetter.Close()
 					return err
 				}
-				getterSPH = protocol.NewSocketProtocolHandler(socketGetter)
+				getterSPH = newSPH
 			}
 			if err != nil {
 				log.Errorf("ClientHandler | Error handling getter message | %v", err)
@@ -108,8 +101,23 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 	return nil
 }
 
+func exponentialBackoffConnection(currSleep int, socketGetter *communication.ActiveTCPSocket) (*protocol.SocketProtocolHandler, error) {
+	log.Infof("ClientHandler | Sleeping for %v seconds so that response may be ready later...", currSleep)
+	time.Sleep(time.Duration(currSleep) * time.Second)
+	if currSleep < maxSleep {
+		currSleep = currSleep * 2
+	}
+	err := socketGetter.Reconnect()
+	if err != nil {
+		log.Errorf("ClientHandler | Error trying to reconnect to getter... Ending...")
+		_ = socketGetter.Close()
+		return nil, err
+	}
+	return protocol.NewSocketProtocolHandler(socketGetter), nil
+}
+
 func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) error {
-	log.Infof("ClientHandler | Sending airports to exchange...")
+	log.Debugf("ClientHandler | Sending airports to exchange...")
 	err := ch.outQueueAirports.Send(serializer.SerializeMsg(message))
 	if err != nil {
 		log.Errorf("ClientHandler | Error sending airports to exchange | %v", err)
@@ -138,34 +146,33 @@ func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) e
 	return ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
 }
 
-func (ch *ClientHandler) handleMessage(message *data_structures.Message, cliSPH *protocol.SocketProtocolHandler) error {
-	log.Infof("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
+func (ch *ClientHandler) handleMessage(message *data_structures.Message, cliSPH *protocol.SocketProtocolHandler) (bool, error) {
+	log.Debugf("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
 	if message.TypeMessage == data_structures.Airports || message.TypeMessage == data_structures.EOFAirports {
-		return ch.handleAirportMessage(message)
+		return false, ch.handleAirportMessage(message)
 	}
 	if message.TypeMessage == data_structures.EOFFlightRows {
-		return ch.handleEOFFlightRows(message)
+		return false, ch.handleEOFFlightRows(message)
 	}
 	if message.TypeMessage == data_structures.FlightRows {
-		return ch.handleFlightRowMessage(message)
+		return false, ch.handleFlightRowMessage(message)
 	}
 	if message.TypeMessage == data_structures.GetResults {
-		return ch.handleGetResults(cliSPH)
+		return true, ch.handleGetResults(cliSPH)
 	}
-	return fmt.Errorf("unrecognized message type: %v", message.TypeMessage)
+	return false, fmt.Errorf("unrecognized message type: %v", message.TypeMessage)
 }
 
 func (ch *ClientHandler) StartClientLoop() {
-
 	defer ch.conn.Close()
-	for {
+	for endConn := false; !endConn; {
 		message, err := ch.conn.Read()
 		if err != nil {
 			log.Errorf("ClientHandler | Error trying to receive message | %v | Ending client handle & Closing socket...", err)
 			return
 		}
 		log.Debugf("ClientHandler | Handling message from client | %v", message)
-		err = ch.handleMessage(message, ch.conn)
+		endConn, err = ch.handleMessage(message, ch.conn)
 		if err != nil {
 			log.Errorf("ClientHandler | Error handling message | %v", err)
 			return
