@@ -23,6 +23,8 @@ El `Makefile` tiene las acciones:
 * `docker-compose-up`: Inicializa el ambiente de desarrollo (buildear docker images del servidor y cliente, inicializar la red a utilizar por docker, etc.) y arranca los containers de las aplicaciones que componen el proyecto.
 * `docker-compose-down`: Realiza un `docker-compose stop` para detener los containers asociados al compose y luego realiza un `docker-compose down` para destruir todos los recursos asociados al proyecto que fueron inicializados
 * `docker-compose-logs`: Permite ver los logs actuales del proyecto.
+* `test`: Ejecuta los tests de la aplicación
+* `build`: Realiza el build de los servicios localmente. Es necesario Go a partir de 1.21 por lo menos.
 
 Una cuestión a tener en cuenta, es que se deberán de configurar los archivos a utilizar por el cliente. 
 Por defecto el docker-compose los busca de la carpeta `/data`, 
