@@ -3,8 +3,8 @@ package serializer
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )
@@ -33,12 +33,7 @@ func TestSerializeDynMapWithAnIntReturnsTheBytesExpected(t *testing.T) {
 	bytesExpected = append(bytesExpected, bytesLenValue...)
 	bytesExpected = append(bytesExpected, bytesValue...)
 
-	if bytes.Compare(bytesExpected, serializedRow) != 0 {
-		fmt.Printf("Expected: %v", bytesExpected)
-		fmt.Printf("Got: %v", serializedRow)
-		t.Errorf("Bytes comparation failed. Expected is not equal to serialized one...")
-	}
-
+	assert.Zerof(t, bytes.Compare(bytesExpected, serializedRow), "Expected is not equal to serialized one | Expected: %v, Got: %v", bytesExpected, serializedRow)
 }
 
 func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
@@ -77,11 +72,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 	bytesExpected = append(bytesExpected, bytesLenValue2...)
 	bytesExpected = append(bytesExpected, bytesValue2...)
 
-	if bytes.Compare(bytesExpected, serializedRow) != 0 {
-		fmt.Printf("Expected: %v\n", bytesExpected)
-		fmt.Printf("Got: %v\n", serializedRow)
-		t.Errorf("Bytes comparation failed. Expected is not equal to serialized one...")
-	}
+	assert.Zerof(t, bytes.Compare(bytesExpected, serializedRow), "Expected is not equal to serialized one | Expected: %v, Got: %v", bytesExpected, serializedRow)
+
 }
 
 func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
@@ -89,9 +81,8 @@ func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
 	serializedRow := SerializeDynMap(row)
 	bytesExpected := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytesExpected, uint32(0))
-	if bytes.Compare(serializedRow, bytesExpected) != 0 {
-		t.Errorf("Expected %v and got %v", bytesExpected, serializedRow)
-	}
+	assert.Zerof(t, bytes.Compare(bytesExpected, serializedRow), "Expected is not equal to serialized one | Expected: %v, Got: %v", bytesExpected, serializedRow)
+
 }
 
 func TestDeserializeDynMapWithTwoColumnsReturnsTheExpectedDynMap(t *testing.T) {
@@ -131,20 +122,11 @@ func TestDeserializeDynMapWithTwoColumnsReturnsTheExpectedDynMap(t *testing.T) {
 	rowReceived, _ := DeserializeDynMap(bytesSer)
 
 	stringCol, errStringCol := rowReceived.GetAsString("test_string")
-	if errStringCol != nil {
-		t.Errorf("Got error on casting string col that was string in original.")
-	}
-	if strings.Compare(stringCol, stringCol2) != 0 {
-		t.Errorf("Wrong value on stringCol expected %v and got %v.", stringCol2, stringCol)
-	}
+	assert.Nil(t, errStringCol, "Got error on casting string col that was string in original.")
+	assert.Zerof(t, strings.Compare(stringCol, stringCol2), "Wrong value on stringCol expected %v and got %v.", stringCol2, stringCol)
+
 	intCol, errIntCol := rowReceived.GetAsInt("test")
-	if errIntCol != nil {
-		t.Errorf("Got error on casting int col that was int in original.")
-	}
-	if intCol != 32 {
-		t.Errorf("Wrong value on intCol expected 32 and got %v.", intCol)
-	}
-	if rowReceived.GetColumnCount() != 2 {
-		t.Errorf("RowCount expected was 2 and got %v.", rowReceived.GetColumnCount())
-	}
+	assert.Nil(t, errIntCol, "Got error on casting int col that was int in original.")
+	assert.Equalf(t, 32, intCol, "Wrong value on intCol expected 32 and got %v.", intCol)
+	assert.Equalf(t, uint32(2), rowReceived.GetColumnCount(), "RowCount expected was 2 and got %v.", rowReceived.GetColumnCount())
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -20,19 +21,15 @@ func TestShouldReturnLaterMessage(t *testing.T) {
 	go getter.ReturnResults()
 
 	conn, err := communication.NewActiveTCPSocket("127.0.0.1:45678")
-	if err != nil {
-		t.Errorf("Error connecting to getter: %v", err)
-	}
+	assert.Nilf(t, err, "Error connecting to getter: %v", err)
+
 	socketProtocol := protocol.NewSocketProtocolHandler(conn)
 
 	go func() {
 		msg, err := socketProtocol.Read()
-		if err != nil {
-			t.Errorf("Error receiving msg: %v", err)
-		}
-		if msg.TypeMessage != dataStructures.Later {
-			t.Errorf("Msg is not later: %v", msg.TypeMessage)
-		}
+
+		assert.Nilf(t, err, "Error receiving msg: %v", err)
+		assert.Equal(t, dataStructures.Later, msg.TypeMessage, "Msg is not later: %v", msg.TypeMessage)
 		resultChan <- true
 	}()
 	select {
