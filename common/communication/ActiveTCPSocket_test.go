@@ -1,13 +1,12 @@
-package communication_test
+package communication
 
 import (
 	"bytes"
-	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"net"
 	"testing"
 )
 
-func AcceptClient(listener net.Listener, returnChannel chan net.Conn) {
+func AcceptClientTest(listener net.Listener, returnChannel chan net.Conn) {
 	accept, err := listener.Accept()
 	if err != nil {
 		returnChannel <- nil
@@ -16,7 +15,7 @@ func AcceptClient(listener net.Listener, returnChannel chan net.Conn) {
 }
 
 func TestCreatingAnActiveSocketWithoutServerThrowsError(t *testing.T) {
-	_, err := communication.NewActiveTCPSocket("127.0.0.1:9000")
+	_, err := NewActiveTCPSocket("127.0.0.1:9000")
 	if err == nil {
 		t.Errorf("Should have thrown error, server does not exist.")
 	}
@@ -25,11 +24,11 @@ func TestCreatingAnActiveSocketWithoutServerThrowsError(t *testing.T) {
 func TestCreatingAnActiveSocketWithServerCreatesItOk(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:9001")
 	retChan := make(chan net.Conn)
-	go AcceptClient(listener, retChan)
+	go AcceptClientTest(listener, retChan)
 	if err != nil {
 		t.Errorf("Error creating the server: %v", err)
 	}
-	activeTcpSocket, errCli := communication.NewActiveTCPSocket("127.0.0.1:9001")
+	activeTcpSocket, errCli := NewActiveTCPSocket("127.0.0.1:9001")
 	if errCli != nil {
 		t.Errorf("Thrown Error on creating ActiveSocket: %v", errCli)
 	}
@@ -55,11 +54,11 @@ func TestCreatingAnActiveSocketWithServerCreatesItOk(t *testing.T) {
 func TestSendShortMessageInActiveSocket(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:9002")
 	retChan := make(chan net.Conn)
-	go AcceptClient(listener, retChan)
+	go AcceptClientTest(listener, retChan)
 	if err != nil {
 		t.Errorf("Error creating the server: %v", err)
 	}
-	activeTcpSocket, errCli := communication.NewActiveTCPSocket("127.0.0.1:9002")
+	activeTcpSocket, errCli := NewActiveTCPSocket("127.0.0.1:9002")
 	if errCli != nil {
 		t.Errorf("Thrown Error on creating ActiveSocket: %v", errCli)
 	}
@@ -93,11 +92,11 @@ func TestSendShortMessageInActiveSocket(t *testing.T) {
 func TestSendLongMessageInActiveSocket(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:9003")
 	retChan := make(chan net.Conn)
-	go AcceptClient(listener, retChan)
+	go AcceptClientTest(listener, retChan)
 	if err != nil {
 		t.Errorf("Error creating the server: %v", err)
 	}
-	activeTcpSocket, errCli := communication.NewActiveTCPSocket("127.0.0.1:9003")
+	activeTcpSocket, errCli := NewActiveTCPSocket("127.0.0.1:9003")
 	if errCli != nil {
 		t.Errorf("Thrown Error on creating ActiveSocket: %v", errCli)
 	}
@@ -142,11 +141,11 @@ func TestSendLongMessageInActiveSocket(t *testing.T) {
 func TestLongReadMessageInActiveSocket(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:9004")
 	retChan := make(chan net.Conn)
-	go AcceptClient(listener, retChan)
+	go AcceptClientTest(listener, retChan)
 	if err != nil {
 		t.Errorf("Error creating the server: %v", err)
 	}
-	activeTcpSocket, errCli := communication.NewActiveTCPSocket("127.0.0.1:9004")
+	activeTcpSocket, errCli := NewActiveTCPSocket("127.0.0.1:9004")
 	if errCli != nil {
 		t.Errorf("Thrown Error on creating ActiveSocket: %v", errCli)
 	}
@@ -190,11 +189,11 @@ func TestLongReadMessageInActiveSocket(t *testing.T) {
 func TestShortReadMessageInActiveSocket(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:9005")
 	retChan := make(chan net.Conn)
-	go AcceptClient(listener, retChan)
+	go AcceptClientTest(listener, retChan)
 	if err != nil {
 		t.Errorf("Error creating the server: %v", err)
 	}
-	activeTcpSocket, errCli := communication.NewActiveTCPSocket("127.0.0.1:9005")
+	activeTcpSocket, errCli := NewActiveTCPSocket("127.0.0.1:9005")
 	if errCli != nil {
 		t.Errorf("Thrown Error on creating ActiveSocket: %v", errCli)
 	}

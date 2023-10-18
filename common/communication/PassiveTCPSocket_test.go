@@ -2,12 +2,11 @@ package communication
 
 import (
 	"bytes"
-	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	"net"
 	"testing"
 )
 
-func AcceptClient(passiveSocket *communication.PassiveTCPSocket, returnChannel chan *communication.TCPSocket) {
+func AcceptClient(passiveSocket *PassiveTCPSocket, returnChannel chan *TCPSocket) {
 	accept, err := passiveSocket.Accept()
 	if err != nil {
 		returnChannel <- nil
@@ -16,7 +15,7 @@ func AcceptClient(passiveSocket *communication.PassiveTCPSocket, returnChannel c
 }
 
 func TestPassiveSocketCanBeCreatedWhenPortIsFree(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10000")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10000")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
@@ -27,11 +26,11 @@ func TestPassiveSocketCanBeCreatedWhenPortIsFree(t *testing.T) {
 }
 
 func TestPassiveSocketThrowsErrorOnCreationWhenPortIsNotFree(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10001")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10001")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
-	_, errPort := communication.NewPassiveTCPSocket("127.0.0.1:10001")
+	_, errPort := NewPassiveTCPSocket("127.0.0.1:10001")
 	if errPort == nil {
 		t.Errorf("Should have thrown error on creation when port is used.")
 	}
@@ -42,11 +41,11 @@ func TestPassiveSocketThrowsErrorOnCreationWhenPortIsNotFree(t *testing.T) {
 }
 
 func TestPassiveSocketShortWrite(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10002")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10002")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
-	returnChan := make(chan *communication.TCPSocket)
+	returnChan := make(chan *TCPSocket)
 	defer close(returnChan)
 	go AcceptClient(passiveSocket, returnChan)
 	conn, errConn := net.Dial("tcp", "127.0.0.1:10002")
@@ -77,11 +76,11 @@ func TestPassiveSocketShortWrite(t *testing.T) {
 }
 
 func TestPassiveSocketLongWrite(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10003")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10003")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
-	returnChan := make(chan *communication.TCPSocket)
+	returnChan := make(chan *TCPSocket)
 	defer close(returnChan)
 	go AcceptClient(passiveSocket, returnChan)
 	conn, errConn := net.Dial("tcp", "127.0.0.1:10003")
@@ -120,11 +119,11 @@ func TestPassiveSocketLongWrite(t *testing.T) {
 }
 
 func TestPassiveSocketShortRead(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10004")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10004")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
-	returnChan := make(chan *communication.TCPSocket)
+	returnChan := make(chan *TCPSocket)
 	defer close(returnChan)
 	go AcceptClient(passiveSocket, returnChan)
 	conn, errConn := net.Dial("tcp", "127.0.0.1:10004")
@@ -150,11 +149,11 @@ func TestPassiveSocketShortRead(t *testing.T) {
 }
 
 func TestPassiveSocketLongRead(t *testing.T) {
-	passiveSocket, err := communication.NewPassiveTCPSocket("127.0.0.1:10005")
+	passiveSocket, err := NewPassiveTCPSocket("127.0.0.1:10005")
 	if err != nil {
 		t.Errorf("Thrown error on creation: %v", err)
 	}
-	returnChan := make(chan *communication.TCPSocket)
+	returnChan := make(chan *TCPSocket)
 	defer close(returnChan)
 	go AcceptClient(passiveSocket, returnChan)
 	conn, errConn := net.Dial("tcp", "127.0.0.1:10005")

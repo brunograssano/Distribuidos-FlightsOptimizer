@@ -1,11 +1,10 @@
-package data_structures
+package serializer
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
+	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"strings"
 	"testing"
 )
@@ -14,9 +13,9 @@ func TestSerializeDynMapWithAnIntReturnsTheBytesExpected(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := dataStructures.NewDynamicMap(dynMap)
+	row := data_structures.NewDynamicMap(dynMap)
 
-	serializedRow := serializer.SerializeDynMap(row)
+	serializedRow := SerializeDynMap(row)
 
 	var bytesExpected []byte
 	bytesNCols := make([]byte, 4)
@@ -48,9 +47,9 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 	stringCol2 := "un string largo para la prueba que debería de igual forma leerse bien su longitud"
 	dynMap["test_string"] = []byte(stringCol2)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := dataStructures.NewDynamicMap(dynMap)
+	row := data_structures.NewDynamicMap(dynMap)
 
-	serializedRow := serializer.SerializeDynMap(row)
+	serializedRow := SerializeDynMap(row)
 
 	var bytesExpected []byte
 	bytesNCols := make([]byte, 4)
@@ -86,8 +85,8 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 }
 
 func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
-	row := dataStructures.NewDynamicMap(make(map[string][]byte))
-	serializedRow := serializer.SerializeDynMap(row)
+	row := data_structures.NewDynamicMap(make(map[string][]byte))
+	serializedRow := SerializeDynMap(row)
 	bytesExpected := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytesExpected, uint32(0))
 	if bytes.Compare(serializedRow, bytesExpected) != 0 {
@@ -129,7 +128,7 @@ func TestDeserializeDynMapWithTwoColumnsReturnsTheExpectedDynMap(t *testing.T) {
 	bytesSer = append(bytesSer, bytesLenValue2...)
 	bytesSer = append(bytesSer, bytesValue2...)
 
-	rowReceived, _ := serializer.DeserializeDynMap(bytesSer)
+	rowReceived, _ := DeserializeDynMap(bytesSer)
 
 	stringCol, errStringCol := rowReceived.GetAsString("test_string")
 	if errStringCol != nil {

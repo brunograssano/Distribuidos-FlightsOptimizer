@@ -1,8 +1,7 @@
-package protocol_test
+package protocol
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"testing"
@@ -74,7 +73,7 @@ func TestShouldSendEOFToTheNextStepOnGreaterThanPrevSent(t *testing.T) {
 	nextStep := &mockProducerQueueProtocolHandler{outputChannel: outNext, count: 5}
 	sameStep := &mockProducerQueueProtocolHandler{outputChannel: outSame, count: 5}
 	go func() {
-		err := protocol.HandleEOF(msg, consumer, sameStep, []protocol.ProducerProtocolInterface{nextStep})
+		err := HandleEOF(msg, consumer, sameStep, []ProducerProtocolInterface{nextStep})
 		if err != nil {
 			t.Errorf("Should not have thrown error handling EOF.")
 		}
@@ -128,7 +127,7 @@ func TestShouldSendEOFToTheNextStepOnEqualToPrevSent(t *testing.T) {
 	nextStep := &mockProducerQueueProtocolHandler{outputChannel: outNext, count: 5}
 	sameStep := &mockProducerQueueProtocolHandler{outputChannel: outSame, count: 5}
 	go func() {
-		err := protocol.HandleEOF(msg, consumer, sameStep, []protocol.ProducerProtocolInterface{nextStep})
+		err := HandleEOF(msg, consumer, sameStep, []ProducerProtocolInterface{nextStep})
 		if err != nil {
 			t.Errorf("Should not have thrown error handling EOF.")
 		}
@@ -182,7 +181,7 @@ func TestShouldSendEOFToTheSameStepOnLessThanPrevSent(t *testing.T) {
 	nextStep := &mockProducerQueueProtocolHandler{outputChannel: outNext, count: 5}
 	sameStep := &mockProducerQueueProtocolHandler{outputChannel: outSame, count: 5}
 	go func() {
-		err := protocol.HandleEOF(msg, consumer, sameStep, []protocol.ProducerProtocolInterface{nextStep})
+		err := HandleEOF(msg, consumer, sameStep, []ProducerProtocolInterface{nextStep})
 		if err != nil {
 			t.Errorf("Should not have thrown error handling EOF.")
 		}

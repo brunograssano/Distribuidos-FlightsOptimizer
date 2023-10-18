@@ -1,12 +1,11 @@
 package utils
 
 import (
-	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"testing"
 )
 
 func TestShouldParseTheStringWithHoursAndMinutes(t *testing.T) {
-	duration, err := utils.ConvertTravelDurationToMinutesAsInt("PT3H18M")
+	duration, err := ConvertTravelDurationToMinutesAsInt("PT3H18M")
 	if err != nil {
 		t.Errorf("Got an error when parsing duration %v", err)
 	}
@@ -16,7 +15,7 @@ func TestShouldParseTheStringWithHoursAndMinutes(t *testing.T) {
 }
 
 func TestShouldParseTheStringWithOnlyHours(t *testing.T) {
-	duration, err := utils.ConvertTravelDurationToMinutesAsInt("PT3H")
+	duration, err := ConvertTravelDurationToMinutesAsInt("PT3H")
 	if err != nil {
 		t.Errorf("Got an error when parsing duration %v", err)
 	}
@@ -26,7 +25,7 @@ func TestShouldParseTheStringWithOnlyHours(t *testing.T) {
 }
 
 func TestShouldParseTheStringWithOnlyMinutes(t *testing.T) {
-	duration, err := utils.ConvertTravelDurationToMinutesAsInt("PT40M")
+	duration, err := ConvertTravelDurationToMinutesAsInt("PT40M")
 	if err != nil {
 		t.Errorf("Got an error when parsing duration %v", err)
 	}
@@ -36,7 +35,7 @@ func TestShouldParseTheStringWithOnlyMinutes(t *testing.T) {
 }
 
 func TestShouldParseTheStringWithOnlyDays(t *testing.T) {
-	duration, err := utils.ConvertTravelDurationToMinutesAsInt("P1DT")
+	duration, err := ConvertTravelDurationToMinutesAsInt("P1DT")
 	if err != nil {
 		t.Errorf("Got an error when parsing duration %v", err)
 	}
@@ -46,7 +45,7 @@ func TestShouldParseTheStringWithOnlyDays(t *testing.T) {
 }
 
 func TestShouldNotUnderstandTheFormat(t *testing.T) {
-	duration, err := utils.ConvertTravelDurationToMinutesAsInt("P1WT")
+	duration, err := ConvertTravelDurationToMinutesAsInt("P1WT")
 	if err == nil {
 		t.Errorf("Did not got an error when parsing duration: %v", duration)
 	}
