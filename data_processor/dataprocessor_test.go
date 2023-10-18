@@ -3,6 +3,8 @@ package main
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -26,10 +28,6 @@ func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
-}
-
-func (m *mockConsumer) BindTo(_ string, _ string) error {
-	return nil
 }
 
 type (
@@ -76,13 +74,13 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		consumer:       mConsumer,
 		producersEx123: []protocol.ProducerProtocolInterface{mProducer2, mProducer13},
 		producersEx4:   mProducer4,
-		ex123Columns:   []string{"startingAirport", "segmentsArrivalAirportCode", "totalStopovers", "route"},
-		ex4Columns:     []string{"route"},
+		ex123Columns:   []string{utils.StartingAirport, utils.SegmentsArrivalAirportCode, utils.TotalStopovers, utils.Route},
+		ex4Columns:     []string{utils.Route},
 	}
 
 	dynMap := make(map[string][]byte)
-	dynMap["startingAirport"] = []byte("FRA")
-	dynMap["segmentsArrivalAirportCode"] = []byte("EZE")
+	dynMap[utils.StartingAirport] = []byte("FRA")
+	dynMap[utils.SegmentsArrivalAirportCode] = []byte("EZE")
 	dynMap["col"] = []byte("Even more data")
 
 	row := dataStructures.NewDynamicMap(dynMap)
@@ -97,21 +95,15 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		select {
 		case result := <-outputEx13:
 			newRow := result.DynMaps[0]
-			if newRow.GetColumnCount() != 4 {
-				t.Errorf("RowCount expected was 2")
-			}
+			assert.Equalf(t, uint32(4), newRow.GetColumnCount(), "RowCount expected was 4, got %v", newRow.GetColumnCount())
 			sentResponseToAll[0] = true
 		case result := <-outputEx2:
 			newRow := result.DynMaps[0]
-			if newRow.GetColumnCount() != 4 {
-				t.Errorf("RowCount expected was 2")
-			}
+			assert.Equalf(t, uint32(4), newRow.GetColumnCount(), "RowCount expected was 4, got %v", newRow.GetColumnCount())
 			sentResponseToAll[1] = true
 		case result := <-outputEx4:
 			newRow := result.DynMaps[0]
-			if newRow.GetColumnCount() != 1 {
-				t.Errorf("RowCount expected was 2")
-			}
+			assert.Equalf(t, uint32(1), newRow.GetColumnCount(), "RowCount expected was 1, got %v", newRow.GetColumnCount())
 			sentResponseToAll[2] = true
 		case <-time.After(1 * time.Second):
 			t.Errorf("Timeout! Should have finished by now...")
@@ -119,75 +111,58 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		}
 	}
 	for i := 0; i < 3; i++ {
-		if !sentResponseToAll[i] {
-			t.Errorf("Missing response from a channel")
-		}
+		assert.True(t, sentResponseToAll[i], "Missing response from a channel")
 	}
 }
 
 func TestShouldProcessTheDataOfEx123(t *testing.T) {
 	processor := &DataProcessor{
 		processorId:  0,
-		ex123Columns: []string{"totalStopovers", "route"},
+		ex123Columns: []string{utils.TotalStopovers, utils.Route},
 	}
 	dynMap := make(map[string][]byte)
-	dynMap["startingAirport"] = []byte("FRA")
-	dynMap["segmentsArrivalAirportCode"] = []byte("CDG||EZE")
+	dynMap[utils.StartingAirport] = []byte("FRA")
+	dynMap[utils.SegmentsArrivalAirportCode] = []byte("CDG||EZE")
 	dynMap["col"] = []byte("Even more data")
 
 	row := dataStructures.NewDynamicMap(dynMap)
 	row, err := processor.processEx123Row(row)
-	if err != nil {
-		t.Errorf("Got error when processing ex123 row: %v", err)
-	}
 
-	route, err := row.GetAsString("route")
-	if err != nil {
-		t.Errorf("Got error when getting route: %v", err)
-	}
+	assert.Nilf(t, err, "Got error when processing ex123 row: %v", err)
 
-	if route != "FRA||CDG||EZE" {
-		t.Errorf("Expecting FRA||CDG||EZE route but got %v", route)
-	}
+	route, err := row.GetAsString(utils.Route)
+	assert.Nilf(t, err, "Got error when getting route: %v", err)
+	assert.Equalf(t, "FRA||CDG||EZE", route, "Expecting FRA||CDG||EZE route but got %v", route)
 
-	stopovers, err := row.GetAsInt("totalStopovers")
-	if err != nil {
-		t.Errorf("Got error when getting stopovers: %v", err)
-	}
-
-	if stopovers != 1 {
-		t.Errorf("Expecting 1 stopover but got %v", stopovers)
-	}
+	stopovers, err := row.GetAsInt(utils.TotalStopovers)
+	assert.Nilf(t, err, "Got error when getting stopovers: %v", err)
+	assert.Equalf(t, 1, stopovers, "Expecting 1 stopover but got %v", stopovers)
 }
 
 func TestShouldReturnAnErrorIfTheSegmentsColDoesNotExist(t *testing.T) {
 	processor := &DataProcessor{
 		processorId:  0,
-		ex123Columns: []string{"totalStopovers", "route"},
+		ex123Columns: []string{utils.TotalStopovers, utils.Route},
 	}
 	dynMap := make(map[string][]byte)
-	dynMap["startingAirport"] = []byte("FRA")
+	dynMap[utils.StartingAirport] = []byte("FRA")
 
 	row := dataStructures.NewDynamicMap(dynMap)
 	row, err := processor.processEx123Row(row)
-	if err == nil {
-		t.Errorf("Didn't got an error when processing segments column")
-	}
 
+	assert.Error(t, err, "Didn't got an error when processing segments column")
 }
 
 func TestShouldReturnAnErrorIfTheStartingAirportColDoesNotExist(t *testing.T) {
 	processor := &DataProcessor{
 		processorId:  0,
-		ex123Columns: []string{"totalStopovers", "route"},
+		ex123Columns: []string{utils.TotalStopovers, utils.Route},
 	}
 	dynMap := make(map[string][]byte)
-	dynMap["segmentsArrivalAirportCode"] = []byte("CDG||EZE")
+	dynMap[utils.SegmentsArrivalAirportCode] = []byte("CDG||EZE")
 
 	row := dataStructures.NewDynamicMap(dynMap)
 	row, err := processor.processEx123Row(row)
-	if err == nil {
-		t.Errorf("Didn't got an error when processing starting column")
-	}
 
+	assert.Error(t, err, "Didn't got an error when processing starting column")
 }

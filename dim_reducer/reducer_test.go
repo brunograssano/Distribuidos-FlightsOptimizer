@@ -2,6 +2,7 @@ package main
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -82,9 +83,7 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	select {
 	case result := <-output:
 		newRow := result.DynMaps[0]
-		if newRow.GetColumnCount() != 1 {
-			t.Errorf("RowCount expected was 1")
-		}
+		assert.Equalf(t, uint32(1), newRow.GetColumnCount(), "RowCount expected was 1, got %v", newRow.GetColumnCount())
 
 	case <-time.After(1 * time.Second):
 		t.Errorf("Timeout! Should have finished by now...")
