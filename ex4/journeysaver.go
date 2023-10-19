@@ -31,17 +31,17 @@ func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 	// May need optimization. Mix of memory and disk or only memory...
 	log.Debugf("JourneySaver | Writing records to files")
 	for _, dynMap := range dynMaps {
-		stAirport, err := dynMap.GetAsString("startingAirport")
+		stAirport, err := dynMap.GetAsString(utils.StartingAirport)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting starting airport | %v | Skipping row...", err)
 			continue
 		}
-		destAirport, err := dynMap.GetAsString("destinationAirport")
+		destAirport, err := dynMap.GetAsString(utils.DestinationAirport)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting destination airport | %v | Skipping row...", err)
 			continue
 		}
-		totalFare, err := dynMap.GetAsFloat("totalFare")
+		totalFare, err := dynMap.GetAsFloat(utils.TotalFare)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting total fare | %v | Skipping row...", err)
 			continue
