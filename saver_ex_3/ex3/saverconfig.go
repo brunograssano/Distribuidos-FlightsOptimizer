@@ -1,4 +1,4 @@
-package main
+package ex3
 
 import (
 	"errors"
@@ -9,9 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
-
-const maxSavers = 30
-const defaultSavers = 6
 
 // SaverConfig The configuration of the application
 type SaverConfig struct {

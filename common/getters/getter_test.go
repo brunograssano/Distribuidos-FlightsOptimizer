@@ -3,7 +3,7 @@ package getters
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -23,7 +23,7 @@ func TestShouldReturnLaterMessage(t *testing.T) {
 	conn, err := communication.NewActiveTCPSocket("127.0.0.1:45678")
 	assert.Nilf(t, err, "Error connecting to getter: %v", err)
 
-	socketProtocol := protocol.NewSocketProtocolHandler(conn)
+	socketProtocol := socketsProtocol.NewSocketProtocolHandler(conn)
 
 	go func() {
 		msg, err := socketProtocol.Read()

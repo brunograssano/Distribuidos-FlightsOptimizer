@@ -1,10 +1,10 @@
-package main
+package processor
 
 import (
 	"errors"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -16,24 +16,24 @@ const destinationAirport = 1
 // DataProcessor Structure that handles the initial row preprocessing by removing columns and creating auxiliary columns
 type DataProcessor struct {
 	processorId    int
-	c              *ProcessorConfig
-	consumer       protocol.ConsumerProtocolInterface
-	producersEx123 []protocol.ProducerProtocolInterface
-	producersEx4   protocol.ProducerProtocolInterface
+	c              *Config
+	consumer       queueProtocol.ConsumerProtocolInterface
+	producersEx123 []queueProtocol.ProducerProtocolInterface
+	producersEx4   queueProtocol.ProducerProtocolInterface
 	ex123Columns   []string
 	ex4Columns     []string
-	inputQueueProd protocol.ProducerProtocolInterface
+	inputQueueProd queueProtocol.ProducerProtocolInterface
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
-func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *ProcessorConfig) *DataProcessor {
-	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	var producersEx123 []protocol.ProducerProtocolInterface
+func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Config) *DataProcessor {
+	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	var producersEx123 []queueProtocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
-		producersEx123 = append(producersEx123, protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(queueName, true)))
+		producersEx123 = append(producersEx123, queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(queueName, true)))
 	}
-	producersEx4 := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueNameEx4, true))
-	inputQProd := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+	producersEx4 := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueNameEx4, true))
+	inputQProd := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,
@@ -77,7 +77,7 @@ func (d *DataProcessor) ProcessData() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DataProcessor %v | Received EOF from server. Now finishing...", d.processorId)
-			_ = protocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
+			_ = queueProtocol.HandleEOF(msg, d.consumer, d.inputQueueProd, append(d.producersEx123, d.producersEx4))
 		} else if msg.TypeMessage == dataStructures.FlightRows {
 			log.Debugf("DataProcessor %v | Received Batch of Rows. Now processing...", d.processorId)
 			ex123Rows, ex4Rows := d.processRows(msg.DynMaps)

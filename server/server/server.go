@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"

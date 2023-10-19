@@ -1,4 +1,4 @@
-package protocol
+package sockets
 
 import (
 	"encoding/binary"
@@ -6,7 +6,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,7 +31,7 @@ func (sph *SocketProtocolHandler) getLengthOfMessage() (int, error) {
 	return int(binary.BigEndian.Uint32(bytesLen)), nil
 }
 
-func (sph *SocketProtocolHandler) receiveMessage(length int) (*data_structures.Message, error) {
+func (sph *SocketProtocolHandler) receiveMessage(length int) (*dataStructures.Message, error) {
 	msg, err := sph.sock.Read(uint32(length))
 	if err != nil {
 		return nil, fmt.Errorf("error receiving message of length %v: %v. Skipping client", length, err)
@@ -39,7 +39,7 @@ func (sph *SocketProtocolHandler) receiveMessage(length int) (*data_structures.M
 	return serializer.DeserializeMsg(msg), nil
 }
 
-func (sph *SocketProtocolHandler) Read() (*data_structures.Message, error) {
+func (sph *SocketProtocolHandler) Read() (*dataStructures.Message, error) {
 	length, err := sph.getLengthOfMessage()
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (sph *SocketProtocolHandler) sendMessage(msgBytes []byte) error {
 	return nil
 }
 
-func (sph *SocketProtocolHandler) Write(msg *data_structures.Message) error {
+func (sph *SocketProtocolHandler) Write(msg *dataStructures.Message) error {
 	bytesToSend := serializer.SerializeMsg(msg)
 	err := sph.sendLength(bytesToSend)
 	if err != nil {

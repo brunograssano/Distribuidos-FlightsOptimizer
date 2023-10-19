@@ -12,13 +12,11 @@ type FileManager struct {
 }
 
 type FileReader struct {
-	InputManagerInterface
 	FileManager
 	scanner *bufio.Scanner
 }
 
 type FileWriter struct {
-	OutputManagerInterface
 	FileManager
 }
 

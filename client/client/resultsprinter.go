@@ -1,8 +1,8 @@
-package main
+package client
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -17,7 +17,7 @@ func printResults(dynMaps []*dataStructures.DynamicMap) {
 
 }
 
-func RequestResults(err error, conn *protocol.SocketProtocolHandler) {
+func RequestResults(err error, conn *socketsProtocol.SocketProtocolHandler) {
 	log.Infof("Results printer | Requesting results")
 	msg := &dataStructures.Message{TypeMessage: dataStructures.GetResults}
 	err = conn.Write(msg)

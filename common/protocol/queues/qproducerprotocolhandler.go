@@ -1,16 +1,10 @@
-package protocol
+package queues
 
 import (
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 )
-
-type ProducerProtocolInterface interface {
-	DataCleaner
-	Send(msg *data_structures.Message) error
-	GetSentMessages() int
-}
 
 type ProducerQueueProtocolHandler struct {
 	producer  middleware.ProducerInterface
@@ -24,9 +18,9 @@ func NewProducerQueueProtocolHandler(producer middleware.ProducerInterface) *Pro
 	}
 }
 
-func (q *ProducerQueueProtocolHandler) Send(msg *data_structures.Message) error {
+func (q *ProducerQueueProtocolHandler) Send(msg *dataStructures.Message) error {
 	bytes := serializer.SerializeMsg(msg)
-	if msg.TypeMessage == data_structures.FlightRows {
+	if msg.TypeMessage == dataStructures.FlightRows {
 		q.totalSent += len(msg.DynMaps)
 	}
 	return q.producer.Send(bytes)

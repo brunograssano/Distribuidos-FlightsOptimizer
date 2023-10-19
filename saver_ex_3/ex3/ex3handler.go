@@ -1,4 +1,4 @@
-package main
+package ex3
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -34,19 +34,19 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	var internalSavers []*SaverForEx3
 	var outputFileNames []string
 	finishSignal := make(chan bool, c.InternalSaversCount)
-	var toInternalSaversChannels []protocol.ProducerProtocolInterface
+	var toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
 	log.Infof("Ex3Handler | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		internalSaverChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 		channels = append(channels, internalSaverChannel)
 		internalSavers = append(internalSavers, NewSaverForEx3(
-			protocol.NewConsumerChannel(internalSaverChannel),
+			queueProtocol.NewConsumerChannel(internalSaverChannel),
 			c,
 			finishSignal,
 			i,
 		))
 		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v.csv", c.OutputFilePrefix, i))
-		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalSaverChannel))
+		toInternalSaversChannels = append(toInternalSaversChannels, queueProtocol.NewProducerChannel(internalSaverChannel))
 		log.Infof("Ex3Handler | Created Saver #%v correctly...", i)
 	}
 
@@ -55,8 +55,8 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	var jds []*dispatcher.JourneyDispatcher
 	for i := uint(0); i < c.DispatchersCount; i++ {
 		// We create the input queue to the EX4 service
-		inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-		prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+		prodToInput := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 

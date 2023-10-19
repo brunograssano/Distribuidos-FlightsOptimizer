@@ -2,7 +2,7 @@ package main
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -38,7 +38,7 @@ func TestShouldReturnZeroIfTheSumIsZero(t *testing.T) {
 func TestShouldSendTheAverageToTheConsumers(t *testing.T) {
 	chan1 := make(chan *dataStructures.Message, 1)
 	chan2 := make(chan *dataStructures.Message, 1)
-	avgCalculator := &AvgCalculator{toInternalSaversChannels: []protocol.ProducerProtocolInterface{protocol.NewProducerChannel(chan1), protocol.NewProducerChannel(chan2)}}
+	avgCalculator := &AvgCalculator{toInternalSaversChannels: []queueProtocol.ProducerProtocolInterface{queueProtocol.NewProducerChannel(chan1), queueProtocol.NewProducerChannel(chan2)}}
 
 	go avgCalculator.sendToJourneySavers(5)
 

@@ -1,4 +1,4 @@
-package main
+package processor
 
 import (
 	"errors"
@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ProcessorConfig The configuration of the application
-type ProcessorConfig struct {
+// Config The configuration of the application
+type Config struct {
 	ID                   string
 	InputQueueName       string
 	OutputQueueNameEx123 []string
@@ -19,12 +19,8 @@ type ProcessorConfig struct {
 	RabbitAddress        string
 }
 
-const ValueListSeparator string = ","
-const maxGoroutines int = 32
-const defaultGoroutines int = 4
-
-// initEnv Initializes the configuration properties from a config file and environment
-func initEnv() (*viper.Viper, error) {
+// InitEnv Initializes the configuration properties from a config file and environment
+func InitEnv() (*viper.Viper, error) {
 	v := viper.New()
 
 	// Configure viper to read env variables with the CLI_ prefix
@@ -56,7 +52,7 @@ func initEnv() (*viper.Viper, error) {
 }
 
 // GetConfig Validates and returns the configuration of the application
-func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
+func GetConfig(env *viper.Viper) (*Config, error) {
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -99,7 +95,7 @@ func GetConfig(env *viper.Viper) (*ProcessorConfig, error) {
 		rabbitAddress,
 		inputQueueName, outputQueueNameEx123, outputQueueNameEx4, goroutinesCount)
 
-	return &ProcessorConfig{
+	return &Config{
 		ID:                   id,
 		InputQueueName:       inputQueueName,
 		OutputQueueNameEx123: outputQueueNameEx123Array,

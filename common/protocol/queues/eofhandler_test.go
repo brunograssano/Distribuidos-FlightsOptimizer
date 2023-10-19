@@ -1,4 +1,4 @@
-package protocol
+package queues
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"

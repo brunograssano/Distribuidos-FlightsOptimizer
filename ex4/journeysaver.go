@@ -4,7 +4,7 @@ import (
 	"fmt"
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -14,16 +14,16 @@ import (
 
 // JourneySaver Handles the prices of the assigned journeys
 type JourneySaver struct {
-	consumer          protocol.ConsumerProtocolInterface
-	accumProducer     protocol.ProducerProtocolInterface
-	avgAndMaxProducer protocol.ProducerProtocolInterface
+	consumer          queueProtocol.ConsumerProtocolInterface
+	accumProducer     queueProtocol.ProducerProtocolInterface
+	avgAndMaxProducer queueProtocol.ProducerProtocolInterface
 	filesToRead       []string
 	totalPrice        float32
 	quantities        int
 }
 
 // NewJourneySaver Creates a new JourneySaver
-func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer protocol.ProducerProtocolInterface, avgAndMaxProducer protocol.ProducerProtocolInterface) *JourneySaver {
+func NewJourneySaver(consumer queueProtocol.ConsumerProtocolInterface, accumProducer queueProtocol.ProducerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface) *JourneySaver {
 	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, totalPrice: 0, quantities: 0}
 }
 

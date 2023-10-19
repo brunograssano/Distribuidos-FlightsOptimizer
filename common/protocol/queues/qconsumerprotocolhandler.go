@@ -1,16 +1,10 @@
-package protocol
+package queues
 
 import (
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 )
-
-type ConsumerProtocolInterface interface {
-	DataCleaner
-	Pop() (*data_structures.Message, bool)
-	GetReceivedMessages() int
-}
 
 type ConsumerQueueProtocolHandler struct {
 	consumer  middleware.ConsumerInterface
@@ -24,13 +18,13 @@ func NewConsumerQueueProtocolHandler(consumer middleware.ConsumerInterface) *Con
 	}
 }
 
-func (q *ConsumerQueueProtocolHandler) Pop() (*data_structures.Message, bool) {
+func (q *ConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
 	bytes, ok := q.consumer.Pop()
 	if !ok {
 		return nil, ok
 	}
 	msg := serializer.DeserializeMsg(bytes)
-	if msg.TypeMessage == data_structures.FlightRows {
+	if msg.TypeMessage == dataStructures.FlightRows {
 		q.recvCount += len(msg.DynMaps)
 	}
 	return msg, ok

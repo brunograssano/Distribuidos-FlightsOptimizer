@@ -2,17 +2,17 @@ package main
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
 )
 
 type JourneySink struct {
-	journeysConsumer   protocol.ConsumerProtocolInterface
-	avgAndMaxProducer  protocol.ProducerProtocolInterface
+	journeysConsumer   queueProtocol.ConsumerProtocolInterface
+	avgAndMaxProducer  queueProtocol.ProducerProtocolInterface
 	totalJourneySavers uint
 }
 
-func NewJourneySink(journeysConsumer protocol.ConsumerProtocolInterface, avgAndMaxProducer protocol.ProducerProtocolInterface, totalJourneySavers uint) *JourneySink {
+func NewJourneySink(journeysConsumer queueProtocol.ConsumerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface, totalJourneySavers uint) *JourneySink {
 	return &JourneySink{journeysConsumer: journeysConsumer, avgAndMaxProducer: avgAndMaxProducer, totalJourneySavers: totalJourneySavers}
 }
 

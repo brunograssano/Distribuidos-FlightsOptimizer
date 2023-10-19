@@ -2,18 +2,18 @@ package main
 
 import (
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 type AvgCalculator struct {
-	toInternalSaversChannels []protocol.ProducerProtocolInterface
-	pricesConsumer           protocol.ConsumerProtocolInterface
+	toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
+	pricesConsumer           queueProtocol.ConsumerProtocolInterface
 }
 
-func NewAvgCalculator(toInternalSaversChannels []protocol.ProducerProtocolInterface, pricesConsumer protocol.ConsumerProtocolInterface) *AvgCalculator {
+func NewAvgCalculator(toInternalSaversChannels []queueProtocol.ProducerProtocolInterface, pricesConsumer queueProtocol.ConsumerProtocolInterface) *AvgCalculator {
 	return &AvgCalculator{toInternalSaversChannels: toInternalSaversChannels, pricesConsumer: pricesConsumer}
 }
 

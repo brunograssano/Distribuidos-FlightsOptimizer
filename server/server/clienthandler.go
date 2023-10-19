@@ -1,11 +1,11 @@
-package main
+package server
 
 import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -16,14 +16,14 @@ const maxSleep = 32
 
 type ClientHandler struct {
 	rowsSent           uint
-	conn               *protocol.SocketProtocolHandler
+	conn               *socketsProtocol.SocketProtocolHandler
 	outQueueAirports   middleware.ProducerInterface
 	outQueueFlightRows middleware.ProducerInterface
 	GetterAddresses    []string
 }
 
 func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses []string) *ClientHandler {
-	sph := protocol.NewSocketProtocolHandler(conn)
+	sph := socketsProtocol.NewSocketProtocolHandler(conn)
 	return &ClientHandler{
 		conn:               sph,
 		rowsSent:           0,
@@ -34,20 +34,20 @@ func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware
 }
 
 func (ch *ClientHandler) handleGetterMessage(
-	msg *data_structures.Message,
-	cliSPH *protocol.SocketProtocolHandler,
+	msg *dataStructures.Message,
+	cliSPH *socketsProtocol.SocketProtocolHandler,
 	socketGetter *communication.ActiveTCPSocket,
 ) (bool, bool, error) {
 	// Sends the results to the client.
 	// If the getter finishes it notifies the client the end of an exercise results
-	if msg.TypeMessage == data_structures.FlightRows {
+	if msg.TypeMessage == dataStructures.FlightRows {
 		err := cliSPH.Write(msg)
 		if err != nil {
 			log.Errorf("ClientHandler | Error trying to send to client | %v | Ending loop...", err)
 			_ = socketGetter.Close()
 			return false, false, err
 		}
-	} else if msg.TypeMessage == data_structures.EOFGetter {
+	} else if msg.TypeMessage == dataStructures.EOFGetter {
 		err := cliSPH.Write(msg)
 		if err != nil {
 			log.Errorf("ClientHandler | Error trying to send EOFGetter to client | %v | Ending loop...", err)
@@ -56,7 +56,7 @@ func (ch *ClientHandler) handleGetterMessage(
 		}
 		_ = socketGetter.Close()
 		return true, false, nil
-	} else if msg.TypeMessage == data_structures.Later {
+	} else if msg.TypeMessage == dataStructures.Later {
 		return false, true, nil
 	} else {
 		log.Warnf("ClientHandler | Warning Message | Received unexpected message | Ignoring it...")
@@ -64,7 +64,7 @@ func (ch *ClientHandler) handleGetterMessage(
 	return false, false, nil
 }
 
-func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler) error {
+func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocolHandler) error {
 	for i := 0; i < len(ch.GetterAddresses); i++ {
 		currSleep := 2
 		socketGetter, err := communication.NewActiveTCPSocket(ch.GetterAddresses[i])
@@ -73,7 +73,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 			_ = socketGetter.Close()
 			return err
 		}
-		getterSPH := protocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
+		getterSPH := socketsProtocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
 		for {
 			msg, err := getterSPH.Read()
 			if err != nil {
@@ -101,7 +101,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *protocol.SocketProtocolHandler
 	return nil
 }
 
-func exponentialBackoffConnection(currSleep int, socketGetter *communication.ActiveTCPSocket) (*protocol.SocketProtocolHandler, error) {
+func exponentialBackoffConnection(currSleep int, socketGetter *communication.ActiveTCPSocket) (*socketsProtocol.SocketProtocolHandler, error) {
 	log.Infof("ClientHandler | Sleeping for %v seconds so that response may be ready later...", currSleep)
 	time.Sleep(time.Duration(currSleep) * time.Second)
 	if currSleep < maxSleep {
@@ -113,10 +113,10 @@ func exponentialBackoffConnection(currSleep int, socketGetter *communication.Act
 		_ = socketGetter.Close()
 		return nil, err
 	}
-	return protocol.NewSocketProtocolHandler(socketGetter), nil
+	return socketsProtocol.NewSocketProtocolHandler(socketGetter), nil
 }
 
-func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) error {
+func (ch *ClientHandler) handleAirportMessage(message *dataStructures.Message) error {
 	log.Debugf("ClientHandler | Sending airports to exchange...")
 	err := ch.outQueueAirports.Send(serializer.SerializeMsg(message))
 	if err != nil {
@@ -126,7 +126,7 @@ func (ch *ClientHandler) handleAirportMessage(message *data_structures.Message) 
 	return nil
 }
 
-func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message) error {
+func (ch *ClientHandler) handleFlightRowMessage(message *dataStructures.Message) error {
 	err := ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
 	ch.rowsSent += uint(len(message.DynMaps))
 	if err != nil {
@@ -136,8 +136,8 @@ func (ch *ClientHandler) handleFlightRowMessage(message *data_structures.Message
 	return nil
 }
 
-func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) error {
-	dynMap := data_structures.NewDynamicMap(make(map[string][]byte))
+func (ch *ClientHandler) handleEOFFlightRows(message *dataStructures.Message) error {
+	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
 	dynMap.AddColumn(utils.PrevSent, serializer.SerializeUint(uint32(ch.rowsSent)))
 	dynMap.AddColumn(utils.LocalSent, serializer.SerializeUint(uint32(0)))
 	dynMap.AddColumn(utils.LocalReceived, serializer.SerializeUint(uint32(0)))
@@ -146,18 +146,18 @@ func (ch *ClientHandler) handleEOFFlightRows(message *data_structures.Message) e
 	return ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
 }
 
-func (ch *ClientHandler) handleMessage(message *data_structures.Message, cliSPH *protocol.SocketProtocolHandler) (bool, error) {
+func (ch *ClientHandler) handleMessage(message *dataStructures.Message, cliSPH *socketsProtocol.SocketProtocolHandler) (bool, error) {
 	log.Debugf("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
-	if message.TypeMessage == data_structures.Airports || message.TypeMessage == data_structures.EOFAirports {
+	if message.TypeMessage == dataStructures.Airports || message.TypeMessage == dataStructures.EOFAirports {
 		return false, ch.handleAirportMessage(message)
 	}
-	if message.TypeMessage == data_structures.EOFFlightRows {
+	if message.TypeMessage == dataStructures.EOFFlightRows {
 		return false, ch.handleEOFFlightRows(message)
 	}
-	if message.TypeMessage == data_structures.FlightRows {
+	if message.TypeMessage == dataStructures.FlightRows {
 		return false, ch.handleFlightRowMessage(message)
 	}
-	if message.TypeMessage == data_structures.GetResults {
+	if message.TypeMessage == dataStructures.GetResults {
 		return true, ch.handleGetResults(cliSPH)
 	}
 	return false, fmt.Errorf("unrecognized message type: %v", message.TypeMessage)

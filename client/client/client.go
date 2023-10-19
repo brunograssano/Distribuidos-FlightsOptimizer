@@ -1,15 +1,15 @@
-package main
+package client
 
 import (
-	"client/parsers"
+	"client/client/parsers"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	log "github.com/sirupsen/logrus"
 )
 
 // Client Entity that encapsulates the client
 type Client struct {
-	conn *protocol.SocketProtocolHandler
+	conn *sockets.SocketProtocolHandler
 	conf *ClientConfig
 }
 
@@ -20,7 +20,7 @@ func NewClient(c *ClientConfig) *Client {
 		log.Fatalf("Client | action: connect | result: fail | client_id: %v | error: %v", c.ID, err)
 	}
 	log.Infof("Client | Connected to server")
-	return &Client{conn: protocol.NewSocketProtocolHandler(socket), conf: c}
+	return &Client{conn: sockets.NewSocketProtocolHandler(socket), conf: c}
 }
 
 // StartClientLoop Sends the flight rows and airport

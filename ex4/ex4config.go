@@ -19,9 +19,6 @@ type Ex4Config struct {
 	InternalSaversCount uint
 }
 
-const maxSaversCount = 32
-const defaultSaversCount = 4
-
 // InitEnv Initializes the configuration properties from a config file and environment
 func InitEnv() (*viper.Viper, error) {
 	v := viper.New()

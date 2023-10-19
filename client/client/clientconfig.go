@@ -1,14 +1,13 @@
-package main
+package client
 
 import (
 	"errors"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
 )
-
-const DefaultBatchSize = 300
 
 // ClientConfig The configuration of the application
 type ClientConfig struct {
@@ -79,7 +78,7 @@ func GetConfig(env *viper.Viper) (*ClientConfig, error) {
 	batch := env.GetUint("input.batch")
 	if batch == 0 {
 		log.Warnf("Client Config | Warning Message | Missing batch size, using default")
-		batch = DefaultBatchSize
+		batch = utils.DefaultBatchLines
 	}
 
 	log.Infof("Client Config | action: config | result: success | id: %s | log_level: %s | inputFile: %v | serverAddress: %v | inputAirports: %v | batch: %v",

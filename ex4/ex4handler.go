@@ -4,7 +4,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -25,33 +25,33 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 	// We create the output queue to the saver of the end results
-	outputQueue := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
+	outputQueue := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 
 	// Creation of the queue to the average calculator
 	accumChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
-	toAccumulatorChannelProducer := protocol.NewProducerChannel(accumChannel)
-	toAccumulatorChannelConsumer := protocol.NewConsumerChannel(accumChannel)
+	toAccumulatorChannelProducer := queueProtocol.NewProducerChannel(accumChannel)
+	toAccumulatorChannelConsumer := queueProtocol.NewConsumerChannel(accumChannel)
 	// We append the channels so that we can close all of them later
 	channels = append(channels, accumChannel)
 
 	// Creation of the JourneySink, it will redirect and handle EOF to saver
 	journeySinkChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
-	toJourneySinkChannelProducer := protocol.NewProducerChannel(journeySinkChannel)
+	toJourneySinkChannelProducer := queueProtocol.NewProducerChannel(journeySinkChannel)
 	channels = append(channels, journeySinkChannel)
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*JourneySaver
-	var toInternalSaversChannels []protocol.ProducerProtocolInterface
+	var toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
 	log.Infof("Ex4Handler | Creating %v journey savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		internalServerChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
 		channels = append(channels, internalServerChannel)
 		internalSavers = append(internalSavers, NewJourneySaver(
-			protocol.NewConsumerChannel(internalServerChannel),
+			queueProtocol.NewConsumerChannel(internalServerChannel),
 			toAccumulatorChannelProducer,
 			toJourneySinkChannelProducer,
 		))
-		toInternalSaversChannels = append(toInternalSaversChannels, protocol.NewProducerChannel(internalServerChannel))
+		toInternalSaversChannels = append(toInternalSaversChannels, queueProtocol.NewProducerChannel(internalServerChannel))
 		log.Infof("Ex4Handler | Created Saver #%v correctly...", i)
 	}
 
@@ -60,8 +60,8 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 	var jd []*dispatcher.JourneyDispatcher
 	for i := 0; i < 6; i++ {
 		// We create the input queue to the EX4 service
-		inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-		prodToInput := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+		prodToInput := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 		jd = append(jd, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 
@@ -72,7 +72,7 @@ func NewEx4Handler(c *Ex4Config) *Ex4Handler {
 		qMiddleware:       qMiddleware,
 		channels:          channels,
 		savers:            internalSavers,
-		journeySink:       NewJourneySink(protocol.NewConsumerChannel(journeySinkChannel), outputQueue, c.InternalSaversCount),
+		journeySink:       NewJourneySink(queueProtocol.NewConsumerChannel(journeySinkChannel), outputQueue, c.InternalSaversCount),
 	}
 }
 

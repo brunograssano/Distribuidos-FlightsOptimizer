@@ -4,7 +4,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -13,13 +13,13 @@ import (
 // SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
 	c        *Config
-	consumer protocol.ConsumerProtocolInterface
+	consumer queueProtocol.ConsumerProtocolInterface
 	canSend  chan string
 }
 
 // NewSimpleSaver Creates a new saver for the results
 func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *Config, canSend chan string) *SimpleSaver {
-	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	return &SimpleSaver{c: c, consumer: consumer, canSend: canSend}
 }
 
@@ -57,7 +57,7 @@ func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error 
 		return err
 	}
 	defer utils.CloseFileAndNotifyError(writer.FileManager)
-	return s.writeRowsToFile(msgStruct.DynMaps, writer.OutputManagerInterface)
+	return s.writeRowsToFile(msgStruct.DynMaps, writer)
 }
 
 func (s *SimpleSaver) writeRowsToFile(rows []*dataStructures.DynamicMap, writer filemanager.OutputManagerInterface) error {

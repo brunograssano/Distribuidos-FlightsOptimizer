@@ -3,7 +3,7 @@ package reducer
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,16 +11,16 @@ import (
 type Reducer struct {
 	reducerId  int
 	c          *Config
-	consumer   protocol.ConsumerProtocolInterface
-	producer   protocol.ProducerProtocolInterface
-	prodToCons protocol.ProducerProtocolInterface
+	consumer   queueProtocol.ConsumerProtocolInterface
+	producer   queueProtocol.ProducerProtocolInterface
+	prodToCons queueProtocol.ProducerProtocolInterface
 }
 
 // NewReducer Creates a new reducer
 func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Config) *Reducer {
-	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
-	prodToCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+	producer := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
+	prodToCons := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
 	return &Reducer{
 		reducerId:  reducerId,
 		c:          c,
@@ -42,7 +42,7 @@ func (r *Reducer) ReduceDims() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DimReducer %v | Received EOF. Now handling...", r.reducerId)
-			err := protocol.HandleEOF(msg, r.consumer, r.prodToCons, []protocol.ProducerProtocolInterface{r.producer})
+			err := queueProtocol.HandleEOF(msg, r.consumer, r.prodToCons, []queueProtocol.ProducerProtocolInterface{r.producer})
 			if err != nil {
 				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}

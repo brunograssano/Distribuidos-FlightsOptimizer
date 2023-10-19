@@ -3,7 +3,7 @@ package serializer
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -13,7 +13,7 @@ func TestSerializeDynMapWithAnIntReturnsTheBytesExpected(t *testing.T) {
 	dynMap := make(map[string][]byte)
 	dynMap["test"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 
 	serializedRow := SerializeDynMap(row)
 
@@ -42,7 +42,7 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 	stringCol2 := "un string largo para la prueba que debería de igual forma leerse bien su longitud"
 	dynMap["test_string"] = []byte(stringCol2)
 	binary.BigEndian.PutUint32(dynMap["test"], uint32(32))
-	row := data_structures.NewDynamicMap(dynMap)
+	row := dataStructures.NewDynamicMap(dynMap)
 
 	serializedRow := SerializeDynMap(row)
 
@@ -77,7 +77,7 @@ func TestSerializeDynMapWithTwoColumnsReturnsTheBytesExpected(t *testing.T) {
 }
 
 func TestSerializeEmptyDynMapReturnsOnlyColLengthOfZeroAsBytes(t *testing.T) {
-	row := data_structures.NewDynamicMap(make(map[string][]byte))
+	row := dataStructures.NewDynamicMap(make(map[string][]byte))
 	serializedRow := SerializeDynMap(row)
 	bytesExpected := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytesExpected, uint32(0))

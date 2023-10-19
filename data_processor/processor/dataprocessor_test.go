@@ -1,8 +1,8 @@
-package main
+package processor
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -48,7 +48,7 @@ func (m *mockProducer) Send(data *dataStructures.Message) error {
 func (m *mockProducer) ClearData() {}
 
 func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
-	pConfig := &ProcessorConfig{}
+	pConfig := &Config{}
 	input := make(chan *dataStructures.Message, 10)
 	outputEx13 := make(chan *dataStructures.Message, 10)
 	outputEx2 := make(chan *dataStructures.Message, 10)
@@ -72,7 +72,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		processorId:    0,
 		c:              pConfig,
 		consumer:       mConsumer,
-		producersEx123: []protocol.ProducerProtocolInterface{mProducer2, mProducer13},
+		producersEx123: []queueProtocol.ProducerProtocolInterface{mProducer2, mProducer13},
 		producersEx4:   mProducer4,
 		ex123Columns:   []string{utils.StartingAirport, utils.SegmentsArrivalAirportCode, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.Route},

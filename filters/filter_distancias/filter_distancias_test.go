@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/binary"
 	"filters_config"
-	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"math"
 	"testing"
 	"time"
@@ -13,7 +13,7 @@ import (
 
 type (
 	mockConsumer struct {
-		inputChannel chan *data_structures.Message
+		inputChannel chan *dataStructures.Message
 		ok           bool
 	}
 )
@@ -26,9 +26,9 @@ func (m *mockConsumer) GetReceivedMessages() int {
 	return 0
 }
 
-func (m *mockConsumer) Pop() (*data_structures.Message, bool) {
+func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
-		return &data_structures.Message{}, m.ok
+		return &dataStructures.Message{}, m.ok
 	}
 	msg, ok := <-m.inputChannel
 	return msg, ok
@@ -40,7 +40,7 @@ func (m *mockConsumer) BindTo(_ string, _ string) error {
 
 type (
 	mockProducer struct {
-		outputChannel chan *data_structures.Message
+		outputChannel chan *dataStructures.Message
 	}
 )
 
@@ -52,20 +52,20 @@ func (m *mockProducer) GetSentMessages() int {
 	return 0
 }
 
-func (m *mockProducer) Send(data *data_structures.Message) error {
+func (m *mockProducer) Send(data *dataStructures.Message) error {
 	m.outputChannel <- data
 	return nil
 }
 
 func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesFilter(t *testing.T) {
-	input := make(chan *data_structures.Message)
-	output := make(chan *data_structures.Message)
+	input := make(chan *dataStructures.Message)
+	output := make(chan *dataStructures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -83,8 +83,8 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(8.5))
-	row := data_structures.NewDynamicMap(dynMap)
-	input <- &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+	row := dataStructures.NewDynamicMap(dynMap)
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}}
 	close(input)
 	select {
 	case msg := <-output:
@@ -101,14 +101,14 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 }
 
 func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(t *testing.T) {
-	input := make(chan *data_structures.Message)
-	output := make(chan *data_structures.Message)
+	input := make(chan *dataStructures.Message)
+	output := make(chan *dataStructures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -126,8 +126,8 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(7.6))
-	row := data_structures.NewDynamicMap(dynMap)
-	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+	row := dataStructures.NewDynamicMap(dynMap)
+	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}}
 	input <- msgToSend
 	close(input)
 	select {
@@ -138,14 +138,14 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 }
 
 func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass(t *testing.T) {
-	input := make(chan *data_structures.Message)
-	output := make(chan *data_structures.Message)
+	input := make(chan *dataStructures.Message)
+	output := make(chan *dataStructures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -163,8 +163,8 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 	binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
 	dynMap["totalTravelDistance"] = make([]byte, 4)
 	binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.0))
-	row := data_structures.NewDynamicMap(dynMap)
-	msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+	row := dataStructures.NewDynamicMap(dynMap)
+	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}}
 	input <- msgToSend
 	close(input)
 	select {
@@ -175,14 +175,14 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 }
 
 func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
-	input := make(chan *data_structures.Message)
-	output := make(chan *data_structures.Message)
+	input := make(chan *dataStructures.Message)
+	output := make(chan *dataStructures.Message)
 
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -201,8 +201,8 @@ func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 		binary.BigEndian.PutUint32(dynMap["directDistance"], math.Float32bits(1.9))
 		dynMap["totalTravelDistance"] = make([]byte, 4)
 		binary.BigEndian.PutUint32(dynMap["totalTravelDistance"], math.Float32bits(5.7+1.9*float32(i)))
-		row := data_structures.NewDynamicMap(dynMap)
-		msgToSend := &data_structures.Message{TypeMessage: data_structures.FlightRows, DynMaps: []*data_structures.DynamicMap{row}}
+		row := dataStructures.NewDynamicMap(dynMap)
+		msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}}
 		input <- msgToSend
 	}
 	close(input)

@@ -1,10 +1,10 @@
-package main
+package ex3
 
 import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 // SaverForEx3 Structure that handles the final results
 type SaverForEx3 struct {
 	c             *SaverConfig
-	consumer      protocol.ConsumerProtocolInterface
+	consumer      queueProtocol.ConsumerProtocolInterface
 	finishSig     chan bool
 	regsToPersist map[string][2]*dataStructures.DynamicMap
 	id            int
@@ -21,7 +21,7 @@ type SaverForEx3 struct {
 
 // NewSaverForEx3 Creates a new saver for the results
 func NewSaverForEx3(
-	consumer protocol.ConsumerProtocolInterface,
+	consumer queueProtocol.ConsumerProtocolInterface,
 	c *SaverConfig,
 	finishSig chan bool,
 	id int,

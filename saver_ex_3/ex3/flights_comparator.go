@@ -1,4 +1,4 @@
-package main
+package ex3
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"

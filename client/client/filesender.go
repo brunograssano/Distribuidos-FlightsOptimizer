@@ -1,10 +1,10 @@
-package main
+package client
 
 import (
-	"client/parsers"
+	"client/client/parsers"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,7 +17,7 @@ func skipHeader(reader *filemanager.FileReader) {
 }
 
 // SendFile Sends a file data through a socket
-func SendFile(FileName string, batchSize uint, conn *protocol.SocketProtocolHandler, parser parsers.Parser) error {
+func SendFile(FileName string, batchSize uint, conn *socketsProtocol.SocketProtocolHandler, parser parsers.Parser) error {
 	reader, err := filemanager.NewFileReader(FileName)
 	if err != nil {
 		return err
