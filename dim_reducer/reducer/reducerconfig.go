@@ -1,4 +1,4 @@
-package main
+package reducer
 
 import (
 	"errors"
@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ReducerConfig The configuration of the application
-type ReducerConfig struct {
+// Config The configuration of the application
+type Config struct {
 	ID              string
 	InputQueueName  string
 	OutputQueueName string
@@ -19,8 +19,8 @@ type ReducerConfig struct {
 	RabbitAddress   string
 }
 
-// initEnv Initializes the configuration properties from a config file and environment
-func initEnv() (*viper.Viper, error) {
+// InitEnv Initializes the configuration properties from a config file and environment
+func InitEnv() (*viper.Viper, error) {
 	v := viper.New()
 
 	// Configure viper to read env variables with the CLI_ prefix
@@ -45,14 +45,14 @@ func initEnv() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		log.Warnf("ReducerConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("Config | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
 }
 
 // GetConfig Validates and returns the configuration of the application
-func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
+func GetConfig(env *viper.Viper) (*Config, error) {
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -86,17 +86,17 @@ func GetConfig(env *viper.Viper) (*ReducerConfig, error) {
 
 	goroutinesCount := env.GetInt("reducer.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
-		log.Warnf("ReducerConfig | Not a valid value '%v' for goroutines count, using default.", goroutinesCount)
+		log.Warnf("Config | Not a valid value '%v' for goroutines count, using default.", goroutinesCount)
 		goroutinesCount = utils.DefaultGoroutines
 	}
 
-	log.Infof("ReducerConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
+	log.Infof("Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | columnsToKeep: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,
 		inputQueueName, outputQueueName, columnsToKeep, goroutinesCount)
 
-	return &ReducerConfig{
+	return &Config{
 		ID:              id,
 		InputQueueName:  inputQueueName,
 		OutputQueueName: outputQueueName,

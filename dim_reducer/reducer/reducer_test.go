@@ -1,4 +1,4 @@
-package main
+package reducer
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
@@ -50,7 +50,7 @@ func (m *mockProducerQueueProtocolHandler) GetSentMessages() int {
 }
 
 func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
-	reducerConfig := &ReducerConfig{ColumnsToKeep: []string{"col1"}}
+	reducerConfig := &Config{ColumnsToKeep: []string{"col1"}}
 	input := make(chan *dataStructures.Message, 10)
 	output := make(chan *dataStructures.Message, 10)
 

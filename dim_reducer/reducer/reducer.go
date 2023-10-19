@@ -1,4 +1,4 @@
-package main
+package reducer
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
@@ -10,14 +10,14 @@ import (
 // Reducer Structure that reduces the dimensions of a row by removing columns
 type Reducer struct {
 	reducerId  int
-	c          *ReducerConfig
+	c          *Config
 	consumer   protocol.ConsumerProtocolInterface
 	producer   protocol.ProducerProtocolInterface
 	prodToCons protocol.ProducerProtocolInterface
 }
 
 // NewReducer Creates a new reducer
-func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *ReducerConfig) *Reducer {
+func NewReducer(reducerId int, qMiddleware *middleware.QueueMiddleware, c *Config) *Reducer {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
 	prodToCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
