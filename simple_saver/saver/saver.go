@@ -1,4 +1,4 @@
-package main
+package saver
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
@@ -12,13 +12,13 @@ import (
 
 // SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
-	c        *SaverConfig
+	c        *Config
 	consumer protocol.ConsumerProtocolInterface
 	canSend  chan string
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *SaverConfig, canSend chan string) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *Config, canSend chan string) *SimpleSaver {
 	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
 	return &SimpleSaver{c: c, consumer: consumer, canSend: canSend}
 }
@@ -56,16 +56,19 @@ func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error 
 		log.Errorf("SimpleSaver | Error opening file writer of output")
 		return err
 	}
-	for _, row := range msgStruct.DynMaps {
+	defer utils.CloseFileAndNotifyError(writer.FileManager)
+	return s.writeRowsToFile(msgStruct.DynMaps, writer.OutputManagerInterface)
+}
+
+func (s *SimpleSaver) writeRowsToFile(rows []*dataStructures.DynamicMap, writer filemanager.OutputManagerInterface) error {
+	for _, row := range rows {
 		line := serializer.SerializeToString(row)
 		log.Debugf("SimpleSaver | Saving line: %v", line)
-		err = writer.WriteLine(line)
+		err := writer.WriteLine(line)
 		if err != nil {
 			log.Errorf("SimpleSaver | Error writing to file | %v", err)
-			utils.CloseFileAndNotifyError(writer.FileManager)
 			return err
 		}
 	}
-	utils.CloseFileAndNotifyError(writer.FileManager)
 	return nil
 }

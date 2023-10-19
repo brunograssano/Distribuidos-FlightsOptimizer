@@ -1,4 +1,4 @@
-package main
+package saver
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// SaverConfig The configuration of the application
-type SaverConfig struct {
+// Config The configuration of the application
+type Config struct {
 	ID               string
 	InputQueueName   string
 	OutputFileName   string
@@ -53,7 +53,7 @@ func InitEnv() (*viper.Viper, error) {
 }
 
 // GetConfig Validates and returns the configuration of the application
-func GetConfig(env *viper.Viper) (*SaverConfig, error) {
+func GetConfig(env *viper.Viper) (*Config, error) {
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		getterAddress,
 		getterBatchLines)
 
-	return &SaverConfig{
+	return &Config{
 		ID:               id,
 		InputQueueName:   inputQueueName,
 		OutputFileName:   outputFilename,
