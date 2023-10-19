@@ -5,7 +5,7 @@ import (
 	"filters_config"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"testing"
 	"time"
 )
@@ -64,7 +64,7 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -100,7 +100,7 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -144,7 +144,7 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}
@@ -187,7 +187,7 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 		inputChannel: input,
 		ok:           true,
 	}
-	arrayProducers := make([]protocol.ProducerProtocolInterface, 1)
+	arrayProducers := make([]queueProtocol.ProducerProtocolInterface, 1)
 	arrayProducers[0] = &mockProducer{
 		outputChannel: output,
 	}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -14,16 +14,16 @@ import (
 
 // JourneySaver Handles the prices of the assigned journeys
 type JourneySaver struct {
-	consumer          protocol.ConsumerProtocolInterface
-	accumProducer     protocol.ProducerProtocolInterface
-	avgAndMaxProducer protocol.ProducerProtocolInterface
+	consumer          queueProtocol.ConsumerProtocolInterface
+	accumProducer     queueProtocol.ProducerProtocolInterface
+	avgAndMaxProducer queueProtocol.ProducerProtocolInterface
 	filesToRead       []string
 	totalPrice        float32
 	quantities        int
 }
 
 // NewJourneySaver Creates a new JourneySaver
-func NewJourneySaver(consumer protocol.ConsumerProtocolInterface, accumProducer protocol.ProducerProtocolInterface, avgAndMaxProducer protocol.ProducerProtocolInterface) *JourneySaver {
+func NewJourneySaver(consumer queueProtocol.ConsumerProtocolInterface, accumProducer queueProtocol.ProducerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface) *JourneySaver {
 	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, totalPrice: 0, quantities: 0}
 }
 
@@ -31,17 +31,17 @@ func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 	// May need optimization. Mix of memory and disk or only memory...
 	log.Debugf("JourneySaver | Writing records to files")
 	for _, dynMap := range dynMaps {
-		stAirport, err := dynMap.GetAsString("startingAirport")
+		stAirport, err := dynMap.GetAsString(utils.StartingAirport)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting starting airport | %v | Skipping row...", err)
 			continue
 		}
-		destAirport, err := dynMap.GetAsString("destinationAirport")
+		destAirport, err := dynMap.GetAsString(utils.DestinationAirport)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting destination airport | %v | Skipping row...", err)
 			continue
 		}
-		totalFare, err := dynMap.GetAsFloat("totalFare")
+		totalFare, err := dynMap.GetAsFloat(utils.TotalFare)
 		if err != nil {
 			log.Errorf("JourneySaver | Error getting total fare | %v | Skipping row...", err)
 			continue

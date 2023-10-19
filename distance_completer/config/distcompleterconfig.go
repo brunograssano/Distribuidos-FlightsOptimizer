@@ -23,9 +23,6 @@ type CompleterConfig struct {
 	AirportsFilename           string
 }
 
-const maxGoroutines int = 32
-const defaultGoroutines int = 4
-
 func InitEnv() (*viper.Viper, error) {
 
 	v := viper.New()

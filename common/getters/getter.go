@@ -5,7 +5,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -38,7 +38,7 @@ func (g *Getter) ReturnResults() {
 			log.Errorf("Getter | action: accept_connection | result: error | id: %v | address: %v | %v", g.c.ID, g.c.Address, err)
 			return
 		}
-		sph := protocol.NewSocketProtocolHandler(socket)
+		sph := socketsProtocol.NewSocketProtocolHandler(socket)
 		select {
 		case folder := <-g.canSend:
 			g.sendResults(sph, folder)
@@ -50,7 +50,7 @@ func (g *Getter) ReturnResults() {
 }
 
 // askLaterForResults Tells the client to wait and finishes the connection
-func (g *Getter) askLaterForResults(sph *protocol.SocketProtocolHandler) {
+func (g *Getter) askLaterForResults(sph *socketsProtocol.SocketProtocolHandler) {
 	log.Infof("Getter | Client asked for results when they are not ready. Answer 'Later'")
 	err := sph.Write(&dataStructures.Message{
 		TypeMessage: dataStructures.Later,
@@ -63,7 +63,7 @@ func (g *Getter) askLaterForResults(sph *protocol.SocketProtocolHandler) {
 }
 
 // sendResults Sends the saved results to the client
-func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler, folder string) {
+func (g *Getter) sendResults(sph *socketsProtocol.SocketProtocolHandler, folder string) {
 	log.Infof("Getter | Sending results to client")
 	var currBatch []*dataStructures.DynamicMap
 	curLengthOfBatch := 0
@@ -100,7 +100,7 @@ func (g *Getter) sendResults(sph *protocol.SocketProtocolHandler, folder string)
 	g.sendEOF(sph)
 }
 
-func (g *Getter) sendEOF(sph *protocol.SocketProtocolHandler) {
+func (g *Getter) sendEOF(sph *socketsProtocol.SocketProtocolHandler) {
 	log.Infof("Getter | Sending EOF to client...")
 	err := sph.Write(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFGetter,
@@ -112,7 +112,7 @@ func (g *Getter) sendEOF(sph *protocol.SocketProtocolHandler) {
 }
 
 // sendBatch sends a specific batch of DynamicMaps via protocol handler
-func (g *Getter) sendBatch(sph *protocol.SocketProtocolHandler, batch []*dataStructures.DynamicMap) {
+func (g *Getter) sendBatch(sph *socketsProtocol.SocketProtocolHandler, batch []*dataStructures.DynamicMap) {
 	err := sph.Write(&dataStructures.Message{
 		TypeMessage: dataStructures.FlightRows,
 		DynMaps:     batch,

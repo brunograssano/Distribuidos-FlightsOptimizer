@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dim_reducer/reducer"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -9,19 +10,19 @@ import (
 func main() {
 	sigs := utils.CreateSignalListener()
 
-	env, err := initEnv()
+	env, err := reducer.InitEnv()
 	if err != nil {
 		log.Fatalf("Main - DimReducer | Error initializing env | %s", err)
 	}
 
-	reducerConfig, err := GetConfig(env)
+	reducerConfig, err := reducer.GetConfig(env)
 	if err != nil {
 		log.Fatalf("Main - DimReducer | Error initializing config | %s", err)
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := NewReducer(i, qMiddleware, reducerConfig)
+		r := reducer.NewReducer(i, qMiddleware, reducerConfig)
 		go r.ReduceDims()
 	}
 	<-sigs

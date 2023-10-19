@@ -5,7 +5,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,20 +13,20 @@ import (
 type FilterStopovers struct {
 	filterId   int
 	config     *filters_config.FilterConfig
-	consumer   protocol.ConsumerProtocolInterface
-	producers  []protocol.ProducerProtocolInterface
-	prodToCons protocol.ProducerProtocolInterface
+	consumer   queueProtocol.ConsumerProtocolInterface
+	producers  []queueProtocol.ProducerProtocolInterface
+	prodToCons queueProtocol.ProducerProtocolInterface
 	filter     *filters.Filter
 }
 
 const MinStopovers = 3
 
 func NewFilterStopovers(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterStopovers {
-	inputQueue := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(conf.InputQueueName, true))
-	prodToCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.InputQueueName, true))
-	outputQueues := make([]protocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
+	inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(conf.InputQueueName, true))
+	prodToCons := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.InputQueueName, true))
+	outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
-		outputQueues[i] = protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.OutputQueueNames[i], true))
+		outputQueues[i] = queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.OutputQueueNames[i], true))
 	}
 
 	filter := filters.NewFilter()
@@ -49,7 +49,7 @@ func (fe *FilterStopovers) FilterStopovers() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("FilterStopovers %v | Received EOF. Now handling...", fe.filterId)
-			err := protocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
+			err := queueProtocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error handling EOF | %v", fe.filterId, err)
 			}

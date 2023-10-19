@@ -6,7 +6,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -18,9 +18,9 @@ type DistanceCompleter struct {
 	completerId      int
 	airportsMap      map[string][2]float32
 	c                *config.CompleterConfig
-	consumer         protocol.ConsumerProtocolInterface
-	producer         protocol.ProducerProtocolInterface
-	prodForCons      protocol.ProducerProtocolInterface
+	consumer         queueProtocol.ConsumerProtocolInterface
+	producer         queueProtocol.ProducerProtocolInterface
+	prodForCons      queueProtocol.ProducerProtocolInterface
 	fileLoadedSignal chan string
 }
 
@@ -30,9 +30,9 @@ func NewDistanceCompleter(
 	c *config.CompleterConfig,
 	fileLoadedSignal chan string,
 ) *DistanceCompleter {
-	consumer := protocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
-	producer := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
-	producerForCons := protocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueFlightsName, true))
+	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
+	producer := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
+	producerForCons := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueFlightsName, true))
 
 	return &DistanceCompleter{
 		completerId:      id,
@@ -150,7 +150,7 @@ func (dc *DistanceCompleter) CompleteDistances() {
 		log.Debugf("DistanceCompleter %v | Received Message | {type: %v, rowCount:%v}", dc.completerId, msg.TypeMessage, len(msg.DynMaps))
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DistanceCompleter %v | Received EOF. Handling...", dc.completerId)
-			err := protocol.HandleEOF(msg, dc.consumer, dc.prodForCons, []protocol.ProducerProtocolInterface{dc.producer})
+			err := queueProtocol.HandleEOF(msg, dc.consumer, dc.prodForCons, []queueProtocol.ProducerProtocolInterface{dc.producer})
 			if err != nil {
 				log.Errorf("DistanceCompleter %v | Error handling EOF | %v", dc.completerId, err)
 			}

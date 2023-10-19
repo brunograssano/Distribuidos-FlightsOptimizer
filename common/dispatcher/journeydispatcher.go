@@ -2,7 +2,7 @@ package dispatcher
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol"
+	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"hash/fnv"
@@ -10,13 +10,13 @@ import (
 
 // JourneyDispatcher Struct that dispatches journey messages
 type JourneyDispatcher struct {
-	channels    []protocol.ProducerProtocolInterface
-	input       protocol.ConsumerProtocolInterface
-	prodToInput protocol.ProducerProtocolInterface
+	channels    []queueProtocol.ProducerProtocolInterface
+	input       queueProtocol.ConsumerProtocolInterface
+	prodToInput queueProtocol.ProducerProtocolInterface
 }
 
 // NewJourneyDispatcher Creates a new dispatcher
-func NewJourneyDispatcher(input protocol.ConsumerProtocolInterface, prodToInput protocol.ProducerProtocolInterface, outputChannels []protocol.ProducerProtocolInterface) *JourneyDispatcher {
+func NewJourneyDispatcher(input queueProtocol.ConsumerProtocolInterface, prodToInput queueProtocol.ProducerProtocolInterface, outputChannels []queueProtocol.ProducerProtocolInterface) *JourneyDispatcher {
 	return &JourneyDispatcher{
 		input:       input,
 		channels:    outputChannels,
@@ -42,7 +42,7 @@ func (jd *JourneyDispatcher) DispatchLoop() {
 // on the starting airport and destination airport on each row of the message
 func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 	if message.TypeMessage == dataStructures.EOFFlightRows {
-		err := protocol.HandleEOF(message, jd.input, jd.prodToInput, jd.channels)
+		err := queueProtocol.HandleEOF(message, jd.input, jd.prodToInput, jd.channels)
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error handling EOF | %v", err)
 		}
