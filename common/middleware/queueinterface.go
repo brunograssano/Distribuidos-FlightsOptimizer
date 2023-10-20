@@ -6,5 +6,5 @@ type ProducerInterface interface {
 
 type ConsumerInterface interface {
 	Pop() ([]byte, bool)
-	BindTo(nameExchange string, routingKey string) error
+	BindTo(nameExchange string, routingKey string, kind string) error
 }

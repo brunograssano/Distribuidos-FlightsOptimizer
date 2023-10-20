@@ -23,8 +23,8 @@ func NewAirportSaver(
 	qMiddleware *middleware.QueueMiddleware,
 	fileLoadedSignals []chan string,
 ) *AirportSaver {
-	consumer := qMiddleware.CreateConsumer(conf.InputQueueAirportsName, true)
-	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports)
+	consumer := qMiddleware.CreateConsumer(fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID), true)
+	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports, "fanout")
 	if err != nil {
 		log.Fatalf("AirportsSaver | Error trying to bind the consumer's queue to the exchange | %v", err)
 	}

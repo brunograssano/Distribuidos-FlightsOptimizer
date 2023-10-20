@@ -10,7 +10,10 @@ use (
 	./simple_saver
 	./client
 	./distance_completer
-	./ex4
+	./dispatcher_ex4
+	./ex4_journey_saver
 	./saver_ex_3
 	./server
+	./avg_calculator_ex4
+	./ex4_sink
 )

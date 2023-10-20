@@ -45,10 +45,10 @@ func (queue *Consumer) Pop() ([]byte, bool) {
 	return msg.Body, ok
 }
 
-func (queue *Consumer) BindTo(nameExchange string, routingKey string) error {
+func (queue *Consumer) BindTo(nameExchange string, routingKey string, kind string) error {
 	err := queue.rabbitMQChannel.ExchangeDeclare(
 		nameExchange,
-		"fanout",
+		kind,
 		true,
 		false,
 		false,

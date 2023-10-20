@@ -7,25 +7,33 @@ import (
 )
 
 type JourneySink struct {
-	journeysConsumer   queueProtocol.ConsumerProtocolInterface
-	avgAndMaxProducer  queueProtocol.ProducerProtocolInterface
+	inputQueue         queueProtocol.ConsumerProtocolInterface
+	toSaver4Producer   queueProtocol.ProducerProtocolInterface
 	totalJourneySavers uint
 }
 
-func NewJourneySink(journeysConsumer queueProtocol.ConsumerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface, totalJourneySavers uint) *JourneySink {
-	return &JourneySink{journeysConsumer: journeysConsumer, avgAndMaxProducer: avgAndMaxProducer, totalJourneySavers: totalJourneySavers}
+func NewJourneySink(
+	inputQueue queueProtocol.ConsumerProtocolInterface,
+	toSaver4Producer queueProtocol.ProducerProtocolInterface,
+	totalJourneySavers uint,
+) *JourneySink {
+	return &JourneySink{
+		inputQueue:         inputQueue,
+		toSaver4Producer:   toSaver4Producer,
+		totalJourneySavers: totalJourneySavers,
+	}
 }
 
 func (j *JourneySink) HandleJourneys() {
 	for {
 		for recvJourneys := uint(0); recvJourneys < j.totalJourneySavers; {
-			msg, ok := j.journeysConsumer.Pop()
+			msg, ok := j.inputQueue.Pop()
 			if !ok {
 				log.Infof("JourneySink | Consumer closed, exiting goroutine")
 				return
 			}
 			if msg.TypeMessage == dataStructures.FlightRows {
-				err := j.avgAndMaxProducer.Send(msg)
+				err := j.toSaver4Producer.Send(msg)
 				if err != nil {
 					log.Errorf("JourneySink | Error sending max and average to saver | %v", err)
 					return
@@ -41,7 +49,7 @@ func (j *JourneySink) HandleJourneys() {
 		msg := &dataStructures.Message{
 			TypeMessage: dataStructures.EOFFlightRows,
 		}
-		err := j.avgAndMaxProducer.Send(msg)
+		err := j.toSaver4Producer.Send(msg)
 		if err != nil {
 			log.Errorf("JourneySink | Error sending EOF to saver | %v", err)
 		}
