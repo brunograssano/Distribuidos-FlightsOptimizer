@@ -11,9 +11,9 @@ RUN mkdir -p /build
 WORKDIR /build/
 COPY .. .
 # CGO_ENABLED must be disabled to run go binary in Alpine
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/ex4 ex4
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/ex4_journey_saver ex4_journey_saver
 
 
 FROM busybox:latest
-COPY --from=builder /build/bin/ex4 /ex4
-ENTRYPOINT ["/ex4"]
+COPY --from=builder /build/bin/ex4_journey_saver /ex4_journey_saver
+ENTRYPOINT ["/ex4_journey_saver"]

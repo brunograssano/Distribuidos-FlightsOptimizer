@@ -1,0 +1,8 @@
+
+log:
+  level: "info"
+rabbitmq:
+  address: "amqp://guest:guest@rabbitmq:5672/"
+internal:
+  dispatcher:
+    count: 6

@@ -5,18 +5,17 @@ import (
 	"strings"
 
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
-	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-// Ex4Config The configuration of the application
-type Ex4Config struct {
-	ID                  string
-	InputQueueName      string
-	OutputQueueName     string
-	RabbitAddress       string
-	InternalSaversCount uint
+// AvgCalculatorConfig The configuration of the application
+type AvgCalculatorConfig struct {
+	ID              string
+	InputQueueName  string
+	OutputQueueName string
+	RabbitAddress   string
+	SaversCount     uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -33,18 +32,18 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "address")
 	_ = v.BindEnv("rabbitmq", "queue", "input")
 	_ = v.BindEnv("rabbitmq", "queue", "output")
-	_ = v.BindEnv("internal", "savers", "count")
+	_ = v.BindEnv("savers", "count")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		log.Warnf("Ex4Config | Warning Message | Configuration could not be read from config file. Using env variables instead")
+		log.Warnf("AvgCalculatorConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
 	}
 
 	return v, nil
 }
 
 // GetConfig Validates and returns the configuration of the application
-func GetConfig(env *viper.Viper) (*Ex4Config, error) {
+func GetConfig(env *viper.Viper) (*AvgCalculatorConfig, error) {
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -69,28 +68,28 @@ func GetConfig(env *viper.Viper) (*Ex4Config, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
-	internalSaversCount := env.GetUint("internal.savers.count")
-	if internalSaversCount <= 0 || internalSaversCount > utils.MaxGoroutines {
-		log.Warnf("Ex4Config | Not a valid value '%v' for internal savers count, using default", internalSaversCount)
-		internalSaversCount = utils.DefaultGoroutines
+	saversCount := env.GetUint("savers.count")
+	if saversCount <= 0 {
+		return nil, errors.New("invalid savers count")
 	}
 
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
 
-	log.Infof("Ex4Config | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | internalSaversCount: %v",
+	log.Infof("AvgCalculatorConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueName: %v | saversCount: %v",
 		id,
 		env.GetString("log.level"),
 		rabbitAddress,
 		inputQueueName,
-		internalSaversCount)
+		outputQueueName,
+		saversCount)
 
-	return &Ex4Config{
-		ID:                  id,
-		InputQueueName:      inputQueueName,
-		OutputQueueName:     outputQueueName,
-		RabbitAddress:       rabbitAddress,
-		InternalSaversCount: internalSaversCount,
+	return &AvgCalculatorConfig{
+		ID:              id,
+		InputQueueName:  inputQueueName,
+		OutputQueueName: outputQueueName,
+		RabbitAddress:   rabbitAddress,
+		SaversCount:     saversCount,
 	}, nil
 }

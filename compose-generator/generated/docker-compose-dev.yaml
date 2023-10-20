@@ -200,7 +200,7 @@ services:
     image: dispatcher_ex4:latest
     environment:
       - CLI_ID=10
-      - CLI_LOG_LEVEL=INFO
+      - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=18
@@ -227,7 +227,7 @@ services:
     image: dispatcher_ex4:latest
     environment:
       - CLI_ID=11
-      - CLI_LOG_LEVEL=INFO
+      - CLI_LOG_LEVEL=DEBUG
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=18

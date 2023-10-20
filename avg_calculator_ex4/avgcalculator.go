@@ -9,12 +9,13 @@ import (
 )
 
 type AvgCalculator struct {
-	toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
-	pricesConsumer           queueProtocol.ConsumerProtocolInterface
+	toJourneySavers []queueProtocol.ProducerProtocolInterface
+	pricesConsumer  queueProtocol.ConsumerProtocolInterface
+	c               *AvgCalculatorConfig
 }
 
-func NewAvgCalculator(toInternalSaversChannels []queueProtocol.ProducerProtocolInterface, pricesConsumer queueProtocol.ConsumerProtocolInterface) *AvgCalculator {
-	return &AvgCalculator{toInternalSaversChannels: toInternalSaversChannels, pricesConsumer: pricesConsumer}
+func NewAvgCalculator(toJourneySavers []queueProtocol.ProducerProtocolInterface, pricesConsumer queueProtocol.ConsumerProtocolInterface, c *AvgCalculatorConfig) *AvgCalculator {
+	return &AvgCalculator{toJourneySavers: toJourneySavers, pricesConsumer: pricesConsumer, c: c}
 }
 
 // CalculateAvgLoop Waits for the final results from the journey savers,
@@ -24,8 +25,9 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 	for {
 		sumOfPrices := float32(0)
 		sumOfRows := 0
-		log.Infof("AvgCalculator | Starting await of internalSavers | Now waiting for %v savers...", len(a.toInternalSaversChannels))
-		for sentResults := 0; sentResults < len(a.toInternalSaversChannels); sentResults++ {
+		log.Infof("AvgCalculator | Starting await of internalSavers | Now waiting for %v savers...", len(a.toJourneySavers))
+
+		for sentResults := uint(0); sentResults < a.c.SaversCount; sentResults++ {
 			msg, ok := a.pricesConsumer.Pop()
 			if !ok {
 				log.Errorf("AvgCalculator | Consumer closed when not expected, exiting average calculator")
@@ -68,7 +70,7 @@ func (a *AvgCalculator) sendToJourneySavers(avg float32) {
 	dynMap[utils.FinalAvg] = avgBytes
 	data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
 	msg := &dataStructure.Message{TypeMessage: dataStructure.FinalAvgMsg, DynMaps: data}
-	for i, channel := range a.toInternalSaversChannels {
+	for i, channel := range a.toJourneySavers {
 		log.Infof("AvgCalculator | Sending average to saver %v", i)
 		err := channel.Send(msg)
 		if err != nil {

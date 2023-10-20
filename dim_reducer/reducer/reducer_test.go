@@ -28,7 +28,7 @@ func (m *mockConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool)
 	return msg, ok
 }
 
-func (m *mockConsumerQueueProtocolHandler) BindTo(_ string, _ string) error {
+func (m *mockConsumerQueueProtocolHandler) BindTo(_ string, _ string, _ string) error {
 	return nil
 }
 

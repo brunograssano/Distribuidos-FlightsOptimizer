@@ -44,7 +44,7 @@ services:
     environment:
       - CLI_ID={{reducers1 + i}}
       - CLI_LOG_LEVEL=INFO
-      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_{{i}}
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
     networks:
@@ -135,18 +135,80 @@ services:
           condition: service_healthy
 {% endfor %}
 
-  ex4_handler:
-    container_name: ex4_handler
-    image: ex4_handler:latest
+{% for i in range(1,ex4Savers + 1) %}
+  ex4_journey_saver-{{i}}:
+    container_name: ex4_saver-{{i}}
+    image: ex4_journey_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 1}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + i}}
       - CLI_LOG_LEVEL=INFO
-      - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
-      - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
+      - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
+      - CLI_INTERNAL_SAVERS_COUNT=6
+      - CLI_RABBITMQ_RK_INPUT={{6*(i-1)}}
     networks:
       - testing_net
     volumes:
-      - ./ex4/config.yaml:/config.yaml
+      - ./ex4_journey_saver/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+{% endfor %}
+
+{% for i in range(1,ex4Dispatchers + 1) %}
+  ex4_dispatcher-{{i}}:
+    container_name: ex4_dispatcher-{{i}}
+    image: dispatcher_ex4:latest
+    environment:
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + i}}
+      - CLI_LOG_LEVEL=DEBUG
+      - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
+      - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
+      - CLI_SAVERS_COUNT={{6*ex4Savers}}
+    networks:
+      - testing_net
+    volumes:
+      - ./dispatcher_ex4/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+{% for j in range(1,ex4Savers + 1) %}
+      ex4_journey_saver-{{j}}:
+        condition: service_started
+{% endfor %}
+{% endfor %}
+
+  avg_calculator_ex4:
+    container_name: avg_calculator_ex4
+    image: avg_calculator_ex4:latest
+    environment:
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 1}}
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
+      - CLI_SAVERS_COUNT={{6*ex4Savers}}
+    networks:
+      - testing_net
+    volumes:
+      - ./avg_calculator_ex4/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  ex4_sink:
+    container_name: ex4_sink
+    image: ex4_sink:latest
+    environment:
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 2}}
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
+      - CLI_SAVERS_COUNT={{6*ex4Savers}}
+    networks:
+      - testing_net
+    volumes:
+      - ./ex4_sink/config.yaml:/config.yaml
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -156,7 +218,7 @@ services:
     container_name: saver-ex1
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 2}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 3}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
       - CLI_SAVER_OUTPUT=results_ex1.csv
@@ -174,7 +236,7 @@ services:
     container_name: saver-ex2
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 3}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 4}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
       - CLI_SAVER_OUTPUT=results_ex2.csv
@@ -192,7 +254,7 @@ services:
     container_name: saver-ex3
     image: saver_ex_3:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 4}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 5}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver_3
       - CLI_SAVER_OUTPUT=results_ex3
@@ -210,7 +272,7 @@ services:
     container_name: saver-ex4
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 5}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 6}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
       - CLI_SAVER_OUTPUT=results_ex4.csv
@@ -228,7 +290,7 @@ services:
     container_name: server
     image: server:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 6}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 7}}
       - CLI_LOG_LEVEL=INFO
       - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080,saver-ex4:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
@@ -257,9 +319,9 @@ services:
     container_name: client
     image: client:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + 7}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 8}}
       - CLI_LOG_LEVEL=INFO
-      - CLI_INPUT_BATCH=1
+      - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
       - CLI_INPUT_FILE=/data/flightrows.csv # configurar localmente
     networks:
