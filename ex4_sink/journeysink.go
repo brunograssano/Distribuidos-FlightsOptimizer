@@ -26,6 +26,7 @@ func NewJourneySink(
 
 func (j *JourneySink) HandleJourneys() {
 	for {
+		// TODO manejar multiples clientes
 		for recvJourneys := uint(0); recvJourneys < j.totalJourneySavers; {
 			msg, ok := j.inputQueue.Pop()
 			if !ok {
@@ -48,6 +49,7 @@ func (j *JourneySink) HandleJourneys() {
 		log.Infof("JourneySink | Sending EOF to saver")
 		msg := &dataStructures.Message{
 			TypeMessage: dataStructures.EOFFlightRows,
+			//ClientId: clientId, TODO
 		}
 		err := j.toSaver4Producer.Send(msg)
 		if err != nil {

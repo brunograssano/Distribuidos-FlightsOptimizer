@@ -1,6 +1,7 @@
 package filemanager
 
 import (
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -22,4 +23,20 @@ func MoveFiles(files []string) (string, error) {
 		}
 	}
 	return folder, nil
+}
+
+func RenameFile(file string, newName string) error {
+	err := os.Rename(file, newName)
+	if err != nil {
+		log.Errorf("FileRenamer | Error renaming file | %v", err)
+		return err
+	}
+	return nil
+}
+
+func FileExists(file string) bool {
+	if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
 }

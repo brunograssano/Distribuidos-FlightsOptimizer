@@ -23,15 +23,11 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(completerConfig.RabbitAddress)
 
-	var startChannels []chan string
 	for i := 0; i < completerConfig.GoroutinesCount; i++ {
-		startProcessing := make(chan string, 1)
-		startChannels = append(startChannels, startProcessing)
 		distCompleter := controllers.NewDistanceCompleter(
 			i,
 			qMiddleware,
 			completerConfig,
-			startProcessing,
 		)
 		go distCompleter.CompleteDistances()
 	}
@@ -39,7 +35,6 @@ func main() {
 	airportsSaver := controllers.NewAirportSaver(
 		completerConfig,
 		qMiddleware,
-		startChannels,
 	)
 	go airportsSaver.SaveAirports()
 

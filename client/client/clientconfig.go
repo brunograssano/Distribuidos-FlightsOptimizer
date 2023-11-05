@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"strings"
@@ -16,6 +17,7 @@ type ClientConfig struct {
 	AirportFileName string
 	ServerAddress   string
 	Batch           uint
+	Uuid            string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -95,5 +97,6 @@ func GetConfig(env *viper.Viper) (*ClientConfig, error) {
 		ServerAddress:   serverAddress,
 		AirportFileName: inputAirports,
 		Batch:           batch,
+		Uuid:            uuid.New().String(),
 	}, nil
 }

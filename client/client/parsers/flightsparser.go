@@ -13,13 +13,46 @@ import (
 const flightFileColumnCount = 27
 
 const legIdPos = 0
+
+/*
+const searchDatePos = 1
+const flightDatePos = 2
+*/
 const startingAirportPos = 3
 const destinationAirportPos = 4
+
+// const fareBasisCodePos = 5
 const travelDurationPos = 6
+
+/*
+const elapsedDaysPos = 7
+const isBasicEconomyPos = 8
+const isRefundablePos = 9
+const isNonStopPos = 10
+const baseFarePos = 11
+*/
 const totalFarePos = 12
+
+// const seatsRemainingPos = 13
 const totalTravelDistancePos = 14
+
+/*
+const segmentsDepartureTimeEpochSecondsPos = 15
+const segmentsDepartureTimeRawPos = 17
+const segmentsArrivalTimeEpochSecondsPos = 18
+*/
 const segmentsArrivalAirportCodePos = 19
+
+// const totalTravelDistancePos = 20
 const segmentsAirlineNamePos = 21
+
+/*
+const totalTravelDistancePos = 22
+const totalTravelDistancePos = 23
+const totalTravelDistancePos = 24
+const totalTravelDistancePos = 25
+const totalTravelDistancePos = 26
+*/
 
 type FlightsParser struct{}
 
@@ -47,7 +80,6 @@ func (a FlightsParser) LineToDynMap(line string) (*dataStructures.DynamicMap, er
 			log.Warnf("FlightsParser | Error converting totalTravelDistance | %v | Will be sent as zero", err)
 		}
 	}
-
 	dynMap.AddColumn(utils.TotalTravelDistance, serializer.SerializeFloat(float32(totalTravelDistance)))
 	dynMap.AddColumn(utils.SegmentsArrivalAirportCode, serializer.SerializeString(fields[segmentsArrivalAirportCodePos]))
 	dynMap.AddColumn(utils.SegmentsAirlineName, serializer.SerializeString(fields[segmentsAirlineNamePos]))

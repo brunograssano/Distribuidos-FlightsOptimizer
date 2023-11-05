@@ -17,28 +17,28 @@ func skipHeader(reader *filemanager.FileReader) {
 }
 
 // SendFile Sends a file data through a socket
-func SendFile(FileName string, batchSize uint, conn *socketsProtocol.SocketProtocolHandler, parser parsers.Parser) error {
+func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketProtocolHandler, parser parsers.Parser) error {
 	reader, err := filemanager.NewFileReader(FileName)
 	if err != nil {
 		return err
 	}
 	defer utils.CloseFileAndNotifyError(reader.FileManager)
 
-	rows := make([]*dataStructures.DynamicMap, 0, batchSize)
+	rows := make([]*dataStructures.DynamicMap, 0, conf.Batch)
 	addedToMsg := uint(0)
 
 	skipHeader(reader)
 	for reader.CanRead() {
 		line := reader.ReadLine()
-		if addedToMsg >= batchSize {
-			msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows}
+		if addedToMsg >= conf.Batch {
+			msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid}
 			err = conn.Write(msg)
 			if err != nil {
 				log.Errorf("FileSend | Error trying to send file | %v", err)
 				return err
 			}
 			addedToMsg = 0
-			rows = make([]*dataStructures.DynamicMap, 0, batchSize)
+			rows = make([]*dataStructures.DynamicMap, 0, conf.Batch)
 		}
 		dynMap, err := parser.LineToDynMap(line)
 		if err != nil {
@@ -54,9 +54,9 @@ func SendFile(FileName string, batchSize uint, conn *socketsProtocol.SocketProto
 		return err
 	}
 	if addedToMsg > 0 {
-		msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows}
+		msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid}
 		err = conn.Write(msg)
 	}
 
-	return conn.Write(&dataStructures.Message{TypeMessage: parser.GetEofMsgType()})
+	return conn.Write(&dataStructures.Message{TypeMessage: parser.GetEofMsgType(), ClientId: conf.Uuid})
 }

@@ -125,7 +125,7 @@ services:
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
-      - CLI_COMPLETER_FILENAME=flightrows.csv
+      - CLI_COMPLETER_FILENAME=flightrows
     networks:
       - testing_net
     volumes:

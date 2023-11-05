@@ -15,4 +15,5 @@ type ConsumerProtocolInterface interface {
 	protocol.DataCleaner
 	Pop() (*dataStructures.Message, bool)
 	GetReceivedMessages() int
+	SetStatusOfLastMessage(bool)
 }

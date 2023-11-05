@@ -33,3 +33,6 @@ func (c *ConsumerChannel) GetReceivedMessages() int {
 func (c *ConsumerChannel) ClearData() {
 	c.recvCount = 0
 }
+
+func (q *ConsumerChannel) SetStatusOfLastMessage(status bool) {
+}
