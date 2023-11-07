@@ -170,7 +170,7 @@ func (dc *DistanceCompleter) checkForAirports(clientId string) bool {
 	if exists {
 		return exists
 	}
-	exists = filemanager.FileExists(dc.c.AirportsFilename + "_" + clientId + utils.CsvSuffix)
+	exists = filemanager.DirectoryExists(dc.c.AirportsFilename + "_" + clientId + utils.CsvSuffix)
 	if exists {
 		dc.loadAirports(clientId)
 	}
@@ -208,6 +208,6 @@ func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
 		nextBatch = append(nextBatch, row)
 	}
 	log.Debugf("DistanceCompleter %v | Finished processing batch. Sending to next queue...", dc.completerId)
-	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch}
+	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch, ClientId: msg.ClientId}
 	dc.sendNext(msgToSend)
 }

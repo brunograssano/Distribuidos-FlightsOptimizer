@@ -14,9 +14,11 @@ type (
 	}
 )
 
-func (m *mockConsumerQueueProtocolHandler) ClearData() {}
+func (m *mockConsumerQueueProtocolHandler) SetStatusOfLastMessage(b bool) {}
 
-func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages() int {
+func (m *mockConsumerQueueProtocolHandler) ClearData(s string) {}
+
+func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages(s string) int {
 	return 0
 }
 
@@ -38,14 +40,14 @@ type (
 	}
 )
 
-func (m *mockProducerQueueProtocolHandler) ClearData() {}
+func (m *mockProducerQueueProtocolHandler) ClearData(s string) {}
 
 func (m *mockProducerQueueProtocolHandler) Send(msg *dataStructures.Message) error {
 	m.outputChannel <- msg
 	return nil
 }
 
-func (m *mockProducerQueueProtocolHandler) GetSentMessages() int {
+func (m *mockProducerQueueProtocolHandler) GetSentMessages(s string) int {
 	return 0
 }
 

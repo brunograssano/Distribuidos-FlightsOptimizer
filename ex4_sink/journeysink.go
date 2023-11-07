@@ -7,9 +7,10 @@ import (
 )
 
 type JourneySink struct {
-	inputQueue         queueProtocol.ConsumerProtocolInterface
-	toSaver4Producer   queueProtocol.ProducerProtocolInterface
-	totalJourneySavers uint
+	inputQueue                    queueProtocol.ConsumerProtocolInterface
+	toSaver4Producer              queueProtocol.ProducerProtocolInterface
+	totalJourneySavers            uint
+	journeySaversReceivedByClient map[string]uint
 }
 
 func NewJourneySink(
@@ -18,42 +19,58 @@ func NewJourneySink(
 	totalJourneySavers uint,
 ) *JourneySink {
 	return &JourneySink{
-		inputQueue:         inputQueue,
-		toSaver4Producer:   toSaver4Producer,
-		totalJourneySavers: totalJourneySavers,
+		inputQueue:                    inputQueue,
+		toSaver4Producer:              toSaver4Producer,
+		totalJourneySavers:            totalJourneySavers,
+		journeySaversReceivedByClient: make(map[string]uint),
 	}
 }
 
 func (j *JourneySink) HandleJourneys() {
 	for {
-		// TODO manejar multiples clientes
-		for recvJourneys := uint(0); recvJourneys < j.totalJourneySavers; {
-			msg, ok := j.inputQueue.Pop()
-			if !ok {
-				log.Infof("JourneySink | Consumer closed, exiting goroutine")
-				return
-			}
-			if msg.TypeMessage == dataStructures.FlightRows {
-				err := j.toSaver4Producer.Send(msg)
-				if err != nil {
-					log.Errorf("JourneySink | Error sending max and average to saver | %v", err)
-					return
-				}
-			} else if msg.TypeMessage == dataStructures.EOFFlightRows {
-				recvJourneys++
-				log.Infof("JourneySink | Received EOF of one journey saver | Accumulated %v | Total: %v ", recvJourneys, j.totalJourneySavers)
-			} else {
-				log.Warnf("JourneySink | Received unexpected message type %v", msg.TypeMessage)
-			}
+		msg, ok := j.inputQueue.Pop()
+		if !ok {
+			log.Infof("JourneySink | Consumer closed, exiting goroutine")
+			return
 		}
-		log.Infof("JourneySink | Sending EOF to saver")
-		msg := &dataStructures.Message{
-			TypeMessage: dataStructures.EOFFlightRows,
-			//ClientId: clientId, TODO
-		}
-		err := j.toSaver4Producer.Send(msg)
-		if err != nil {
-			log.Errorf("JourneySink | Error sending EOF to saver | %v", err)
+		if msg.TypeMessage == dataStructures.FlightRows {
+			j.handleFlightRows(msg)
+		} else if msg.TypeMessage == dataStructures.EOFFlightRows {
+			j.handleEofMsg(msg)
+		} else {
+			log.Warnf("JourneySink | Received unexpected message type %v", msg.TypeMessage)
 		}
 	}
+}
+
+func (j *JourneySink) handleEofMsg(msg *dataStructures.Message) {
+	_, exists := j.journeySaversReceivedByClient[msg.ClientId]
+	if !exists {
+		j.journeySaversReceivedByClient[msg.ClientId] = 0
+	}
+	j.journeySaversReceivedByClient[msg.ClientId]++
+	log.Infof("JourneySink | Received EOF of one journey saver | Accumulated %v | Total: %v ", j.journeySaversReceivedByClient[msg.ClientId], j.totalJourneySavers)
+	if j.journeySaversReceivedByClient[msg.ClientId] >= j.totalJourneySavers {
+		j.sendEofToNext(msg.ClientId)
+	}
+}
+
+func (j *JourneySink) handleFlightRows(msg *dataStructures.Message) {
+	err := j.toSaver4Producer.Send(msg)
+	if err != nil {
+		log.Errorf("JourneySink | Error sending max and average to saver | %v", err)
+	}
+}
+
+func (j *JourneySink) sendEofToNext(clientId string) {
+	log.Infof("JourneySink | Sending EOF to saver")
+	msg := &dataStructures.Message{
+		TypeMessage: dataStructures.EOFFlightRows,
+		ClientId:    clientId,
+	}
+	err := j.toSaver4Producer.Send(msg)
+	if err != nil {
+		log.Errorf("JourneySink | Error sending EOF to saver | %v", err)
+	}
+	delete(j.journeySaversReceivedByClient, msg.ClientId)
 }

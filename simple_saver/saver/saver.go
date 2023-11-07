@@ -1,6 +1,7 @@
 package saver
 
 import (
+	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -14,34 +15,31 @@ import (
 type SimpleSaver struct {
 	c        *Config
 	consumer queueProtocol.ConsumerProtocolInterface
-	canSend  chan string
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *Config, canSend chan string) *SimpleSaver {
+func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *Config) *SimpleSaver {
 	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-	return &SimpleSaver{c: c, consumer: consumer, canSend: canSend}
+	return &SimpleSaver{c: c, consumer: consumer}
 }
 
 // SaveData Saves the results from the queue in a file
 func (s *SimpleSaver) SaveData() {
 	log.Infof("SimpleSaver | Goroutine started")
 	for {
-		msgStruct, ok := s.consumer.Pop()
+		msg, ok := s.consumer.Pop()
 		if !ok {
 			log.Infof("SimpleSaver | Exiting saver")
 			return
 		}
-		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
-			log.Infof("SimpleSaver | Received all results. Closing saver...")
-			folder, err := filemanager.MoveFiles([]string{s.c.OutputFileName})
+		if msg.TypeMessage == dataStructures.EOFFlightRows {
+			log.Infof("SimpleSaver | Received all results from client %v. Renaming file saved...", msg.ClientId)
+			err := filemanager.MoveFiles([]string{fmt.Sprintf("%v_%v.csv", s.c.OutputFileName, msg.ClientId)}, msg.ClientId)
 			if err != nil {
 				log.Errorf("SimpleSaver | Error moving to file to folder | %v", err)
-				return
 			}
-			s.canSend <- folder
-		} else if msgStruct.TypeMessage == dataStructures.FlightRows {
-			err := s.handleFlightRows(msgStruct)
+		} else if msg.TypeMessage == dataStructures.FlightRows {
+			err := s.handleFlightRows(msg)
 			if err != nil {
 				log.Errorf("SimpleSaver | Error handling flight rows. Closing saver...")
 				return
@@ -50,14 +48,15 @@ func (s *SimpleSaver) SaveData() {
 	}
 }
 
-func (s *SimpleSaver) handleFlightRows(msgStruct *dataStructures.Message) error {
-	writer, err := filemanager.NewFileWriter(s.c.OutputFileName)
+func (s *SimpleSaver) handleFlightRows(msg *dataStructures.Message) error {
+	file := fmt.Sprintf("%v_%v.csv", s.c.OutputFileName, msg.ClientId)
+	writer, err := filemanager.NewFileWriter(file)
 	if err != nil {
 		log.Errorf("SimpleSaver | Error opening file writer of output")
 		return err
 	}
 	defer utils.CloseFileAndNotifyError(writer.FileManager)
-	return s.writeRowsToFile(msgStruct.DynMaps, writer)
+	return s.writeRowsToFile(msg.DynMaps, writer)
 }
 
 func (s *SimpleSaver) writeRowsToFile(rows []*dataStructures.DynamicMap, writer filemanager.OutputManagerInterface) error {

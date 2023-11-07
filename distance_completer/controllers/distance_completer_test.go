@@ -16,12 +16,14 @@ type (
 	}
 )
 
-func (m *mockConsumer) ClearData() {
+func (m *mockConsumer) ClearData(s string) {}
 
+func (m *mockConsumer) GetReceivedMessages(s string) int {
+	return 0
 }
 
-func (m *mockConsumer) GetReceivedMessages() int {
-	return 0
+func (m *mockConsumer) SetStatusOfLastMessage(_ bool) {
+
 }
 
 func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
@@ -38,11 +40,11 @@ type (
 	}
 )
 
-func (m *mockProducer) ClearData() {
+func (m *mockProducer) ClearData(s string) {
 	return
 }
 
-func (m *mockProducer) GetSentMessages() int {
+func (m *mockProducer) GetSentMessages(s string) int {
 	return 0
 }
 
@@ -52,13 +54,14 @@ func (m *mockProducer) Send(data *dataStructures.Message) error {
 }
 
 func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralConditions(t *testing.T) {
-	input := make(chan *dataStructures.Message)
-	output := make(chan *dataStructures.Message)
-	mapAirports := make(map[string][2]float32)
-	mapAirports["A"] = [2]float32{0.0, 0.0}
-	mapAirports["B"] = [2]float32{1.0, 0.0}
-	mapAirports["C"] = [2]float32{0.0, 1.0}
-	mapAirports["D"] = [2]float32{1.0, 1.0}
+	input := make(chan *dataStructures.Message, 10)
+	output := make(chan *dataStructures.Message, 10)
+	mapAirports := make(map[string]map[string][2]float32)
+	mapAirports["1"] = make(map[string][2]float32)
+	mapAirports["1"]["A"] = [2]float32{0.0, 0.0}
+	mapAirports["1"]["B"] = [2]float32{1.0, 0.0}
+	mapAirports["1"]["C"] = [2]float32{0.0, 1.0}
+	mapAirports["1"]["D"] = [2]float32{1.0, 1.0}
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
@@ -66,14 +69,12 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 	mockProd := &mockProducer{
 		outputChannel: output,
 	}
-	signalChan := make(chan string)
 	distCompleter := &DistanceCompleter{
-		completerId:      0,
-		airportsMap:      mapAirports,
-		c:                &config.CompleterConfig{},
-		consumer:         mockCons,
-		producer:         mockProd,
-		fileLoadedSignal: signalChan,
+		completerId:  0,
+		airportsMaps: mapAirports,
+		c:            &config.CompleterConfig{},
+		consumer:     mockCons,
+		producer:     mockProd,
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)
@@ -81,9 +82,7 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 	dynMapWithRoute[utils.DestinationAirport] = []byte("D")
 	dynMapWithRoute[utils.Route] = []byte("A||B||C||D")
 	dynMapStructure := dataStructures.NewDynamicMap(dynMapWithRoute)
-	signalChan <- ""
-	close(signalChan)
-	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}}
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}, ClientId: "1"}
 	dynMapResult := (<-output).DynMaps[0]
 
 	assert.Equalf(t, uint32(5), dynMapResult.GetColumnCount(), "Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
@@ -98,13 +97,14 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 }
 
 func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
-	input := make(chan *dataStructures.Message)
-	output := make(chan *dataStructures.Message)
-	mapAirports := make(map[string][2]float32)
-	mapAirports["A"] = [2]float32{0.0, 0.0}
-	mapAirports["B"] = [2]float32{0.0, 1.0}
-	mapAirports["C"] = [2]float32{0.0, 2.0}
-	mapAirports["D"] = [2]float32{0.0, 3.0}
+	input := make(chan *dataStructures.Message, 10)
+	output := make(chan *dataStructures.Message, 10)
+	mapAirports := make(map[string]map[string][2]float32)
+	mapAirports["1"] = make(map[string][2]float32)
+	mapAirports["1"]["A"] = [2]float32{0.0, 0.0}
+	mapAirports["1"]["B"] = [2]float32{0.0, 1.0}
+	mapAirports["1"]["C"] = [2]float32{0.0, 2.0}
+	mapAirports["1"]["D"] = [2]float32{0.0, 3.0}
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
@@ -112,14 +112,12 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 	mockProd := &mockProducer{
 		outputChannel: output,
 	}
-	signalChan := make(chan string)
 	distCompleter := &DistanceCompleter{
-		completerId:      0,
-		airportsMap:      mapAirports,
-		c:                &config.CompleterConfig{},
-		consumer:         mockCons,
-		producer:         mockProd,
-		fileLoadedSignal: signalChan,
+		completerId:  0,
+		airportsMaps: mapAirports,
+		c:            &config.CompleterConfig{},
+		consumer:     mockCons,
+		producer:     mockProd,
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)
@@ -127,9 +125,7 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 	dynMapWithRoute[utils.DestinationAirport] = []byte("D")
 	dynMapWithRoute[utils.Route] = []byte("A||B||C||D")
 	dynMapStructure := dataStructures.NewDynamicMap(dynMapWithRoute)
-	signalChan <- ""
-	close(signalChan)
-	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}}
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}, ClientId: "1"}
 	dynMapResult := (<-output).DynMaps[0]
 
 	assert.Equalf(t, uint32(5), dynMapResult.GetColumnCount(), "Column count was %v, and expected was 5", dynMapResult.GetColumnCount())
@@ -146,13 +142,14 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 }
 
 func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
-	input := make(chan *dataStructures.Message)
-	output := make(chan *dataStructures.Message)
-	mapAirports := make(map[string][2]float32)
-	mapAirports["A"] = [2]float32{0.0, 0.0}
-	mapAirports["B"] = [2]float32{0.0, 1.0}
-	mapAirports["C"] = [2]float32{1.0, 1.0}
-	mapAirports["D"] = [2]float32{0.0, 1.0}
+	input := make(chan *dataStructures.Message, 10)
+	output := make(chan *dataStructures.Message, 10)
+	mapAirports := make(map[string]map[string][2]float32)
+	mapAirports["1"] = make(map[string][2]float32)
+	mapAirports["1"]["A"] = [2]float32{0.0, 0.0}
+	mapAirports["1"]["B"] = [2]float32{0.0, 1.0}
+	mapAirports["1"]["C"] = [2]float32{1.0, 1.0}
+	mapAirports["1"]["D"] = [2]float32{0.0, 1.0}
 	mockCons := &mockConsumer{
 		inputChannel: input,
 		ok:           true,
@@ -160,14 +157,12 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 	mockProd := &mockProducer{
 		outputChannel: output,
 	}
-	signalChan := make(chan string)
 	distCompleter := &DistanceCompleter{
-		completerId:      0,
-		airportsMap:      mapAirports,
-		c:                &config.CompleterConfig{},
-		consumer:         mockCons,
-		producer:         mockProd,
-		fileLoadedSignal: signalChan,
+		completerId:  0,
+		airportsMaps: mapAirports,
+		c:            &config.CompleterConfig{},
+		consumer:     mockCons,
+		producer:     mockProd,
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)
@@ -175,9 +170,7 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 	dynMapWithRoute[utils.DestinationAirport] = []byte("D")
 	dynMapWithRoute[utils.Route] = []byte("A||B||C||D")
 	dynMapStructure := dataStructures.NewDynamicMap(dynMapWithRoute)
-	signalChan <- ""
-	close(signalChan)
-	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}}
+	input <- &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{dynMapStructure}, ClientId: "1"}
 	dynMapResult := (<-output).DynMaps[0]
 
 	assert.Equalf(t, uint32(5), dynMapResult.GetColumnCount(), "Column count was %v, and expected was 5", dynMapResult.GetColumnCount())

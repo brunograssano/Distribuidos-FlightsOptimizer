@@ -1,5 +1,5 @@
 package protocol
 
 type DataCleaner interface {
-	ClearData()
+	ClearData(string)
 }

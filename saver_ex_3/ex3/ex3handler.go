@@ -13,27 +13,26 @@ import (
 )
 
 type Ex3Handler struct {
-	c                 *SaverConfig
-	journeyDispatcher []*dispatcher.JourneyDispatcher
-	savers            []*SaverForEx3
-	getter            *getters.Getter
-	qMiddleware       *middleware.QueueMiddleware
-	channels          []chan *dataStructures.Message
-	finishedSignals   chan bool
-	canSendGetter     chan string
-	outputFilenames   []string
+	c                        *SaverConfig
+	journeyDispatcher        []*dispatcher.JourneyDispatcher
+	savers                   []*SaverForEx3
+	getter                   *getters.Getter
+	qMiddleware              *middleware.QueueMiddleware
+	channels                 []chan *dataStructures.Message
+	finishedSignals          chan string
+	outputFilenames          []string
+	quantityFinishedByClient map[string]uint
 }
 
 // NewEx3Handler Creates a new exercise 4 handler
 func NewEx3Handler(c *SaverConfig) *Ex3Handler {
-	canSend := make(chan string, 1)
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
 	var outputFileNames []string
-	finishSignal := make(chan bool, c.InternalSaversCount)
+	finishSignal := make(chan string, c.InternalSaversCount)
 	var toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
 	log.Infof("Ex3Handler | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
@@ -45,7 +44,7 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 			finishSignal,
 			i,
 		))
-		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v.csv", c.OutputFilePrefix, i))
+		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v", c.OutputFilePrefix, i))
 		toInternalSaversChannels = append(toInternalSaversChannels, queueProtocol.NewProducerChannel(internalSaverChannel))
 		log.Infof("Ex3Handler | Created Saver #%v correctly...", i)
 	}
@@ -61,41 +60,44 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
-	getter, err := getters.NewGetter(getterConf, canSend)
+	getter, err := getters.NewGetter(getterConf)
 	if err != nil {
 		log.Fatalf("Ex3Handler | Error initializing Getter | %s", err)
 	}
 
 	return &Ex3Handler{
-		c:                 c,
-		journeyDispatcher: jds,
-		qMiddleware:       qMiddleware,
-		channels:          channels,
-		savers:            internalSavers,
-		getter:            getter,
-		finishedSignals:   finishSignal,
-		canSendGetter:     canSend,
-		outputFilenames:   outputFileNames,
+		c:                        c,
+		journeyDispatcher:        jds,
+		qMiddleware:              qMiddleware,
+		channels:                 channels,
+		savers:                   internalSavers,
+		getter:                   getter,
+		finishedSignals:          finishSignal,
+		outputFilenames:          outputFileNames,
+		quantityFinishedByClient: make(map[string]uint),
 	}
 }
 
 func (se3 *Ex3Handler) handleFinishSignals() {
-	quantityFinished := uint(0)
 	for {
-		_, ok := <-se3.finishedSignals
+		clientId, ok := <-se3.finishedSignals
 		// If channels are closed is because I received a Close
 		if !ok {
 			return
 		}
-		quantityFinished++
-		if quantityFinished == se3.c.InternalSaversCount {
+		_, existsCID := se3.quantityFinishedByClient[clientId]
+		if !existsCID {
+			se3.quantityFinishedByClient[clientId] = 0
+		}
+		se3.quantityFinishedByClient[clientId]++
+		if se3.quantityFinishedByClient[clientId] == se3.c.InternalSaversCount {
 			log.Infof("Ex3Handler | All savers finished | Notifying getter that it is able to send results...")
-			folder, err := filemanager.MoveFiles(se3.outputFilenames)
+			//Renames the folder from tmp to definitive folder
+			err := filemanager.RenameFile(fmt.Sprintf("%v_tmp", clientId), fmt.Sprintf("%v", clientId))
 			if err != nil {
-				log.Errorf("Ex3Handler | Error trying to move files into folder | %v", err)
+				log.Errorf("Ex3Handler | Error trying to rename client_id %v folder | %v", clientId, err)
 			}
-			se3.canSendGetter <- folder
-			quantityFinished = 0
+			delete(se3.quantityFinishedByClient, clientId)
 		}
 	}
 }

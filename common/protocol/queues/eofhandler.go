@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolInterface) error {
+func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolInterface, clientId string) error {
 	dynMapData := make(map[string][]byte)
 	dynMapData[utils.LocalReceived] = serializer.SerializeUint(uint32(0))
 	dynMapData[utils.LocalSent] = serializer.SerializeUint(uint32(0))
@@ -17,12 +17,13 @@ func sendEOFToOutput(localSent int, sent int, prodOutputQueue ProducerProtocolIn
 	err := prodOutputQueue.Send(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
+		ClientId:    clientId,
 	})
-	prodOutputQueue.ClearData()
+	prodOutputQueue.ClearData(clientId)
 	return err
 }
 
-func sendEOFToInput(localReceived int, received int, prevSent int, sent int, localSent int, prodInputQueue ProducerProtocolInterface) error {
+func sendEOFToInput(localReceived int, received int, prevSent int, sent int, localSent int, prodInputQueue ProducerProtocolInterface, clientId string) error {
 	dynMapData := make(map[string][]byte)
 	dynMapData[utils.LocalReceived] = serializer.SerializeUint(uint32(localReceived + received))
 	dynMapData[utils.LocalSent] = serializer.SerializeUint(uint32(sent + localSent))
@@ -30,8 +31,9 @@ func sendEOFToInput(localReceived int, received int, prevSent int, sent int, loc
 	err := prodInputQueue.Send(&dataStructures.Message{
 		TypeMessage: dataStructures.EOFFlightRows,
 		DynMaps:     []*dataStructures.DynamicMap{dataStructures.NewDynamicMap(dynMapData)},
+		ClientId:    clientId,
 	})
-	prodInputQueue.ClearData()
+	prodInputQueue.ClearData(clientId)
 	return err
 }
 
@@ -46,11 +48,11 @@ func HandleEOF(
 		return fmt.Errorf("type is not EOF")
 	}
 	// Zero is arbitrary for any case... Array of producers should have sent the same amount for every listener.
-	sent := prodOutputQueues[0].GetSentMessages()
-	received := consInputQueue.GetReceivedMessages()
-	consInputQueue.ClearData()
+	sent := prodOutputQueues[0].GetSentMessages(message.ClientId)
+	received := consInputQueue.GetReceivedMessages(message.ClientId)
+	consInputQueue.ClearData(message.ClientId)
 	for _, prodOQ := range prodOutputQueues {
-		prodOQ.ClearData()
+		prodOQ.ClearData(message.ClientId)
 	}
 	// We get the total sent messages from the EOF queue, the total that were processed by the controllers,
 	// and the total sent by this controller to the next step
@@ -75,7 +77,7 @@ func HandleEOF(
 		log.Infof("EOF Handler | Sum of EOF reached the expected value. Sending EOF to next nodes...")
 		for i := 0; i < len(prodOutputQueues); i++ {
 			log.Infof("EOF Handler | Sending EOF to Next node with index %v", i)
-			err = sendEOFToOutput(localSent, sent, prodOutputQueues[i])
+			err = sendEOFToOutput(localSent, sent, prodOutputQueues[i], message.ClientId)
 			if err != nil {
 				log.Errorf("EOFHandler | Error sending EOF to Output | %v", err)
 				return err
@@ -85,5 +87,5 @@ func HandleEOF(
 	}
 	log.Infof("EOF Handler | Received accumulated were: %v. Prev sent were: %v", received+localReceived, prevSent)
 	log.Infof("EOF Handler | Enqueueing EOF again...")
-	return sendEOFToInput(localReceived, received, prevSent, sent, localSent, prodInputQueue)
+	return sendEOFToInput(localReceived, received, prevSent, sent, localSent, prodInputQueue, message.ClientId)
 }

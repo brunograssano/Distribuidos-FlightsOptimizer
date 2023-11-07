@@ -8,17 +8,17 @@ import (
 )
 
 type ConsumerQueueProtocolHandler struct {
-	consumer  middleware.ConsumerInterface
-	recvCount int
-	status    bool
-	lastMsg   *dataStructures.Message
+	consumer          middleware.ConsumerInterface
+	status            bool
+	lastMsg           *dataStructures.Message
+	consumedByClients map[string]int
 }
 
 func NewConsumerQueueProtocolHandler(consumer middleware.ConsumerInterface) *ConsumerQueueProtocolHandler {
 	return &ConsumerQueueProtocolHandler{
-		consumer:  consumer,
-		recvCount: 0,
-		lastMsg:   nil,
+		consumer:          consumer,
+		lastMsg:           nil,
+		consumedByClients: make(map[string]int),
 	}
 }
 
@@ -37,12 +37,17 @@ func (q *ConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
 	return msg, ok
 }
 
-func (q *ConsumerQueueProtocolHandler) GetReceivedMessages() int {
-	return q.recvCount
+func (q *ConsumerQueueProtocolHandler) GetReceivedMessages(clientId string) int {
+	count, exists := q.consumedByClients[clientId]
+	if !exists {
+		log.Warnf("ConsumerQueueProtocolHandler | Warning Message | Client with id %v not found. Returning 0 for Recvd Messages.", clientId)
+		return 0
+	}
+	return count
 }
 
-func (q *ConsumerQueueProtocolHandler) ClearData() {
-	q.recvCount = 0
+func (q *ConsumerQueueProtocolHandler) ClearData(clientId string) {
+	delete(q.consumedByClients, clientId)
 }
 
 func (q *ConsumerQueueProtocolHandler) SetStatusOfLastMessage(status bool) {
@@ -56,7 +61,11 @@ func (q *ConsumerQueueProtocolHandler) notifyStatusOfLastMessage() error {
 		return err
 	}
 	if q.lastMsg != nil && q.lastMsg.TypeMessage == dataStructures.FlightRows && q.status {
-		q.recvCount += len(q.lastMsg.DynMaps)
+		_, exists := q.consumedByClients[q.lastMsg.ClientId]
+		if !exists {
+			q.consumedByClients[q.lastMsg.ClientId] = 0
+		}
+		q.consumedByClients[q.lastMsg.ClientId] += len(q.lastMsg.DynMaps)
 	}
 	q.status = true
 	return nil
