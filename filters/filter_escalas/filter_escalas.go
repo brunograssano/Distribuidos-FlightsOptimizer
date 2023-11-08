@@ -79,6 +79,7 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,
 				DynMaps:     filteredRows,
+				ClientId:    msg.ClientId,
 			})
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error trying to send message that passed filter...", fe.filterId)

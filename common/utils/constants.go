@@ -8,6 +8,16 @@ const AirportCode = "Airport Code"
 const Latitude = "Latitude"
 const Longitude = "Longitude"
 
+const AirportName = "AirportName"
+const CityName = "CityName"
+const CountryName = "CountryName"
+const CountryCode = "CountryCode"
+const WorldAreaCode = "WorldAreaCode"
+const CityNameId = "CityNameId"
+const CountryNameId = "CountryNameId"
+const Coordinates = "Coordinates"
+const TempSuffix = "_tmp"
+
 const LegId = "legId"
 const StartingAirport = "startingAirport"
 const DestinationAirport = "destinationAirport"
@@ -29,6 +39,7 @@ const LocalSent = "localSent"
 const ConvertedTravelDuration = "convertedTravelDuration"
 const Journey = "journey"
 const Route = "route"
+const CsvSuffix = ".csv"
 
 const BufferSizeChannels = 300
 const MaxBatchLines = 1500

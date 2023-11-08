@@ -60,9 +60,9 @@ func (fd *FilterDistances) FilterDistances() {
 	}
 }
 
-func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
+func (fd *FilterDistances) handleFlightRows(msg *dataStructures.Message) {
 	var filteredRows []*dataStructures.DynamicMap
-	for _, row := range msgStruct.DynMaps {
+	for _, row := range msg.DynMaps {
 		directDistance, errCast := row.GetAsFloat(utils.DirectDistance)
 		if errCast != nil {
 			log.Errorf("FilterDistances %v | action: filter_distances | result: fail | skipping row | error: %v", fd.filterId, errCast)
@@ -78,11 +78,12 @@ func (fd *FilterDistances) handleFlightRows(msgStruct *dataStructures.Message) {
 		}
 	}
 	if len(filteredRows) > 0 {
-		log.Debugf("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msgStruct.DynMaps), len(filteredRows))
+		log.Debugf("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msg.DynMaps), len(filteredRows))
 		for _, producer := range fd.producers {
 			err := producer.Send(&dataStructures.Message{
 				TypeMessage: dataStructures.FlightRows,
 				DynMaps:     filteredRows,
+				ClientId:    msg.ClientId,
 			})
 			if err != nil {
 				log.Errorf("FilterDistances %v | Error trying to send message that passed filter | %v", fd.filterId, err)

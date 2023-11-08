@@ -30,18 +30,18 @@ func (c *Client) StartClientLoop() {
 	defer c.Close()
 
 	log.Infof("Client | Sending airports file...")
-	err := SendFile(c.conf.AirportFileName, c.conf.Batch, c.conn, parsers.AirportsParser{})
+	err := SendFile(c.conf.AirportFileName, c.conf, c.conn, parsers.AirportsParser{})
 	if err != nil {
 		return
 	}
 
 	log.Infof("Client | Sending flight rows file...")
-	err = SendFile(c.conf.InputFileName, c.conf.Batch, c.conn, parsers.FlightsParser{})
+	err = SendFile(c.conf.InputFileName, c.conf, c.conn, parsers.FlightsParser{})
 	if err != nil {
 		return
 	}
 
-	RequestResults(err, c.conn)
+	RequestResults(c.conf.Uuid, c.conn)
 
 }
 

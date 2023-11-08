@@ -12,8 +12,7 @@ import (
 func TestShouldReturnLaterMessage(t *testing.T) {
 	resultChan := make(chan bool, 1)
 	config := &GetterConfig{Address: "127.0.0.1:45678", MaxLinesPerSend: 1}
-	canSend := make(chan string, 1)
-	getter, err := NewGetter(config, canSend)
+	getter, err := NewGetter(config)
 	if err != nil {
 		t.Errorf("Error creating getter: %v", err)
 	}
@@ -24,8 +23,8 @@ func TestShouldReturnLaterMessage(t *testing.T) {
 	assert.Nilf(t, err, "Error connecting to getter: %v", err)
 
 	socketProtocol := socketsProtocol.NewSocketProtocolHandler(conn)
-
 	go func() {
+		_ = socketProtocol.Write(&dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: "1"})
 		msg, err := socketProtocol.Read()
 
 		assert.Nilf(t, err, "Error receiving msg: %v", err)

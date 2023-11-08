@@ -12,13 +12,15 @@ import (
 )
 
 func SerializeMsg(msg *dataStructures.Message) []byte {
-	serializedMsg := []byte{}
-	typeBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(typeBytes, uint32(msg.TypeMessage))
-	nRows := make([]byte, 4)
-	binary.BigEndian.PutUint32(nRows, uint32(len(msg.DynMaps)))
+	var serializedMsg []byte
+	typeBytes := SerializeUint(uint32(msg.TypeMessage))
+	nRows := SerializeUint(uint32(len(msg.DynMaps)))
+	sizeUuidBytes := SerializeUint(uint32(len(msg.ClientId)))
+	uuidBytes := SerializeString(msg.ClientId)
 	serializedMsg = append(serializedMsg, typeBytes...)
 	serializedMsg = append(serializedMsg, nRows...)
+	serializedMsg = append(serializedMsg, sizeUuidBytes...)
+	serializedMsg = append(serializedMsg, uuidBytes...)
 	for _, row := range msg.DynMaps {
 		serializedRow := SerializeDynMap(row)
 		serializedMsg = append(serializedMsg, serializedRow...)
@@ -29,9 +31,13 @@ func SerializeMsg(msg *dataStructures.Message) []byte {
 func DeserializeMsg(bytesMsg []byte) *dataStructures.Message {
 	offset := 0
 	typeMsg := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
-	offset = 4
+	offset += 4
 	nRows := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
-	offset = 8
+	offset += 4
+	sizeOfClientId := int(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
+	offset += 4
+	clientId := DeserializeString(bytesMsg[offset : offset+sizeOfClientId])
+	offset += sizeOfClientId
 	var dynMaps []*dataStructures.DynamicMap
 	for i := 0; i < nRows; i++ {
 		dynMap, bytesRead := DeserializeDynMap(bytesMsg[offset:])
@@ -41,6 +47,7 @@ func DeserializeMsg(bytesMsg []byte) *dataStructures.Message {
 	return &dataStructures.Message{
 		TypeMessage: typeMsg,
 		DynMaps:     dynMaps,
+		ClientId:    clientId,
 	}
 }
 

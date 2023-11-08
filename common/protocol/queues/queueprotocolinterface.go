@@ -8,11 +8,12 @@ import (
 type ProducerProtocolInterface interface {
 	protocol.DataCleaner
 	Send(msg *dataStructures.Message) error
-	GetSentMessages() int
+	GetSentMessages(string) int
 }
 
 type ConsumerProtocolInterface interface {
 	protocol.DataCleaner
 	Pop() (*dataStructures.Message, bool)
-	GetReceivedMessages() int
+	GetReceivedMessages(string) int
+	SetStatusOfLastMessage(bool)
 }

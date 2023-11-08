@@ -22,12 +22,11 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	canSend := make(chan string, 1)
-	simpleSaver := saver.NewSimpleSaver(qMiddleware, saverConfig, canSend)
+	simpleSaver := saver.NewSimpleSaver(qMiddleware, saverConfig)
 	go simpleSaver.SaveData()
 
 	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)
-	getter, err := getters.NewGetter(getterConf, canSend)
+	getter, err := getters.NewGetter(getterConf)
 	if err != nil {
 		log.Fatalf("Main - Simple Saver | Error initializing Getter | %s", err)
 	}

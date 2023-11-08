@@ -2,6 +2,7 @@ package data_structures
 
 type Message struct {
 	TypeMessage int
+	ClientId    string
 	DynMaps     []*DynamicMap
 }
 

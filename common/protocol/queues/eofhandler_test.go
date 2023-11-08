@@ -17,7 +17,9 @@ type (
 	}
 )
 
-func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages() int {
+func (m *mockConsumerQueueProtocolHandler) SetStatusOfLastMessage(b bool) {}
+
+func (m *mockConsumerQueueProtocolHandler) GetReceivedMessages(s string) int {
 	return m.count
 }
 
@@ -33,7 +35,7 @@ func (m *mockConsumerQueueProtocolHandler) BindTo(_ string, _ string, _ string) 
 	return nil
 }
 
-func (m *mockConsumerQueueProtocolHandler) ClearData() {
+func (m *mockConsumerQueueProtocolHandler) ClearData(s string) {
 	m.count = 0
 }
 
@@ -49,11 +51,11 @@ func (m *mockProducerQueueProtocolHandler) Send(msg *dataStructures.Message) err
 	return nil
 }
 
-func (m *mockProducerQueueProtocolHandler) GetSentMessages() int {
+func (m *mockProducerQueueProtocolHandler) GetSentMessages(s string) int {
 	return m.count
 }
 
-func (m *mockProducerQueueProtocolHandler) ClearData() {
+func (m *mockProducerQueueProtocolHandler) ClearData(s string) {
 	m.count = 0
 }
 

@@ -20,6 +20,7 @@ type ClientHandler struct {
 	outQueueAirports   middleware.ProducerInterface
 	outQueueFlightRows middleware.ProducerInterface
 	GetterAddresses    []string
+	clientId           string
 }
 
 func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses []string) *ClientHandler {
@@ -30,6 +31,7 @@ func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware
 		outQueueAirports:   outQueueAirports,
 		outQueueFlightRows: outQueueFlightRows,
 		GetterAddresses:    GetterAddresses,
+		clientId:           "",
 	}
 }
 
@@ -65,6 +67,7 @@ func (ch *ClientHandler) handleGetterMessage(
 }
 
 func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocolHandler) error {
+
 	for i := 0; i < len(ch.GetterAddresses); i++ {
 		currSleep := 2
 		socketGetter, err := communication.NewActiveTCPSocket(ch.GetterAddresses[i])
@@ -74,7 +77,13 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 			return err
 		}
 		getterSPH := socketsProtocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
+		initialMessage := &dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: ch.clientId}
+		err = getterSPH.Write(initialMessage)
+		if err != nil {
+			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+		}
 		for {
+
 			msg, err := getterSPH.Read()
 			if err != nil {
 				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", i+1, err)
@@ -86,11 +95,15 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 				break
 			}
 			if shouldReconnect {
-				newSPH, err := exponentialBackoffConnection(currSleep, socketGetter)
+				newSPH, err := exponentialBackoffConnection(&currSleep, socketGetter)
 				if err != nil {
 					return err
 				}
 				getterSPH = newSPH
+				err = getterSPH.Write(initialMessage)
+				if err != nil {
+					log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+				}
 			}
 			if err != nil {
 				log.Errorf("ClientHandler | Error handling getter message | %v", err)
@@ -101,11 +114,11 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 	return nil
 }
 
-func exponentialBackoffConnection(currSleep int, socketGetter *communication.ActiveTCPSocket) (*socketsProtocol.SocketProtocolHandler, error) {
+func exponentialBackoffConnection(currSleep *int, socketGetter *communication.ActiveTCPSocket) (*socketsProtocol.SocketProtocolHandler, error) {
 	log.Infof("ClientHandler | Sleeping for %v seconds so that response may be ready later...", currSleep)
-	time.Sleep(time.Duration(currSleep) * time.Second)
-	if currSleep < maxSleep {
-		currSleep = currSleep * 2
+	time.Sleep(time.Duration(*currSleep) * time.Second)
+	if *currSleep < maxSleep {
+		*currSleep = (*currSleep) * 2
 	}
 	err := socketGetter.Reconnect()
 	if err != nil {
@@ -148,6 +161,7 @@ func (ch *ClientHandler) handleEOFFlightRows(message *dataStructures.Message) er
 
 func (ch *ClientHandler) handleMessage(message *dataStructures.Message, cliSPH *socketsProtocol.SocketProtocolHandler) (bool, error) {
 	log.Debugf("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
+	ch.clientId = message.ClientId
 	if message.TypeMessage == dataStructures.Airports || message.TypeMessage == dataStructures.EOFAirports {
 		return false, ch.handleAirportMessage(message)
 	}

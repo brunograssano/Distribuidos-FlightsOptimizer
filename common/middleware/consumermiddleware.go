@@ -8,9 +8,10 @@ import (
 
 type Consumer struct {
 	ConsumerInterface
-	rabbitMQChannel *amqp.Channel
-	messageChannel  <-chan amqp.Delivery
-	queue           amqp.Queue
+	rabbitMQChannel     *amqp.Channel
+	messageChannel      <-chan amqp.Delivery
+	queue               amqp.Queue
+	lastMessageConsumed *amqp.Delivery
 }
 
 func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
@@ -26,22 +27,16 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 	)
 	FailOnError(err, "Failed to consume and create bytes channel in the RabbitMQ Queue.")
 	return &Consumer{
-		rabbitMQChannel: channel,
-		queue:           queue,
-		messageChannel:  messages,
+		rabbitMQChannel:     channel,
+		queue:               queue,
+		messageChannel:      messages,
+		lastMessageConsumed: nil,
 	}
 }
 
 func (queue *Consumer) Pop() ([]byte, bool) {
 	msg, ok := <-queue.messageChannel
-	if ok {
-		log.Debugf("Consumer | Sending ACK to RabbitMQ.")
-		err := msg.Ack(false)
-		if err != nil {
-			log.Errorf("Consumer | Error sending ACK to RabbitMQ.")
-			return msg.Body, ok
-		}
-	}
+	queue.lastMessageConsumed = &msg
 	return msg.Body, ok
 }
 
@@ -65,6 +60,24 @@ func (queue *Consumer) BindTo(nameExchange string, routingKey string, kind strin
 	)
 	if err != nil {
 		return fmt.Errorf("error binding queue to exchange: %v", err)
+	}
+	return nil
+}
+
+func (queue *Consumer) SignalFinishedMessage(processedCorrectly bool) error {
+	if queue.lastMessageConsumed != nil {
+		var err error
+		deliveredId := queue.lastMessageConsumed.DeliveryTag
+		if !processedCorrectly {
+			err = queue.rabbitMQChannel.Reject(deliveredId, true)
+		} else {
+			err = queue.rabbitMQChannel.Ack(deliveredId, false)
+		}
+		if err != nil {
+			log.Errorf("Consumer | Error trying to send ACK/NACK to RabbitMQ | %v", err)
+			return err
+		}
+		return nil
 	}
 	return nil
 }

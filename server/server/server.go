@@ -44,7 +44,7 @@ func (svr *Server) StartServerLoop() {
 			svr.outQueueFlightRows,
 			svr.c.GetterAddresses,
 		)
-		ch.StartClientLoop()
+		go ch.StartClientLoop()
 	}
 }
 

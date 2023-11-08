@@ -13,7 +13,6 @@ func assertAvgFromChannel(t *testing.T, expectedAvg float32, consumer chan *data
 	select {
 	case msg := <-consumer:
 		avg, err := msg.DynMaps[0].GetAsFloat(utils.FinalAvg)
-
 		assert.Nilf(t, err, "Got error: %v", err)
 		assert.Equalf(t, expectedAvg, avg, "Different avg: %v", avg)
 	case <-time.After(1 * time.Second):
@@ -40,7 +39,7 @@ func TestShouldSendTheAverageToTheConsumers(t *testing.T) {
 	chan2 := make(chan *dataStructures.Message, 1)
 	avgCalculator := &AvgCalculator{toJourneySavers: []queueProtocol.ProducerProtocolInterface{queueProtocol.NewProducerChannel(chan1), queueProtocol.NewProducerChannel(chan2)}}
 
-	go avgCalculator.sendToJourneySavers(5)
+	go avgCalculator.sendToJourneySavers(5, "1")
 
 	assertAvgFromChannel(t, 5, chan1)
 	assertAvgFromChannel(t, 5, chan2)

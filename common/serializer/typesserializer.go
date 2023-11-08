@@ -15,6 +15,10 @@ func SerializeString(value string) []byte {
 	return []byte(value)
 }
 
+func DeserializeString(value []byte) string {
+	return string(value)
+}
+
 func SerializeFloat(value float32) []byte {
 	bytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(bytes, math.Float32bits(value))

@@ -16,11 +16,16 @@ type (
 	}
 )
 
-func (m *mockConsumer) GetReceivedMessages() int {
-	return 0
+func (m *mockConsumer) ClearData(s string) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (m *mockConsumer) ClearData() {}
+func (m *mockConsumer) SetStatusOfLastMessage(b bool) {}
+
+func (m *mockConsumer) GetReceivedMessages(s string) int {
+	return 0
+}
 
 func (m *mockConsumer) Pop() (*dataStructures.Message, bool) {
 	if !m.ok {
@@ -36,7 +41,7 @@ type (
 	}
 )
 
-func (m *mockProducer) GetSentMessages() int {
+func (m *mockProducer) GetSentMessages(s string) int {
 	return 0
 }
 
@@ -45,7 +50,7 @@ func (m *mockProducer) Send(data *dataStructures.Message) error {
 	return nil
 }
 
-func (m *mockProducer) ClearData() {}
+func (m *mockProducer) ClearData(s string) {}
 
 func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 	pConfig := &Config{}

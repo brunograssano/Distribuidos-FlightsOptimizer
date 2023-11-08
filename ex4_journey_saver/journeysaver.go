@@ -14,20 +14,18 @@ import (
 
 // JourneySaver Handles the prices of the assigned journeys
 type JourneySaver struct {
-	consumer          queueProtocol.ConsumerProtocolInterface
-	accumProducer     queueProtocol.ProducerProtocolInterface
-	avgAndMaxProducer queueProtocol.ProducerProtocolInterface
-	filesToRead       []string
-	totalPrice        float32
-	quantities        int
+	consumer               queueProtocol.ConsumerProtocolInterface
+	accumProducer          queueProtocol.ProducerProtocolInterface
+	avgAndMaxProducer      queueProtocol.ProducerProtocolInterface
+	partialResultsByClient map[string]*PartialResult
 }
 
 // NewJourneySaver Creates a new JourneySaver
 func NewJourneySaver(consumer queueProtocol.ConsumerProtocolInterface, accumProducer queueProtocol.ProducerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface) *JourneySaver {
-	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, totalPrice: 0, quantities: 0}
+	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, partialResultsByClient: make(map[string]*PartialResult)}
 }
 
-func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
+func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap, clientId string) {
 	// May need optimization. Mix of memory and disk or only memory...
 	log.Debugf("JourneySaver | Writing records to files")
 	for _, dynMap := range dynMaps {
@@ -50,28 +48,43 @@ func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap) {
 			log.Errorf("JourneySaver | Total fare <= 0 | Skipping row...")
 			continue
 		}
-		journey := fmt.Sprintf("%v-%v", stAirport, destAirport)
-		fileWriter, err := filemanager.NewFileWriter(journey)
-		if err != nil {
-			log.Errorf("JourneySaver | Error creating file writer for %v | %v | Skipping row...", journey, err)
-			continue
-		}
-		err = fileWriter.WriteLine(fmt.Sprintf("%v\n", totalFare))
-		if err != nil {
-			log.Errorf("JourneySaver | Error writing total fare with file writer | %v | Skipping row...", err)
-		}
-		log.Debugf("JourneySaver | Added price %v to registry of journey: %v", totalFare, journey)
-		if !slices.Contains(js.filesToRead, journey) {
-			log.Infof("JourneySaver | Adding journey: %v to the files that must be read.", journey)
-			js.filesToRead = append(js.filesToRead, journey)
-		}
-		err = fileWriter.FileManager.Close()
-		if err != nil {
-			log.Errorf("JourneySaver | Error closing file manager for journey %v | %v", journey, err)
-		}
-		js.totalPrice += totalFare
-		js.quantities++
+		js.writeResults(stAirport, destAirport, clientId, err, totalFare)
 	}
+}
+
+func (js *JourneySaver) writeResults(stAirport string, destAirport string, clientId string, err error, totalFare float32) {
+	journey := fmt.Sprintf("%v-%v_%v", stAirport, destAirport, clientId)
+	fileWriter, err := filemanager.NewFileWriter(journey)
+	if err != nil {
+		log.Errorf("JourneySaver | Error creating file writer for %v | %v | Skipping row...", journey, err)
+		return
+	}
+	err = fileWriter.WriteLine(fmt.Sprintf("%v\n", totalFare))
+	if err != nil {
+		log.Errorf("JourneySaver | Error writing total fare with file writer | %v | Skipping row...", err)
+		return
+	}
+	log.Debugf("JourneySaver | Added price %v to registry of journey: %v", totalFare, journey)
+	partialResult := js.getPartialResultOfClient(clientId)
+	if !slices.Contains(partialResult.filesToRead, journey) {
+		log.Infof("JourneySaver | Adding journey: %v to the files that must be read.", journey)
+		partialResult.filesToRead = append(partialResult.filesToRead, journey)
+	}
+	err = fileWriter.FileManager.Close()
+	if err != nil {
+		log.Errorf("JourneySaver | Error closing file manager for journey %v | %v", journey, err)
+	}
+	partialResult.totalPrice += totalFare
+	partialResult.quantities++
+}
+
+func (js *JourneySaver) getPartialResultOfClient(clientId string) *PartialResult {
+	partialResult, exists := js.partialResultsByClient[clientId]
+	if exists {
+		return partialResult
+	}
+	js.partialResultsByClient[clientId] = NewPartialResult()
+	return js.partialResultsByClient[clientId]
 }
 
 func (js *JourneySaver) readJourneyAsArrays(journeyStr string) ([]float32, error) {
@@ -95,13 +108,19 @@ func (js *JourneySaver) readJourneyAsArrays(journeyStr string) ([]float32, error
 }
 
 // sendToGeneralAccumulator Sends to the accumulator the values that the JourneySaver managed
-func (js *JourneySaver) sendToGeneralAccumulator() error {
+func (js *JourneySaver) sendToGeneralAccumulator(clientId string) error {
 	dynMapData := make(map[string][]byte)
-	dynMapData[utils.LocalPrice] = serializer.SerializeFloat(js.totalPrice)
-	dynMapData[utils.LocalQuantity] = serializer.SerializeUint(uint32(js.quantities))
+	partialResult, exists := js.partialResultsByClient[clientId]
+	if !exists {
+		partialResult = NewPartialResult()
+	}
+	log.Infof("JourneySaver | Received EOF. Sending to Gral Accum. TotalPrice: %v, Quantities: %v", partialResult.totalPrice, partialResult.quantities)
+	dynMapData[utils.LocalPrice] = serializer.SerializeFloat(partialResult.totalPrice)
+	dynMapData[utils.LocalQuantity] = serializer.SerializeUint(uint32(partialResult.quantities))
 	msgToSend := &dataStructure.Message{
 		TypeMessage: dataStructure.EOFFlightRows,
 		DynMaps:     []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMapData)},
+		ClientId:    clientId,
 	}
 	err := js.accumProducer.Send(msgToSend)
 	if err != nil {
@@ -140,8 +159,12 @@ func (js *JourneySaver) getMaxAndAverage(prices []float32) (float32, float32) {
 	return average, maxVal
 }
 
-func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
-	for _, fileStr := range js.filesToRead {
+func (js *JourneySaver) sendAverageForJourneys(finalAvg float32, clientId string) {
+	partialResults, exist := js.partialResultsByClient[clientId]
+	if !exist {
+		partialResults = NewPartialResult()
+	}
+	for _, fileStr := range partialResults.filesToRead {
 		log.Debugf("JourneySaver | Reading file: %v", fileStr)
 		pricesForJourney, err := js.readJourneyAsArrays(fileStr)
 		if err != nil {
@@ -165,6 +188,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 		msg := &dataStructure.Message{
 			TypeMessage: dataStructure.FlightRows,
 			DynMaps:     data,
+			ClientId:    clientId,
 		}
 		log.Debugf("JourneySaver | Sending max and avg to next step...")
 		err = js.avgAndMaxProducer.Send(msg)
@@ -173,10 +197,15 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32) {
 			continue
 		}
 	}
-	err := js.avgAndMaxProducer.Send(&dataStructure.Message{TypeMessage: dataStructure.EOFFlightRows})
+	err := js.avgAndMaxProducer.Send(&dataStructure.Message{TypeMessage: dataStructure.EOFFlightRows, ClientId: clientId})
 	if err != nil {
 		log.Errorf("JourneySaver | Error sending EOF to saver | %v", err)
 	}
+	err = filemanager.MoveFiles(partialResults.filesToRead, clientId)
+	if err != nil {
+		log.Errorf("JourneySaver | Error trying to move files | %v", err)
+	}
+	js.clearInternalState(clientId)
 }
 
 // SavePricesForJourneys JourneySaver loop that reads from the input channel, saves the journey and performs calculations
@@ -189,9 +218,7 @@ func (js *JourneySaver) SavePricesForJourneys() {
 		}
 		log.Debugf("JourneySaver | Received message of type: %v. Row Count: %v", msg.TypeMessage, len(msg.DynMaps))
 		if msg.TypeMessage == dataStructure.EOFFlightRows {
-			log.Infof("JourneySaver | Received EOF...")
-			log.Infof("JourneySaver | Sending to Gral Accum. TotalPrice: %v, Quantities: %v", js.totalPrice, js.quantities)
-			err := js.sendToGeneralAccumulator()
+			err := js.sendToGeneralAccumulator(msg.ClientId)
 			if err != nil {
 				log.Errorf("JourneySaver | Could not send to General Accumulator. Ending execution...")
 				return
@@ -199,25 +226,19 @@ func (js *JourneySaver) SavePricesForJourneys() {
 			log.Debugf("JourneySaver | Sent correctly!")
 		} else if msg.TypeMessage == dataStructure.FlightRows {
 			log.Debugf("JourneySaver | Received flight row. Now saving...")
-			js.saveRowsInFiles(msg.DynMaps)
+			js.saveRowsInFiles(msg.DynMaps, msg.ClientId)
 		} else if msg.TypeMessage == dataStructure.FinalAvgMsg {
-			finalAvg, err := msg.DynMaps[0].GetAsFloat("finalAvg")
+			finalAvg, err := msg.DynMaps[0].GetAsFloat(utils.FinalAvg)
 			if err != nil {
 				log.Errorf("JourneySaver | Error getting finalAvg")
 			}
 			log.Infof("JourneySaver | Received Final Avg: %v. Now sending Average for Journeys...", finalAvg)
-			js.sendAverageForJourneys(finalAvg)
-			_, err = filemanager.MoveFiles(js.filesToRead)
-			if err != nil {
-				log.Errorf("JourneySaver | Error trying to move files | %v", err)
-			}
-			js.clearInternalState()
+			js.sendAverageForJourneys(finalAvg, msg.ClientId)
+
 		}
 	}
 }
 
-func (js *JourneySaver) clearInternalState() {
-	js.filesToRead = []string{}
-	js.totalPrice = 0
-	js.quantities = 0
+func (js *JourneySaver) clearInternalState(clientId string) {
+	delete(js.partialResultsByClient, clientId)
 }

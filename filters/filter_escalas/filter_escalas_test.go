@@ -17,11 +17,16 @@ type (
 	}
 )
 
-func (m *mockConsumer) ClearData() {
+func (m *mockConsumer) SetStatusOfLastMessage(b bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) ClearData(s string) {
 	return
 }
 
-func (m *mockConsumer) GetReceivedMessages() int {
+func (m *mockConsumer) GetReceivedMessages(s string) int {
 	return 0
 }
 
@@ -43,11 +48,11 @@ type (
 	}
 )
 
-func (m *mockProducer) ClearData() {
+func (m *mockProducer) ClearData(s string) {
 	return
 }
 
-func (m *mockProducer) GetSentMessages() int {
+func (m *mockProducer) GetSentMessages(s string) int {
 	return 0
 }
 

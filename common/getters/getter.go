@@ -1,32 +1,28 @@
 package getters
 
 import (
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
-	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 // Getter Server that waits for clients asking for the pipeline results
 type Getter struct {
-	c       *GetterConfig
-	server  *communication.PassiveTCPSocket
-	stop    chan bool
-	canSend chan string
+	c            *GetterConfig
+	server       *communication.PassiveTCPSocket
+	stop         chan bool
+	joinChannels []chan bool
+	stopChannels []chan bool
 }
 
 // NewGetter Creates a new results getter server
-func NewGetter(getterConf *GetterConfig, canSend chan string) (*Getter, error) {
+func NewGetter(getterConf *GetterConfig) (*Getter, error) {
 	server, err := communication.NewPassiveTCPSocket(getterConf.Address)
 	if err != nil {
 		log.Errorf("Getter | action: create_server | result: error | id: %v | address: %v | %v", getterConf.ID, getterConf.Address, err)
 		return nil, err
 	}
-	return &Getter{c: getterConf, server: server, stop: make(chan bool, 1), canSend: canSend}, nil
+	return &Getter{c: getterConf, server: server, stop: make(chan bool, 1), joinChannels: []chan bool{}, stopChannels: []chan bool{}}, nil
 }
 
 func (g *Getter) ReturnResults() {
@@ -38,87 +34,30 @@ func (g *Getter) ReturnResults() {
 			log.Errorf("Getter | action: accept_connection | result: error | id: %v | address: %v | %v", g.c.ID, g.c.Address, err)
 			return
 		}
-		sph := socketsProtocol.NewSocketProtocolHandler(socket)
+		stopChannel := make(chan bool, 1)
+		joinChannel := make(chan bool, 1)
+		g.joinChannels = append(g.joinChannels, joinChannel)
+		g.stopChannels = append(g.stopChannels, stopChannel)
+		client := NewClientGetter(socket, g.c, joinChannel, stopChannel)
+		go client.HandleClientGetter()
+		g.clearChannels()
+	}
+}
+
+func (g *Getter) clearChannels() {
+	var indexesToClean []int
+	for i := 0; i < len(g.joinChannels); i++ {
 		select {
-		case folder := <-g.canSend:
-			g.sendResults(sph, folder)
+		case <-g.joinChannels[i]:
+			indexesToClean = append(indexesToClean, i)
+			close(g.stopChannels[i])
 		default:
-			g.askLaterForResults(sph)
 		}
-		sph.Close()
 	}
-}
-
-// askLaterForResults Tells the client to wait and finishes the connection
-func (g *Getter) askLaterForResults(sph *socketsProtocol.SocketProtocolHandler) {
-	log.Infof("Getter | Client asked for results when they are not ready. Answer 'Later'")
-	err := sph.Write(&dataStructures.Message{
-		TypeMessage: dataStructures.Later,
-		DynMaps:     make([]*dataStructures.DynamicMap, 0),
-	})
-	if err != nil {
-		log.Errorf("Getter | Error trying to send 'Later' Message to socket...")
-		return
-	}
-}
-
-// sendResults Sends the saved results to the client
-func (g *Getter) sendResults(sph *socketsProtocol.SocketProtocolHandler, folder string) {
-	log.Infof("Getter | Sending results to client")
-	var currBatch []*dataStructures.DynamicMap
-	curLengthOfBatch := 0
-	for _, filename := range g.c.FileNames {
-		reader, err := filemanager.NewFileReader(fmt.Sprintf("%v/%v", folder, filename))
-		if err != nil {
-			log.Errorf("Getter | Error trying to open file: %v | %v | Skipping it...", filename, err)
-			continue
-		}
-		for reader.CanRead() {
-			select {
-			case <-g.stop:
-				log.Warnf("Getter | Received signal while sending file, stopping transfer")
-				return
-			default:
-			}
-			line := reader.ReadLine()
-			currBatch = append(currBatch, serializer.DeserializeFromString(line))
-			curLengthOfBatch++
-			if uint(curLengthOfBatch) >= g.c.MaxLinesPerSend {
-				g.sendBatch(sph, currBatch)
-				currBatch = make([]*dataStructures.DynamicMap, 0)
-			}
-		}
-		err = reader.Err()
-		if err != nil {
-			log.Errorf("Getter | Error reading file | %v", err)
-		}
-		utils.CloseFileAndNotifyError(reader.FileManager)
-	}
-	if curLengthOfBatch > 0 {
-		g.sendBatch(sph, currBatch)
-	}
-	g.sendEOF(sph)
-}
-
-func (g *Getter) sendEOF(sph *socketsProtocol.SocketProtocolHandler) {
-	log.Infof("Getter | Sending EOF to client...")
-	err := sph.Write(&dataStructures.Message{
-		TypeMessage: dataStructures.EOFGetter,
-		DynMaps:     []*dataStructures.DynamicMap{},
-	})
-	if err != nil {
-		log.Errorf("Getter | Error trying to send EOF | %v", err)
-	}
-}
-
-// sendBatch sends a specific batch of DynamicMaps via protocol handler
-func (g *Getter) sendBatch(sph *socketsProtocol.SocketProtocolHandler, batch []*dataStructures.DynamicMap) {
-	err := sph.Write(&dataStructures.Message{
-		TypeMessage: dataStructures.FlightRows,
-		DynMaps:     batch,
-	})
-	if err != nil {
-		log.Errorf("Getter | Error sending batch from getter | %v", err)
+	// Clear in inverse order so that indexes are not moved from array when removing
+	for i := len(indexesToClean) - 1; i >= 0; i-- {
+		g.joinChannels = append(g.joinChannels[:indexesToClean[i]], g.joinChannels[indexesToClean[i]+1:]...)
+		g.stopChannels = append(g.stopChannels[:indexesToClean[i]], g.stopChannels[indexesToClean[i]+1:]...)
 	}
 }
 

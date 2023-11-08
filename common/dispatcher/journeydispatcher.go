@@ -74,7 +74,7 @@ func (jd *JourneyDispatcher) dispatchFlightRows(message *dataStructures.Message)
 		log.Debugf("JourneyDispatcher | Deciding where to dispatch. hashRes is: %v; Len of channels is: %v", hashRes, len(jd.channels))
 		resultIndex := hashRes % len(jd.channels)
 		log.Debugf("JourneyDispatcher | Dispatching to Node #%v...", resultIndex)
-		err = jd.channels[resultIndex].Send(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}})
+		err = jd.channels[resultIndex].Send(&dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: []*dataStructures.DynamicMap{row}, ClientId: message.ClientId})
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error sending message to queue #%v | %v | Skipping row...", resultIndex, err)
 		}
