@@ -23,8 +23,8 @@ func TestShouldReturnLaterMessage(t *testing.T) {
 	assert.Nilf(t, err, "Error connecting to getter: %v", err)
 
 	socketProtocol := socketsProtocol.NewSocketProtocolHandler(conn)
-
 	go func() {
+		_ = socketProtocol.Write(&dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: "1"})
 		msg, err := socketProtocol.Read()
 
 		assert.Nilf(t, err, "Error receiving msg: %v", err)
