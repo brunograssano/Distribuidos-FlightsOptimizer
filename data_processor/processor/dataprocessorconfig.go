@@ -11,12 +11,15 @@ import (
 
 // Config The configuration of the application
 type Config struct {
-	ID                   string
-	InputQueueName       string
-	OutputQueueNameEx123 []string
-	OutputQueueNameEx4   string
-	GoroutinesCount      int
-	RabbitAddress        string
+	ID                      string
+	InputQueueName          string
+	OutputQueueNameEx123    []string
+	OutputQueueNameEx4      string
+	GoroutinesCount         int
+	RabbitAddress           string
+	HeartBeatTime           uint
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -39,6 +42,9 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "output", "ex123")
 	_ = v.BindEnv("rabbitmq", "queue", "output", "ex4")
 	_ = v.BindEnv("processor", "goroutines")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("heartbeat", "time")
+	_ = v.BindEnv("healthchecker", "addresses")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables, so we shouldn't
@@ -83,11 +89,27 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
 	goroutinesCount := env.GetInt("processor.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("DataProcessorConfig | Warning Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
 		goroutinesCount = utils.DefaultGoroutines
 	}
+
+	heartBeatTime := env.GetUint("heartbeat.time")
+	if heartBeatTime == 0 {
+		return nil, errors.New("missing heartbeat time")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
 
 	log.Infof("DataProcessorConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueNameEx123: %v | outputQueueNameEx4: %v | goroutinesCount: %v",
 		id,
@@ -96,11 +118,14 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		inputQueueName, outputQueueNameEx123, outputQueueNameEx4, goroutinesCount)
 
 	return &Config{
-		ID:                   id,
-		InputQueueName:       inputQueueName,
-		OutputQueueNameEx123: outputQueueNameEx123Array,
-		OutputQueueNameEx4:   outputQueueNameEx4,
-		GoroutinesCount:      goroutinesCount,
-		RabbitAddress:        rabbitAddress,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputQueueNameEx123:    outputQueueNameEx123Array,
+		OutputQueueNameEx4:      outputQueueNameEx4,
+		GoroutinesCount:         goroutinesCount,
+		RabbitAddress:           rabbitAddress,
+		HeartBeatTime:           heartBeatTime,
+		ServiceName:             serviceName,
+		AddressesHealthCheckers: healthCheckerAddresses,
 	}, nil
 }

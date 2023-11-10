@@ -9,6 +9,7 @@ def generate_compose():
     completers = 0
     ex4Savers = 0
     ex4Dispatchers = 0
+    healthCheckers = 0
 
     while reducers1 < 1:
         reducers1 = int(input("How many reducers for ex1? "))
@@ -34,13 +35,27 @@ def generate_compose():
     while ex4Dispatchers < 1:
         ex4Dispatchers = int(input("How many dispatchers for ex4? "))
 
+    while healthCheckers < 1:
+        healthCheckers = int(input("How many healthCheckers? "))
+
     env = Environment(loader=FileSystemLoader("templates/"))
 
     template = env.get_template("docker-compose-template.yaml")
 
     filename = f"generated/docker-compose.yaml"
     with open(filename, mode="w", encoding="utf-8") as output:
-        output.write(template.render(reducers1=reducers1, reducers2=reducers2, stopovers=stopovers, processors=processors, distances=distances, completers=completers, ex4Savers=ex4Savers, ex4Dispatchers=ex4Dispatchers))
+        output.write(template.render(
+            reducers1=reducers1,
+            reducers2=reducers2,
+            stopovers=stopovers,
+            processors=processors,
+            distances=distances,
+            completers=completers,
+            ex4Savers=ex4Savers,
+            ex4Dispatchers=ex4Dispatchers,
+            healthcheckers=healthCheckers
+        )
+    )
         
     print(f"Wrote docker compose to {filename}")
 

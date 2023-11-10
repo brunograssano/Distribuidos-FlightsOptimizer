@@ -1,23 +1,24 @@
 package main
 
 import (
-	"bytes"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os/exec"
-	"time"
 )
 
 func main() {
-	for {
-		cmd := exec.Command("docker", "ps")
-		var outb, errb bytes.Buffer
-		cmd.Stdout = &outb
-		cmd.Stderr = &errb
-		err := cmd.Run()
-		if err != nil {
-			log.Errorf("Error running docker ps: %v", err)
-		}
-		log.Infof("out: %v || err: %v", outb.String(), errb.String())
-		time.Sleep(1 * time.Second)
+	sigs := utils.CreateSignalListener()
+	env, err := InitEnv()
+	if err != nil {
+		log.Fatalf("Main - Health Checker | Error initializing env | %s", err)
 	}
+
+	config, err := GetConfig(env)
+	if err != nil {
+		log.Fatalf("Main - Health Checker | Error initializing config | %s", err)
+	}
+
+	h := NewHealthChecker(config)
+	go h.HandleHeartBeats()
+	<-sigs
+	h.Close()
 }

@@ -12,14 +12,17 @@ import (
 
 // SaverConfig The configuration of the application
 type SaverConfig struct {
-	ID                  string
-	InputQueueName      string
-	OutputFilePrefix    string
-	RabbitAddress       string
-	GetterAddress       string
-	GetterBatchLines    uint
-	InternalSaversCount uint
-	DispatchersCount    uint
+	ID                     string
+	InputQueueName         string
+	OutputFilePrefix       string
+	RabbitAddress          string
+	GetterAddress          string
+	GetterBatchLines       uint
+	InternalSaversCount    uint
+	DispatchersCount       uint
+	HealthCheckerAddresses []string
+	ContainerName          string
+	HeartBeatTime          uint32
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -44,6 +47,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("dispatchers", "count")
 	_ = v.BindEnv("getter", "address")
 	_ = v.BindEnv("getter", "batch", "lines")
+	_ = v // TODO
 
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration

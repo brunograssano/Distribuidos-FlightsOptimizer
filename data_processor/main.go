@@ -2,6 +2,7 @@ package main
 
 import (
 	"data_processor/processor"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,9 @@ func main() {
 		r := processor.NewDataProcessor(i, qMiddleware, processorConfig)
 		go r.ProcessData()
 	}
+	endSignalHB := make(chan bool, 1)
+	go heartbeat.HeartBeatLoop(processorConfig.AddressesHealthCheckers, processorConfig.ServiceName, uint32(processorConfig.HeartBeatTime), endSignalHB)
 	<-sigs
+	endSignalHB <- true
 	qMiddleware.Close()
 }

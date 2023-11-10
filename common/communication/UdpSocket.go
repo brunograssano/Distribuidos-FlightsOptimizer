@@ -27,7 +27,7 @@ func NewUdpServer(address string, port int) (*UdpServer, error) {
 }
 
 func (u *UdpServer) Listen() {
-	ser, err := u.listener.ReadFromUDP()
+	//size_read, _ser, _err := u.listener.ReadFromUDP()
 }
 
 type UdpClient struct {

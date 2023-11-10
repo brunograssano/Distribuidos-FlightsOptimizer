@@ -4,3 +4,5 @@ rabbitmq:
   address: "amqp://guest:guest@rabbitmq:5672/"
 server:
   address: "server:8080"
+heartbeat:
+  time: 5

@@ -14,15 +14,15 @@ func main() {
 		log.Fatalf("Main - Saver Ex3 | Error initializing env | %s", err)
 	}
 
-	saverConfig, err := ex3.GetConfig(env)
+	config, err := ex3.GetConfig(env)
 	if err != nil {
 		log.Fatalf("Main - Saver Ex3 | Error initializing config | %s", err)
 	}
-	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
+	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 
-	saverEx3 := ex3.NewEx3Handler(saverConfig)
+	saverEx3 := ex3.NewEx3Handler(config)
 	go saverEx3.StartHandler()
-
+	//go heartbeat.HeartBeatLoop(config.HealthCheckerAddresses)
 	<-sigs
 	qMiddleware.Close()
 	saverEx3.Close()
