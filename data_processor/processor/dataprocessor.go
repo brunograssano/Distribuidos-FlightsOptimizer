@@ -3,8 +3,8 @@ package processor
 import (
 	"errors"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -26,14 +26,14 @@ type DataProcessor struct {
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
-func NewDataProcessor(id int, qMiddleware *middleware.QueueMiddleware, c *Config) *DataProcessor {
-	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Config) *DataProcessor {
+	consumer := qFactory.CreateConsumer(c.InputQueueName)
 	var producersEx123 []queueProtocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
-		producersEx123 = append(producersEx123, queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(queueName, true)))
+		producersEx123 = append(producersEx123, qFactory.CreateProducer(queueName))
 	}
-	producersEx4 := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueNameEx4, true))
-	inputQProd := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+	producersEx4 := qFactory.CreateProducer(c.OutputQueueNameEx4)
+	inputQProd := qFactory.CreateProducer(c.InputQueueName)
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -20,16 +20,12 @@ type AirportSaver struct {
 
 func NewAirportSaver(
 	conf *config.CompleterConfig,
-	qMiddleware *middleware.QueueMiddleware,
+	qFactory queuefactory.QueueProtocolFactory,
 ) *AirportSaver {
-	consumer := qMiddleware.CreateConsumer(fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID), true)
-	err := consumer.BindTo(conf.ExchangeNameAirports, conf.RoutingKeyExchangeAirports, "fanout")
-	if err != nil {
-		log.Fatalf("AirportsSaver | Error trying to bind the consumer's queue to the exchange | %v", err)
-	}
+	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID))
 	return &AirportSaver{
 		c:          conf,
-		consumer:   queues.NewConsumerQueueProtocolHandler(consumer),
+		consumer:   consumer,
 		fileSavers: make(map[string]*filemanager.FileWriter),
 	}
 }

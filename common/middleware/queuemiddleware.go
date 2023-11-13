@@ -5,6 +5,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type QueueMiddlewareI interface {
+	CreateConsumer(name string, durable bool) ConsumerInterface
+	CreateProducer(name string, durable bool) ProducerInterface
+	CreateExchangeProducer(nameExchange string, routingKey string, typeExchange string, durable bool) ProducerInterface
+	Close()
+}
+
 type QueueMiddleware struct {
 	channel *amqp.Channel
 	conn    *amqp.Connection
