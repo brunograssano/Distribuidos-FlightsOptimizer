@@ -24,7 +24,7 @@ type Ex3Handler struct {
 	quantityFinishedByClient map[string]uint
 }
 
-// NewEx3Handler Creates a new exercise 4 handler
+// NewEx3Handler Creates a new exercise 3 handler
 func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	var channels []chan *dataStructures.Message
 	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
