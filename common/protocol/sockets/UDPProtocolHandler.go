@@ -30,25 +30,25 @@ func (uph *UdpProtocolhandler) isAck(bytesPacket []byte) bool {
 	return packet.PacketType == dataStructures.ACK
 }
 
-func (uph *UdpProtocolhandler) Read() (*dataStructures.UDPPacket, error) {
+func (uph *UdpProtocolhandler) Read() (*dataStructures.UDPPacket, *net.UDPAddr, error) {
 	bytesPacket, address, err := uph.udpSocket.Receive(dataStructures.SizeUdpPacket)
 	if err != nil {
 		log.Errorf("UDPProtocolHandler | Error reading | Address: %v | Error: %v", address, err)
-		return nil, err
+		return nil, nil, err
 	}
 	_, err = uph.udpSocket.Send(uph.constructACK(), address)
 	if err != nil {
 		log.Warnf("UDPProtocolHandler | Error sending ACK | Address: %v | Error: %v", address, err)
 		// Should ignore the message because ACK did not reach the sender. Sender will retry eventually...
-		return nil, err
+		return nil, nil, err
 	}
-	return serializer.DeserializeUDPPacket(bytesPacket), nil
+	return serializer.DeserializeUDPPacket(bytesPacket), address, nil
 }
 
 func (uph *UdpProtocolhandler) waitForAck(addrAwaited *net.UDPAddr) bool {
 	//TODO: Probablemente aca debería haber un timeout o algo...
 	packetBytes, address, err := uph.udpSocket.Receive(dataStructures.SizeUdpPacket)
-	if address == addrAwaited && uph.isAck(packetBytes) {
+	if (address == addrAwaited || (address.Port == addrAwaited.Port && address.IP.String() == addrAwaited.IP.String())) && uph.isAck(packetBytes) {
 		return true
 	}
 	if err != nil {
@@ -64,6 +64,7 @@ func (uph *UdpProtocolhandler) Write(packet *dataStructures.UDPPacket, address *
 	receivedACK := false
 	currentRetry := 0
 	for !receivedACK && currentRetry < utils.MaxRetriesUdp {
+		log.Infof("Sending packet to addr: %v", address)
 		_, err := uph.udpSocket.Send(serializer.SerializeUDPPacket(packet), address)
 		if err != nil {
 			log.Errorf("UDPProtocolHandler | Error Writing | Address: %v | Error: %v", address, err)
@@ -71,6 +72,7 @@ func (uph *UdpProtocolhandler) Write(packet *dataStructures.UDPPacket, address *
 		}
 		receivedACK = uph.waitForAck(address)
 		if !receivedACK {
+			log.Infof("Did not receive ACK, new retry: %v", currentRetry+1)
 			currentRetry++
 		}
 	}
@@ -79,4 +81,8 @@ func (uph *UdpProtocolhandler) Write(packet *dataStructures.UDPPacket, address *
 		return fmt.Errorf("could not send the udp packet. Ack's have not arrived to the host")
 	}
 	return nil
+}
+
+func (uph *UdpProtocolhandler) Close() {
+	uph.udpSocket.Close()
 }

@@ -6,6 +6,10 @@ import (
 	"net"
 )
 
+type UdpClient struct {
+	conn net.Conn
+}
+
 func NewUdpClient(address string) (*UdpClient, error) {
 	conn, err := net.Dial("udp", address)
 	if err != nil {
@@ -43,4 +47,11 @@ func (u *UdpClient) Send(message []byte, _ *net.UDPAddr) (int, error) {
 		return sizeSent, err
 	}
 	return sizeSent, nil
+}
+
+func (u *UdpClient) Close() {
+	err := u.conn.Close()
+	if err != nil {
+		log.Errorf("UdpClient | Error closing socket | %v", err)
+	}
 }

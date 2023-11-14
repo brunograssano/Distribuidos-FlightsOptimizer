@@ -54,6 +54,9 @@ func (u *UdpServer) Send(message []byte, address *net.UDPAddr) (int, error) {
 	return sizeSent, nil
 }
 
-type UdpClient struct {
-	conn net.Conn
+func (u *UdpServer) Close() {
+	err := u.listener.Close()
+	if err != nil {
+		log.Errorf("UdpServer | Error closing listener | %v", err)
+	}
 }
