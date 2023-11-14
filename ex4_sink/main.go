@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -18,8 +18,9 @@ func main() {
 		log.Fatalf("Main - Ex4 Sink | Error initializing Config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(config.InputQueueName, true))
-	toSaver4 := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(config.OutputQueueName, true))
+	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	inputQueue := qFactory.CreateConsumer(config.InputQueueName)
+	toSaver4 := qFactory.CreateProducer(config.OutputQueueName)
 
 	sink := NewJourneySink(inputQueue, toSaver4, config.SaversCount)
 	go sink.HandleJourneys()
