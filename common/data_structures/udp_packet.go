@@ -1,8 +1,8 @@
 package data_structures
 
 type UDPPacket struct {
-	PacketType    uint8
-	CoordinatorID uint8
+	PacketType uint8
+	NodeID     uint8
 }
 
 const SizeUdpPacket = 2

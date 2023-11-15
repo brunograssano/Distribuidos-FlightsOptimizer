@@ -14,7 +14,7 @@ func writeFromCliPH(t *testing.T, cliPH *UdpProtocolhandler, packageToSend *data
 	packet, addr, err := cliPH.Read()
 	assert.Nilf(t, err, fmt.Sprintf("Should not have thrown error when receiving UDP Packet in client. Error was :%v", err))
 	assert.Nilf(t, addr, "Should not have received address when receiving in client.")
-	assert.Equalf(t, packageFromSvr.CoordinatorID, packet.CoordinatorID, "Wrong Coordinator ID received in client")
+	assert.Equalf(t, packageFromSvr.NodeID, packet.NodeID, "Wrong Coordinator ID received in client")
 	assert.Equalf(t, packageFromSvr.PacketType, packet.PacketType, "Wrong Packet Type received in client")
 }
 
@@ -23,11 +23,11 @@ func TestBasicUsageOfProtocolHandler(t *testing.T) {
 	udpCli, _ := communication.NewUdpClient("127.0.0.1:10020")
 	svrPH := NewUDPProtocolHandler(udpSvr)
 	cliPH := NewUDPProtocolHandler(udpCli)
-	packageSent := dataStructures.UDPPacket{PacketType: dataStructures.Coordinator, CoordinatorID: 0}
-	packageFromSvr := dataStructures.UDPPacket{PacketType: dataStructures.Election, CoordinatorID: 0}
+	packageSent := dataStructures.UDPPacket{PacketType: dataStructures.Coordinator, NodeID: 0}
+	packageFromSvr := dataStructures.UDPPacket{PacketType: dataStructures.Election, NodeID: 0}
 	go writeFromCliPH(t, cliPH, &packageSent, &packageFromSvr)
 	packet, addr, err := svrPH.Read()
-	assert.Equalf(t, packageSent.CoordinatorID, packet.CoordinatorID, "Coordinator ID in packet received is not equal to the sent one")
+	assert.Equalf(t, packageSent.NodeID, packet.NodeID, "Coordinator ID in packet received is not equal to the sent one")
 	assert.Equalf(t, packageSent.PacketType, packet.PacketType, "Packet Type in packet received is not equal to the sent one")
 	assert.Nilf(t, err, fmt.Sprintf("Should not have thrown error when receiving UDP Packet in server. Error was :%v", err))
 	assert.NotNilf(t, addr, "Address should not be nil as it was received in the server.")
