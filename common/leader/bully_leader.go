@@ -14,6 +14,7 @@ type BullyLeader struct {
 	id               uint8
 	address          *net.UDPAddr
 	leaderID         uint8
+	listener         *sockets.UdpProtocolhandler
 	netAddresses     map[uint8]*net.UDPAddr
 	netClientSockets map[uint8]*sockets.UdpProtocolhandler
 }
@@ -39,21 +40,41 @@ func NewBullyLeader(id uint8, networkNodes map[uint8]*net.UDPAddr, myAddr *net.U
 		cliPH := sockets.NewUDPProtocolHandler(udpCli)
 		netClientSockets[idNode] = cliPH
 	}
+	listenerSocketUdp, err := communication.NewUdpServer(myAddr.IP.String(), myAddr.Port)
+	if err != nil {
+		log.Errorf("BullyLeader | Error trying to create UDP Server Socket | %v", err)
+	}
+	lisPH := sockets.NewUDPProtocolHandler(listenerSocketUdp)
 	bl := BullyLeader{
 		netAddresses:     networkNodes,
 		address:          myAddr,
 		id:               id,
 		leaderID:         id,
+		listener:         lisPH,
 		netClientSockets: netClientSockets,
 	}
+	go bl.receiveNetMessages()
 	if id > maxId {
-		bl.currentState = NewLeaderState()
 		bl.broadcastCoordinator()
 	} else {
-		bl.startElection()
 		bl.currentState = nil
+		bl.startElection()
 	}
 	return &bl
+}
+
+func (bl *BullyLeader) receiveNetMessages() {
+	udpPacket, _, err := bl.listener.Read()
+	if err != nil {
+		log.Errorf("BullyLeader | Error receiving UDP Packets | Now Closing...")
+		bl.Close()
+	}
+	if udpPacket.PacketType == dataStructures.Election && udpPacket.NodeID < bl.id {
+		bl.startElection()
+	}
+	if udpPacket.PacketType == dataStructures.Coordinator {
+		bl.leaderID = udpPacket.NodeID
+	}
 }
 
 func (bl *BullyLeader) broadcastCoordinator() {
@@ -64,6 +85,8 @@ func (bl *BullyLeader) broadcastCoordinator() {
 			log.Errorf("BullyLeader | Error sending coordinator to the node %v | %v", idNode, err)
 		}
 	}
+	bl.leaderID = bl.id
+	bl.currentState = NewLeaderState()
 }
 
 func (bl *BullyLeader) startElection() {
@@ -81,5 +104,14 @@ func (bl *BullyLeader) startElection() {
 	}
 	if !receivedACKFromGreaterOne {
 		bl.broadcastCoordinator()
+	}
+}
+
+func (bl *BullyLeader) Close() {
+	log.Infof("BullyLeader | Closing resources...")
+	bl.listener.Close()
+	bl.currentState.Close()
+	for _, cliPH := range bl.netClientSockets {
+		cliPH.Close()
 	}
 }
