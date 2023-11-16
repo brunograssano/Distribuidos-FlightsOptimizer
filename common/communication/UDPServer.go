@@ -4,12 +4,15 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net"
+	"time"
 )
 
 type UdpServer struct {
 	listener *net.UDPConn
 	address  net.UDPAddr
 }
+
+const UdpServerTimeout = 20
 
 func NewUdpServer(address string, port int) (*UdpServer, error) {
 	addr := net.UDPAddr{
@@ -28,10 +31,16 @@ func NewUdpServer(address string, port int) (*UdpServer, error) {
 }
 
 func (u *UdpServer) Receive(sizeToRecv uint) ([]byte, *net.UDPAddr, error) {
+	err := u.listener.SetReadDeadline(time.Now().Add(UdpServerTimeout * time.Second))
+	if err != nil {
+		log.Errorf("UdpClient | Error setting read timeout | %v", err)
+	}
 	buffer := make([]byte, sizeToRecv)
 	sizeRead, address, err := u.listener.ReadFromUDP(buffer)
 	if err != nil {
-		log.Errorf("UdpServer | Error trying to Read | Address: %v | Size Read: %v | %v", address, sizeRead, err)
+		if netErr, ok := err.(net.Error); !(ok && netErr.Timeout()) {
+			log.Errorf("UdpServer | Error trying to Read | Address: %v | Size Read: %v | %v", address, sizeRead, err)
+		}
 		return nil, address, err
 	}
 	if sizeRead != int(sizeToRecv) {
@@ -43,13 +52,13 @@ func (u *UdpServer) Receive(sizeToRecv uint) ([]byte, *net.UDPAddr, error) {
 
 func (u *UdpServer) Send(message []byte, address *net.UDPAddr) (int, error) {
 	sizeSent, err := u.listener.WriteToUDP(message, address)
-	if sizeSent < len(message) {
-		log.Errorf("UdpServer | Wrong Write | Address: %v | Size Sent: %v | Size Expected: %v ", address, sizeSent, len(message))
-		return sizeSent, fmt.Errorf("size read differs from size expected")
-	}
 	if err != nil {
 		log.Errorf("UdpServer | Error trying to Write | Address: %v | %v", address, err)
 		return sizeSent, err
+	}
+	if sizeSent < len(message) {
+		log.Errorf("UdpServer | Wrong Write | Address: %v | Size Sent: %v | Size Expected: %v ", address, sizeSent, len(message))
+		return sizeSent, fmt.Errorf("size read differs from size expected")
 	}
 	return sizeSent, nil
 }

@@ -5,10 +5,11 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
-	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"net"
 )
+
+const MaxRetriesUdp = 3
 
 type UdpProtocolhandler struct {
 	udpSocket communication.UDPSocket
@@ -46,15 +47,18 @@ func (uph *UdpProtocolhandler) Read() (*dataStructures.UDPPacket, *net.UDPAddr, 
 }
 
 func (uph *UdpProtocolhandler) waitForAck(addrAwaited *net.UDPAddr) bool {
-	//TODO: Probablemente aca debería haber un timeout o algo...
 	packetBytes, address, err := uph.udpSocket.Receive(dataStructures.SizeUdpPacket)
-	if (address == addrAwaited || (address.Port == addrAwaited.Port && address.IP.String() == addrAwaited.IP.String())) && uph.isAck(packetBytes) {
-		return true
-	}
 	if err != nil {
-		log.Errorf("UDPProtocolHandler | Error awaiting for ACK | Address: %v | Error: %v", address, err)
+		if netErr, ok := err.(net.Error); !(ok && netErr.Timeout()) {
+			log.Errorf("UDPProtocolHandler | Error awaiting for ACK | Address: %v | Error: %v", address, err)
+		}
+		return false
 	}
-	return false
+	return isSameAddress(addrAwaited, address) && uph.isAck(packetBytes)
+}
+
+func isSameAddress(addrAwaited *net.UDPAddr, address *net.UDPAddr) bool {
+	return address == addrAwaited || (address.Port == addrAwaited.Port && address.IP.String() == addrAwaited.IP.String())
 }
 
 // Write: Writes an udp packet into the specified address. The
@@ -63,8 +67,7 @@ func (uph *UdpProtocolhandler) waitForAck(addrAwaited *net.UDPAddr) bool {
 func (uph *UdpProtocolhandler) Write(packet *dataStructures.UDPPacket, address *net.UDPAddr) error {
 	receivedACK := false
 	currentRetry := 0
-	for !receivedACK && currentRetry < utils.MaxRetriesUdp {
-		log.Infof("Sending packet to addr: %v", address)
+	for !receivedACK && currentRetry < MaxRetriesUdp {
 		_, err := uph.udpSocket.Send(serializer.SerializeUDPPacket(packet), address)
 		if err != nil {
 			log.Errorf("UDPProtocolHandler | Error Writing | Address: %v | Error: %v", address, err)
@@ -72,11 +75,10 @@ func (uph *UdpProtocolhandler) Write(packet *dataStructures.UDPPacket, address *
 		}
 		receivedACK = uph.waitForAck(address)
 		if !receivedACK {
-			log.Infof("Did not receive ACK, new retry: %v", currentRetry+1)
 			currentRetry++
 		}
 	}
-	if currentRetry == utils.MaxRetriesUdp && !receivedACK {
+	if currentRetry == MaxRetriesUdp && !receivedACK {
 		log.Errorf("UDPProtocolHandler | Could not send a packet | Retried %v times unsuccesfully | ACK was not received", currentRetry)
 		return fmt.Errorf("could not send the udp packet. Ack's have not arrived to the host")
 	}

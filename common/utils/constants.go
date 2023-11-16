@@ -69,5 +69,3 @@ const MaxGoroutines = 32
 const DefaultGoroutines = 6
 
 const NewLine = "\n"
-
-const MaxRetriesUdp = 4

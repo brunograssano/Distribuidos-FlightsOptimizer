@@ -7,7 +7,7 @@ func NewLeaderState() *LeaderState {
 }
 
 func (ls *LeaderState) AmILeader() bool {
-	return false
+	return true
 }
 
 func (ls *LeaderState) Close() {
