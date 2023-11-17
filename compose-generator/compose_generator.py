@@ -2,7 +2,7 @@ from jinja2 import Environment, FileSystemLoader
 
 def ask_for_int_input(text):
     value = 0
-    while reducers1 < 1:
+    while value < 1:
         value = int(input(text))
     return value
 
