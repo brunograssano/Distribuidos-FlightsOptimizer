@@ -29,7 +29,7 @@ func main() {
 		go r.ProcessData()
 	}
 	endSignalHB := make(chan bool, 1)
-	go heartbeat.HeartBeatLoop(processorConfig.AddressesHealthCheckers, processorConfig.ServiceName, uint32(processorConfig.HeartBeatTime), endSignalHB)
+	go heartbeat.HeartBeatLoop(processorConfig.AddressesHealthCheckers, processorConfig.ServiceName, utils.TimePerHeartbeat, endSignalHB)
 	<-sigs
 	endSignalHB <- true
 	qMiddleware.Close()

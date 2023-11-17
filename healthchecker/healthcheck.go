@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/leader"
 	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -16,9 +17,10 @@ type HealthChecker struct {
 	timesLastHeartbeat map[string]time.Time
 	config             *Config
 	endSignal          chan bool
+	election           leader.ElectionService
 }
 
-func NewHealthChecker(healthCheckerConfig *Config) *HealthChecker {
+func NewHealthChecker(healthCheckerConfig *Config, election leader.ElectionService) *HealthChecker {
 	server, err := communication.NewPassiveTCPSocket(healthCheckerConfig.Address)
 	if err != nil {
 		log.Fatalf("HealthChecker | Error instantiating server | %v", err)
@@ -28,6 +30,7 @@ func NewHealthChecker(healthCheckerConfig *Config) *HealthChecker {
 		timesLastHeartbeat: make(map[string]time.Time),
 		config:             healthCheckerConfig,
 		endSignal:          make(chan bool, 1),
+		election:           election,
 	}
 }
 
@@ -40,7 +43,9 @@ func (h *HealthChecker) HandleHeartBeats() {
 			log.Infof("HealthChecker Loop | Closing health checker goroutine")
 		case <-timeout:
 			log.Debugf("HealthChecker Loop | Now Checking If Someone Needs Restart...")
-			h.checkRestarts()
+			if h.election.AmILeader() {
+				h.checkRestarts()
+			}
 		}
 	}
 }
@@ -54,7 +59,6 @@ func (h *HealthChecker) checkRestarts() {
 			log.Infof("HealthChecker | Detected that %v is not heartbeating | Restarting service...", serviceName)
 			go h.restart(serviceName)
 		}
-
 	}
 }
 
@@ -106,4 +110,5 @@ func (h *HealthChecker) handleAcceptedConnection(conn *communication.TCPSocket) 
 func (h *HealthChecker) Close() {
 	utils.CloseSocketAndNotifyError(h.server)
 	h.endSignal <- true
+	h.election.Close()
 }

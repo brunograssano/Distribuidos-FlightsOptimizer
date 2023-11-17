@@ -9,6 +9,12 @@ import (
 	"net"
 )
 
+type ElectionService interface {
+	ReceiveNetMessages()
+	AmILeader() bool
+	Close()
+}
+
 type LeaderElectionService struct {
 	currentState     BullyState
 	id               uint8

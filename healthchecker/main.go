@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
+	"github.com/brunograssano/Distribuidos-TP1/common/leader"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,9 +18,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Main - Health Checker | Error initializing config | %s", err)
 	}
-
-	h := NewHealthChecker(config)
+	electionService := leader.NewLeaderElectionService(config.ElectionId, config.NetAddresses, config.UdpAddress)
+	go electionService.ReceiveNetMessages()
+	h := NewHealthChecker(config, electionService)
 	go h.HandleHeartBeats()
+	endSigHB := make(chan bool, 1)
+	go heartbeat.HeartBeatLoop(config.HealthCheckers, config.Name, utils.TimePerHeartbeat, endSigHB)
 	<-sigs
+	endSigHB <- true
 	h.Close()
 }

@@ -17,7 +17,6 @@ type Config struct {
 	OutputQueueNameEx4      string
 	GoroutinesCount         int
 	RabbitAddress           string
-	HeartBeatTime           uint
 	ServiceName             string
 	AddressesHealthCheckers []string
 }
@@ -43,7 +42,6 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "output", "ex4")
 	_ = v.BindEnv("processor", "goroutines")
 	_ = v.BindEnv("name")
-	_ = v.BindEnv("heartbeat", "time")
 	_ = v.BindEnv("healthchecker", "addresses")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
@@ -100,11 +98,6 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		goroutinesCount = utils.DefaultGoroutines
 	}
 
-	heartBeatTime := env.GetUint("heartbeat.time")
-	if heartBeatTime == 0 {
-		return nil, errors.New("missing heartbeat time")
-	}
-
 	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
 	if healthCheckerAddressesString == "" {
 		return nil, errors.New("missing healthchecker addresses")
@@ -124,7 +117,6 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		OutputQueueNameEx4:      outputQueueNameEx4,
 		GoroutinesCount:         goroutinesCount,
 		RabbitAddress:           rabbitAddress,
-		HeartBeatTime:           heartBeatTime,
 		ServiceName:             serviceName,
 		AddressesHealthCheckers: healthCheckerAddresses,
 	}, nil
