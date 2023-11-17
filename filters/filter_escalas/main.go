@@ -3,6 +3,7 @@ package main
 import (
 	"filters_config"
 	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,8 +20,9 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(filterEscalasConfig.RabbitAddress)
+	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
 	for i := 0; i < filterEscalasConfig.GoroutinesCount; i++ {
-		fe := NewFilterStopovers(i, qMiddleware, filterEscalasConfig)
+		fe := NewFilterStopovers(i, qFactory, filterEscalasConfig)
 		log.Infof("Main - Filter Stopovers | Spawning GoRoutine - Filter #%v", i)
 		go fe.FilterStopovers()
 	}

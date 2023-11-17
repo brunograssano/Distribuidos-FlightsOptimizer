@@ -5,8 +5,8 @@ import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -25,12 +25,12 @@ type DistanceCompleter struct {
 
 func NewDistanceCompleter(
 	id int,
-	qMiddleware *middleware.QueueMiddleware,
+	qFactory queuefactory.QueueProtocolFactory,
 	c *config.CompleterConfig,
 ) *DistanceCompleter {
-	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueFlightsName, true))
-	producer := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.OutputQueueName, true))
-	producerForCons := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueFlightsName, true))
+	consumer := qFactory.CreateConsumer(c.InputQueueFlightsName)
+	producer := qFactory.CreateProducer(c.OutputQueueName)
+	producerForCons := qFactory.CreateProducer(c.InputQueueFlightsName)
 
 	return &DistanceCompleter{
 		completerId:  id,

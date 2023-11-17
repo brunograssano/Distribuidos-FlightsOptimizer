@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"log"
 	"simple_saver/saver"
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	simpleSaver := saver.NewSimpleSaver(qMiddleware, saverConfig)
+	simpleSaver := saver.NewSimpleSaver(queuefactory.NewSimpleQueueFactory(qMiddleware), saverConfig)
 	go simpleSaver.SaveData()
 
 	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)

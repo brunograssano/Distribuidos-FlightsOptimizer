@@ -4,8 +4,8 @@ import (
 	"filters_config"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,12 +21,12 @@ type FilterStopovers struct {
 
 const MinStopovers = 3
 
-func NewFilterStopovers(filterId int, qMiddleware *middleware.QueueMiddleware, conf *filters_config.FilterConfig) *FilterStopovers {
-	inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(conf.InputQueueName, true))
-	prodToCons := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.InputQueueName, true))
+func NewFilterStopovers(filterId int, qFactory queuefactory.QueueProtocolFactory, conf *filters_config.FilterConfig) *FilterStopovers {
+	inputQueue := qFactory.CreateConsumer(conf.InputQueueName)
+	prodToCons := qFactory.CreateProducer(conf.InputQueueName)
 	outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
-		outputQueues[i] = queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(conf.OutputQueueNames[i], true))
+		outputQueues[i] = qFactory.CreateProducer(conf.OutputQueueNames[i])
 	}
 
 	filter := filters.NewFilter()

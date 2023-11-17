@@ -4,6 +4,7 @@ import (
 	"distance_completer/config"
 	"distance_completer/controllers"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,11 +23,12 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(completerConfig.RabbitAddress)
-
+	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	exchangeFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, completerConfig.ExchangeNameAirports, completerConfig.RoutingKeyExchangeAirports)
 	for i := 0; i < completerConfig.GoroutinesCount; i++ {
 		distCompleter := controllers.NewDistanceCompleter(
 			i,
-			qMiddleware,
+			simpleFactory,
 			completerConfig,
 		)
 		go distCompleter.CompleteDistances()
@@ -34,7 +36,7 @@ func main() {
 
 	airportsSaver := controllers.NewAirportSaver(
 		completerConfig,
-		qMiddleware,
+		exchangeFactory,
 	)
 	go airportsSaver.SaveAirports()
 
