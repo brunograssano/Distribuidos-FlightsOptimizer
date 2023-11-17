@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -18,6 +17,7 @@ type DispatcherEx4 struct {
 func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 	qMiddleware := middleware.NewQueueMiddleware(dispatcherConfig.RabbitAddress)
 	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	exchangeFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
 	var dispatchers []*dispatcher.JourneyDispatcher
 	log.Infof("DispatcherEx4 | Creating %v dispatchers...", dispatcherConfig.DispatchersCount)
 	for idx := uint(0); idx < dispatcherConfig.DispatchersCount; idx++ {
@@ -25,9 +25,7 @@ func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 		prodToInput := simpleFactory.CreateProducer(dispatcherConfig.InputQueueName)
 		var outputQueues []queueProtocol.ProducerProtocolInterface
 		for i := uint(0); i < dispatcherConfig.SaversCount; i++ {
-			outputQueue := queueProtocol.NewProducerQueueProtocolHandler(
-				qMiddleware.CreateExchangeProducer(dispatcherConfig.OutputExchangeName, fmt.Sprintf("%v", i), "direct", true),
-			)
+			outputQueue := exchangeFactory.CreateProducer(dispatcherConfig.OutputExchangeName)
 			outputQueues = append(outputQueues, outputQueue)
 		}
 		dispatchers = append(dispatchers, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, outputQueues))
