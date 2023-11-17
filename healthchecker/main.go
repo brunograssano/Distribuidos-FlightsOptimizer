@@ -22,8 +22,7 @@ func main() {
 	go electionService.ReceiveNetMessages()
 	h := NewHealthChecker(config, electionService)
 	go h.HandleHeartBeats()
-	endSigHB := make(chan bool, 1)
-	go heartbeat.HeartBeatLoop(config.HealthCheckers, config.Name, utils.TimePerHeartbeat, endSigHB)
+	endSigHB := heartbeat.StartHeartbeat(config.HealthCheckers, config.Name)
 	<-sigs
 	endSigHB <- true
 	h.Close()

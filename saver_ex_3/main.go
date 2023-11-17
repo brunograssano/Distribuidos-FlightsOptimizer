@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -23,8 +24,9 @@ func main() {
 	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
 	saverEx3 := ex3.NewEx3Handler(config, qFactory)
 	go saverEx3.StartHandler()
-	//go heartbeat.HeartBeatLoop(config.HealthCheckerAddresses)
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 	saverEx3.Close()
 }

@@ -10,14 +10,16 @@ import (
 )
 
 type ServerConfig struct {
-	ID                   string
-	ServerAddress        string
-	GetterAddresses      []string
-	ExchangeNameAirports string
-	ExchangeTypeAirports string
-	ExchangeRKAirports   string
-	QueueNameFlightRows  string
-	RabbitAddress        string
+	ID                      string
+	ServerAddress           string
+	GetterAddresses         []string
+	ExchangeNameAirports    string
+	ExchangeTypeAirports    string
+	ExchangeRKAirports      string
+	QueueNameFlightRows     string
+	RabbitAddress           string
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 func InitEnv() (*viper.Viper, error) {
@@ -37,6 +39,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("queues", "airports", "exchange", "name")
 	_ = v.BindEnv("queues", "airports", "exchange", "routingkey")
 	_ = v.BindEnv("queues", "flightrows")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -93,6 +97,17 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 		return nil, errors.New("missing flight rows queue name")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	log.Infof("ServerConfig | action: config | result: success | id: %s | log_level: %s | getterAddresses: %v | serverAddress: %v ",
 		id,
 		env.GetString("log.level"),
@@ -101,13 +116,15 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 	)
 
 	return &ServerConfig{
-		ID:                   id,
-		ServerAddress:        serverAddress,
-		GetterAddresses:      getterAddresses,
-		ExchangeNameAirports: nameExchangeAirports,
-		ExchangeTypeAirports: typeExchangeAirports,
-		ExchangeRKAirports:   rkExchangeAirports,
-		QueueNameFlightRows:  flightRowQueueName,
-		RabbitAddress:        rabbitAddress,
+		ID:                      id,
+		ServerAddress:           serverAddress,
+		GetterAddresses:         getterAddresses,
+		ExchangeNameAirports:    nameExchangeAirports,
+		ExchangeTypeAirports:    typeExchangeAirports,
+		ExchangeRKAirports:      rkExchangeAirports,
+		QueueNameFlightRows:     flightRowQueueName,
+		RabbitAddress:           rabbitAddress,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

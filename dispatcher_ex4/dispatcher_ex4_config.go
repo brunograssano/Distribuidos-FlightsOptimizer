@@ -12,12 +12,14 @@ import (
 
 // DispatcherEx4Config The configuration of the application
 type DispatcherEx4Config struct {
-	ID                 string
-	InputQueueName     string
-	OutputExchangeName string
-	RabbitAddress      string
-	SaversCount        uint
-	DispatchersCount   uint
+	ID                      string
+	InputQueueName          string
+	OutputExchangeName      string
+	RabbitAddress           string
+	SaversCount             uint
+	DispatchersCount        uint
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -36,6 +38,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "output")
 	_ = v.BindEnv("savers", "count")
 	_ = v.BindEnv("internal", "dispatcher", "count")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -76,6 +80,17 @@ func GetConfig(env *viper.Viper) (*DispatcherEx4Config, error) {
 		return nil, errors.New("invalid handlers count")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	internalDispatcherCount := env.GetUint("internal.dispatcher.count")
 	if internalDispatcherCount <= 0 || internalDispatcherCount > utils.MaxGoroutines {
 		log.Warnf("DispatcherEx4Config | Not a valid value '%v' for internal dispatchers count, using default", internalDispatcherCount)
@@ -94,11 +109,13 @@ func GetConfig(env *viper.Viper) (*DispatcherEx4Config, error) {
 		saversCount)
 
 	return &DispatcherEx4Config{
-		ID:                 id,
-		InputQueueName:     inputQueueName,
-		OutputExchangeName: outputExchangeName,
-		RabbitAddress:      rabbitAddress,
-		SaversCount:        saversCount,
-		DispatchersCount:   internalDispatcherCount,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputExchangeName:      outputExchangeName,
+		RabbitAddress:           rabbitAddress,
+		SaversCount:             saversCount,
+		DispatchersCount:        internalDispatcherCount,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

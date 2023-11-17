@@ -2,6 +2,7 @@ package main
 
 import (
 	"dim_reducer/reducer"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -16,17 +17,19 @@ func main() {
 		log.Fatalf("Main - DimReducer | Error initializing env | %s", err)
 	}
 
-	reducerConfig, err := reducer.GetConfig(env)
+	config, err := reducer.GetConfig(env)
 	if err != nil {
 		log.Fatalf("Main - DimReducer | Error initializing config | %s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
+	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	queueFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
-	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := reducer.NewReducer(i, queueFactory, reducerConfig)
+	for i := 0; i < config.GoroutinesCount; i++ {
+		r := reducer.NewReducer(i, queueFactory, config)
 		go r.ReduceDims()
 	}
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 }

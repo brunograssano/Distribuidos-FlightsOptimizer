@@ -29,7 +29,7 @@ func sendHeartbeat(address string, name string) {
 	}
 }
 
-func HeartBeatLoop(addressesHealthCheckers []string, containerName string, timePerHeartbeatInSeconds uint32, endSignal chan bool) {
+func heartBeatLoop(addressesHealthCheckers []string, containerName string, timePerHeartbeatInSeconds uint32, endSignal chan bool) {
 	for {
 		log.Debugf("HeartBeat Loop | Sending heartbeat...")
 		for i := 0; i < len(addressesHealthCheckers); i++ {

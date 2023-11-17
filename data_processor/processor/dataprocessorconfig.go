@@ -92,17 +92,17 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		return nil, errors.New("missing name")
 	}
 
-	goroutinesCount := env.GetInt("processor.goroutines")
-	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
-		log.Warnf("DataProcessorConfig | Warning Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
-		goroutinesCount = utils.DefaultGoroutines
-	}
-
 	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
 	if healthCheckerAddressesString == "" {
 		return nil, errors.New("missing healthchecker addresses")
 	}
 	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
+	goroutinesCount := env.GetInt("processor.goroutines")
+	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
+		log.Warnf("DataProcessorConfig | Warning Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
+		goroutinesCount = utils.DefaultGoroutines
+	}
 
 	log.Infof("DataProcessorConfig | action: config | result: success | id: %s | log_level: %s | rabbitAddress: %v | inputQueueName: %v | outputQueueNameEx123: %v | outputQueueNameEx4: %v | goroutinesCount: %v",
 		id,

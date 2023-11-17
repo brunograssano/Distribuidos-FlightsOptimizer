@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"strings"
 
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
@@ -11,11 +12,13 @@ import (
 
 // AvgCalculatorConfig The configuration of the application
 type AvgCalculatorConfig struct {
-	ID              string
-	InputQueueName  string
-	OutputQueueName string
-	RabbitAddress   string
-	SaversCount     uint
+	ID                      string
+	InputQueueName          string
+	OutputQueueName         string
+	RabbitAddress           string
+	SaversCount             uint
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -33,6 +36,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "input")
 	_ = v.BindEnv("rabbitmq", "queue", "output")
 	_ = v.BindEnv("savers", "count")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -73,6 +78,17 @@ func GetConfig(env *viper.Viper) (*AvgCalculatorConfig, error) {
 		return nil, errors.New("invalid savers count")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -86,10 +102,12 @@ func GetConfig(env *viper.Viper) (*AvgCalculatorConfig, error) {
 		saversCount)
 
 	return &AvgCalculatorConfig{
-		ID:              id,
-		InputQueueName:  inputQueueName,
-		OutputQueueName: outputQueueName,
-		RabbitAddress:   rabbitAddress,
-		SaversCount:     saversCount,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputQueueName:         outputQueueName,
+		RabbitAddress:           rabbitAddress,
+		SaversCount:             saversCount,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }
