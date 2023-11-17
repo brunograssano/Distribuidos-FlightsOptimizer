@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
-	log "github.com/sirupsen/logrus"
 )
 
 type DirectExchangeProducerSimpleConsQueueFactory struct {
@@ -13,7 +12,7 @@ type DirectExchangeProducerSimpleConsQueueFactory struct {
 }
 
 func NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware middleware.QueueMiddlewareI) QueueProtocolFactory {
-	return &DirectExchangeConsumerSimpleProdQueueFactory{qMiddleware: qMiddleware, counter: uint(0)}
+	return &DirectExchangeProducerSimpleConsQueueFactory{qMiddleware: qMiddleware, counter: uint(0)}
 }
 
 func (d *DirectExchangeProducerSimpleConsQueueFactory) CreateProducer(exchangeName string) queues.ProducerProtocolInterface {

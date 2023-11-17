@@ -17,10 +17,11 @@ type DispatcherEx4 struct {
 func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 	qMiddleware := middleware.NewQueueMiddleware(dispatcherConfig.RabbitAddress)
 	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
-	exchangeFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
+
 	var dispatchers []*dispatcher.JourneyDispatcher
 	log.Infof("DispatcherEx4 | Creating %v dispatchers...", dispatcherConfig.DispatchersCount)
 	for idx := uint(0); idx < dispatcherConfig.DispatchersCount; idx++ {
+		exchangeFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
 		inputQueue := simpleFactory.CreateConsumer(dispatcherConfig.InputQueueName)
 		prodToInput := simpleFactory.CreateProducer(dispatcherConfig.InputQueueName)
 		var outputQueues []queueProtocol.ProducerProtocolInterface
