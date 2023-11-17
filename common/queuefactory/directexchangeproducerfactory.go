@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	log "github.com/sirupsen/logrus"
 )
 
 type DirectExchangeProducerSimpleConsQueueFactory struct {
@@ -15,13 +16,13 @@ func NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware middleware.Queu
 	return &DirectExchangeConsumerSimpleProdQueueFactory{qMiddleware: qMiddleware, counter: uint(0)}
 }
 
-func (d DirectExchangeProducerSimpleConsQueueFactory) CreateProducer(exchangeName string) queues.ProducerProtocolInterface {
+func (d *DirectExchangeProducerSimpleConsQueueFactory) CreateProducer(exchangeName string) queues.ProducerProtocolInterface {
 	e := d.qMiddleware.CreateExchangeProducer(exchangeName, fmt.Sprintf("%v", d.counter), "direct", true)
 	d.counter++
 	return queues.NewProducerQueueProtocolHandler(e)
 }
 
-func (d DirectExchangeProducerSimpleConsQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
+func (d *DirectExchangeProducerSimpleConsQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
 	consumer := d.qMiddleware.CreateConsumer(queueName, true)
 	return queues.NewConsumerQueueProtocolHandler(consumer)
 }

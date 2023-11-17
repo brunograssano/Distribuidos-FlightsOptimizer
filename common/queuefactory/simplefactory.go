@@ -13,12 +13,12 @@ func NewSimpleQueueFactory(qMiddleware middleware.QueueMiddlewareI) QueueProtoco
 	return &SimpleQueueFactory{qMiddleware: qMiddleware}
 }
 
-func (s SimpleQueueFactory) CreateProducer(queueName string) queues.ProducerProtocolInterface {
+func (s *SimpleQueueFactory) CreateProducer(queueName string) queues.ProducerProtocolInterface {
 	producer := s.qMiddleware.CreateProducer(queueName, true)
 	return queues.NewProducerQueueProtocolHandler(producer)
 }
 
-func (s SimpleQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
+func (s *SimpleQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
 	consumer := s.qMiddleware.CreateConsumer(queueName, true)
 	return queues.NewConsumerQueueProtocolHandler(consumer)
 }
