@@ -1,42 +1,21 @@
 from jinja2 import Environment, FileSystemLoader
 
-def generate_compose():
-    reducers1 = 0
-    reducers2 = 0
-    stopovers = 0
-    processors = 0
-    distances = 0
-    completers = 0
-    ex4Savers = 0
-    ex4Dispatchers = 0
-    healthCheckers = 0
-
+def ask_for_int_input(text):
+    value = 0
     while reducers1 < 1:
-        reducers1 = int(input("How many reducers for ex1? "))
+        value = int(input(text))
+    return value
 
-    while reducers2 < 1:
-        reducers2 = int(input("How many reducers for ex2? "))
-
-    while stopovers < 1:
-        stopovers = int(input("How many stopovers filter? "))
-
-    while processors < 1:
-        processors = int(input("How many data processors? "))
-
-    while distances < 1:
-        distances = int(input("How many distance filters? "))
-
-    while completers < 1:
-        completers = int(input("How many distance completers? "))
-
-    while ex4Savers < 1:
-        ex4Savers = int(input("How many journey savers for ex4? "))
-
-    while ex4Dispatchers < 1:
-        ex4Dispatchers = int(input("How many dispatchers for ex4? "))
-
-    while healthCheckers < 1:
-        healthCheckers = int(input("How many healthCheckers? "))
+def generate_compose():
+    reducers1 = ask_for_int_input("How many reducers for ex1? ")
+    reducers2 = ask_for_int_input("How many reducers for ex2? ")
+    stopovers = ask_for_int_input("How many stopovers filter? ")
+    processors = ask_for_int_input("How many data processors? ")
+    distances = ask_for_int_input("How many distance filters? ")
+    completers = ask_for_int_input("How many distance completers? ")
+    ex4Savers = ask_for_int_input("How many journey savers for ex4? ")
+    ex4Dispatchers = ask_for_int_input("How many dispatchers for ex4? ")
+    healthCheckers = ask_for_int_input("How many healthCheckers? ")
 
     env = Environment(loader=FileSystemLoader("templates/"))
 

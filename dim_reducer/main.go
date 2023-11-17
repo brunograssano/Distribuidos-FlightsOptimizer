@@ -3,6 +3,7 @@ package main
 import (
 	"dim_reducer/reducer"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,8 +22,9 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(reducerConfig.RabbitAddress)
+	queueFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
 	for i := 0; i < reducerConfig.GoroutinesCount; i++ {
-		r := reducer.NewReducer(i, qMiddleware, reducerConfig)
+		r := reducer.NewReducer(i, queueFactory, reducerConfig)
 		go r.ReduceDims()
 	}
 	<-sigs

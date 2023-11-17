@@ -5,6 +5,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -17,8 +18,8 @@ const maxSleep = 32
 type ClientHandler struct {
 	rowsSent           uint
 	conn               *socketsProtocol.SocketProtocolHandler
-	outQueueAirports   middleware.ProducerInterface
-	outQueueFlightRows middleware.ProducerInterface
+	outQueueAirports   queues.ProducerProtocolInterface
+	outQueueFlightRows queues.ProducerProtocolInterface
 	GetterAddresses    []string
 	clientId           string
 }
@@ -28,8 +29,8 @@ func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware
 	return &ClientHandler{
 		conn:               sph,
 		rowsSent:           0,
-		outQueueAirports:   outQueueAirports,
-		outQueueFlightRows: outQueueFlightRows,
+		outQueueAirports:   queues.NewProducerQueueProtocolHandler(outQueueAirports),
+		outQueueFlightRows: queues.NewProducerQueueProtocolHandler(outQueueFlightRows),
 		GetterAddresses:    GetterAddresses,
 		clientId:           "",
 	}
@@ -131,7 +132,7 @@ func exponentialBackoffConnection(currSleep *int, socketGetter *communication.Ac
 
 func (ch *ClientHandler) handleAirportMessage(message *dataStructures.Message) error {
 	log.Debugf("ClientHandler | Sending airports to exchange...")
-	err := ch.outQueueAirports.Send(serializer.SerializeMsg(message))
+	err := ch.outQueueAirports.Send(message)
 	if err != nil {
 		log.Errorf("ClientHandler | Error sending airports to exchange | %v", err)
 		return err
@@ -140,7 +141,7 @@ func (ch *ClientHandler) handleAirportMessage(message *dataStructures.Message) e
 }
 
 func (ch *ClientHandler) handleFlightRowMessage(message *dataStructures.Message) error {
-	err := ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
+	err := ch.outQueueFlightRows.Send(message)
 	ch.rowsSent += uint(len(message.DynMaps))
 	if err != nil {
 		return err
@@ -156,7 +157,7 @@ func (ch *ClientHandler) handleEOFFlightRows(message *dataStructures.Message) er
 	dynMap.AddColumn(utils.LocalReceived, serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
 	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
-	return ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
+	return ch.outQueueFlightRows.Send(message)
 }
 
 func (ch *ClientHandler) handleMessage(message *dataStructures.Message, cliSPH *socketsProtocol.SocketProtocolHandler) (bool, error) {
