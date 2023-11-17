@@ -24,7 +24,7 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(completerConfig.RabbitAddress)
 	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
-	exchangeFactory := queuefactory.NewUniqueExchangeQueueFactory(qMiddleware, completerConfig.ExchangeNameAirports, completerConfig.RoutingKeyExchangeAirports)
+	exchangeFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, completerConfig.ExchangeNameAirports, completerConfig.RoutingKeyExchangeAirports)
 	for i := 0; i < completerConfig.GoroutinesCount; i++ {
 		distCompleter := controllers.NewDistanceCompleter(
 			i,
