@@ -40,20 +40,20 @@ test:
 .PHONY: test
 
 docker-image:
-	docker build -f ./dim_reducer/Dockerfile -t "dim_reducer:latest" .
-	docker build -f ./data_processor/Dockerfile -t "data_processor:latest" .
-	docker build -f ./filters/filter_escalas/Dockerfile -t "filter_escalas:latest" .
-	docker build -f ./filters/filter_distancias/Dockerfile -t "filter_distancias:latest" .
-	docker build -f ./distance_completer/Dockerfile -t "distance_completer:latest" .
-	docker build -f ./simple_saver/Dockerfile -t "simple_saver:latest" .
-	docker build -f ./server/Dockerfile -t "server:latest" .
-	docker build -f ./client/Dockerfile -t "client:latest" .
+	#docker build -f ./dim_reducer/Dockerfile -t "dim_reducer:latest" .
+	#docker build -f ./data_processor/Dockerfile -t "data_processor:latest" .
+	#docker build -f ./filters/filter_escalas/Dockerfile -t "filter_escalas:latest" .
+	#docker build -f ./filters/filter_distancias/Dockerfile -t "filter_distancias:latest" .
+	#docker build -f ./distance_completer/Dockerfile -t "distance_completer:latest" .
+	#docker build -f ./simple_saver/Dockerfile -t "simple_saver:latest" .
+	#docker build -f ./server/Dockerfile -t "server:latest" .
+	#docker build -f ./client/Dockerfile -t "client:latest" .
 	docker build -f ./ex4_journey_saver/Dockerfile -t "ex4_journey_saver:latest" .
-	docker build -f ./ex4_sink/Dockerfile -t "ex4_sink:latest" .
-	docker build -f ./dispatcher_ex4/Dockerfile -t "dispatcher_ex4:latest" .
-	docker build -f ./healthchecker/Dockerfile -t "healthchecker:latest" .
+	#docker build -f ./ex4_sink/Dockerfile -t "ex4_sink:latest" .
+	#docker build -f ./dispatcher_ex4/Dockerfile -t "dispatcher_ex4:latest" .
+	#docker build -f ./healthchecker/Dockerfile -t "healthchecker:latest" .
 	docker build -f ./avg_calculator_ex4/Dockerfile -t "avg_calculator_ex4:latest" .
-	docker build -f ./saver_ex_3/Dockerfile -t "saver_ex_3:latest" .
+	#docker build -f ./saver_ex_3/Dockerfile -t "saver_ex_3:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you
 	# want to avoid rebuilding client image every time the docker-compose-up command
