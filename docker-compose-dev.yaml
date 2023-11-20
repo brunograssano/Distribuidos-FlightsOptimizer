@@ -24,10 +24,31 @@ services:
     image: dim_reducer:latest
     environment:
       - CLI_ID=1
+      - CLI_NAME=dim_reducer_reducer-ex1-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
       - CLI_REDUCER_COLUMNS=legId,route,totalFare
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./dim_reducer/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  reducer-ex1-2:
+    container_name: dim_reducer_reducer-ex1-2
+    image: dim_reducer:latest
+    environment:
+      - CLI_ID=2
+      - CLI_NAME=dim_reducer_reducer-ex1-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
+      - CLI_REDUCER_COLUMNS=legId,route,totalFare
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -42,11 +63,32 @@ services:
     container_name: dim_reducer_reducer-ex2-1
     image: dim_reducer:latest
     environment:
-      - CLI_ID=2
+      - CLI_ID=3
+      - CLI_NAME=dim_reducer_reducer-ex2-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./dim_reducer/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  reducer-ex2-2:
+    container_name: dim_reducer_reducer-ex2-2
+    image: dim_reducer:latest
+    environment:
+      - CLI_ID=4
+      - CLI_NAME=dim_reducer_reducer-ex2-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
+      - CLI_REDUCER_COLUMNS=legId,route
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -62,10 +104,32 @@ services:
     container_name: filter_stopovers-1
     image: filter_escalas:latest
     environment:
-      - CLI_ID=3
+      - CLI_ID=5
+      - CLI_NAME=filter_stopovers-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
-      - CLI_RABBITMQ_QUEUES_OUTPUT=saver_3,dim_reducer_saver_1
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_EXCHANGE_OUTPUTS=saver_3
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./filters/filter_escalas/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  filter_stopovers-2:
+    container_name: filter_stopovers-2
+    image: filter_escalas:latest
+    environment:
+      - CLI_ID=6
+      - CLI_NAME=filter_stopovers-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_EXCHANGE_OUTPUTS=saver_3
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -80,11 +144,32 @@ services:
     container_name: data_processor-1
     image: data_processor:latest
     environment:
-      - CLI_ID=4
+      - CLI_ID=7
+      - CLI_NAME=data_processor-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./data_processor/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  data_processor-2:
+    container_name: data_processor-2
+    image: data_processor:latest
+    environment:
+      - CLI_ID=8
+      - CLI_NAME=data_processor-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
+      - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
+      - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -99,10 +184,30 @@ services:
     container_name: filter_distances-1
     image: filter_distancias:latest
     environment:
-      - CLI_ID=5
+      - CLI_ID=9
+      - CLI_NAME=filter_distances-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./filters/filter_distancias/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  filter_distances-2:
+    container_name: filter_distances-2
+    image: filter_distancias:latest
+    environment:
+      - CLI_ID=10
+      - CLI_NAME=filter_distances-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -117,7 +222,8 @@ services:
     container_name: distance_completer-1
     image: distance_completer:latest
     environment:
-      - CLI_ID=6
+      - CLI_ID=11
+      - CLI_NAME=distance_completer-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
@@ -125,7 +231,31 @@ services:
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
-      - CLI_COMPLETER_FILENAME=flightrows
+      - CLI_COMPLETER_FILENAME=flightrows.csv
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./distance_completer/config.yaml:/config.yaml
+    depends_on:
+        rabbitmq:
+          condition: service_healthy
+
+  distance_completer-2:
+    container_name: distance_completer-2
+    image: distance_completer:latest
+    environment:
+      - CLI_ID=12
+      - CLI_NAME=distance_completer-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
+      - CLI_RABBITMQ_QUEUES_OUTPUT=filters_distances
+      - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
+      - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
+      - CLI_COMPLETER_FILENAME=flightrows.csv
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -140,13 +270,15 @@ services:
     container_name: ex4_saver-1
     image: ex4_journey_saver:latest
     environment:
-      - CLI_ID=7
+      - CLI_ID=13
+      - CLI_NAME=ex4_saver-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
       - CLI_RABBITMQ_RK_INPUT=0
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -159,32 +291,15 @@ services:
     container_name: ex4_saver-2
     image: ex4_journey_saver:latest
     environment:
-      - CLI_ID=8
+      - CLI_ID=14
+      - CLI_NAME=ex4_saver-2
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
       - CLI_RABBITMQ_RK_INPUT=6
-    networks:
-      - testing_net
-    volumes:
-      - ./ex4_journey_saver/config.yaml:/config.yaml
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  ex4_journey_saver-3:
-    container_name: ex4_saver-3
-    image: ex4_journey_saver:latest
-    environment:
-      - CLI_ID=9
-      - CLI_LOG_LEVEL=INFO
-      - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
-      - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
-      - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
-      - CLI_INTERNAL_SAVERS_COUNT=6
-      - CLI_RABBITMQ_RK_INPUT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -199,11 +314,13 @@ services:
     container_name: ex4_dispatcher-1
     image: dispatcher_ex4:latest
     environment:
-      - CLI_ID=10
+      - CLI_ID=15
+      - CLI_NAME=ex4_dispatcher-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
-      - CLI_SAVERS_COUNT=18
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -216,9 +333,6 @@ services:
         condition: service_started
 
       ex4_journey_saver-2:
-        condition: service_started
-
-      ex4_journey_saver-3:
         condition: service_started
 
 
@@ -226,11 +340,13 @@ services:
     container_name: ex4_dispatcher-2
     image: dispatcher_ex4:latest
     environment:
-      - CLI_ID=11
+      - CLI_ID=16
+      - CLI_NAME=ex4_dispatcher-2
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
-      - CLI_SAVERS_COUNT=18
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -245,20 +361,20 @@ services:
       ex4_journey_saver-2:
         condition: service_started
 
-      ex4_journey_saver-3:
-        condition: service_started
 
 
 
-  avg_calculator_ex4:
-    container_name: avg_calculator_ex4
+  avg_calculator_ex4-1:
+    container_name: avg_calculator_ex4-1
     image: avg_calculator_ex4:latest
     environment:
-      - CLI_ID=12
+      - CLI_ID=17
+      - CLI_NAME=avg_calculator_ex4-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
-      - CLI_SAVERS_COUNT=18
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -267,15 +383,57 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  ex4_sink:
-    container_name: ex4_sink
+  avg_calculator_ex4-2:
+    container_name: avg_calculator_ex4-2
+    image: avg_calculator_ex4:latest
+    environment:
+      - CLI_ID=18
+      - CLI_NAME=avg_calculator_ex4-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./avg_calculator_ex4/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+
+  ex4_sink-1:
+    container_name: ex4_sink-1
     image: ex4_sink:latest
     environment:
-      - CLI_ID=13
+      - CLI_ID=19
+      - CLI_NAME=ex4_sink-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
-      - CLI_SAVERS_COUNT=18
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./ex4_sink/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  ex4_sink-2:
+    container_name: ex4_sink-2
+    image: ex4_sink:latest
+    environment:
+      - CLI_ID=20
+      - CLI_NAME=ex4_sink-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
+      - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
+      - CLI_SAVERS_COUNT=12
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -285,16 +443,19 @@ services:
         condition: service_healthy
 
 
-  saver-ex1:
-    container_name: saver-ex1
+
+  saver-ex1-1:
+    container_name: saver-ex1-1
     image: simple_saver:latest
     environment:
-      - CLI_ID=14
+      - CLI_ID=21
+      - CLI_NAME=saver-ex1-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
-      - CLI_SAVER_OUTPUT=results_ex1
+      - CLI_SAVER_OUTPUT=results_ex1.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex1:8080
+      - CLI_GETTER_ADDRESS=saver-ex1-1:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -303,16 +464,18 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  saver-ex2:
-    container_name: saver-ex2
+  saver-ex1-2:
+    container_name: saver-ex1-2
     image: simple_saver:latest
     environment:
-      - CLI_ID=15
+      - CLI_ID=22
+      - CLI_NAME=saver-ex1-2
       - CLI_LOG_LEVEL=INFO
-      - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
-      - CLI_SAVER_OUTPUT=results_ex2
+      - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
+      - CLI_SAVER_OUTPUT=results_ex1.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex2:8080
+      - CLI_GETTER_ADDRESS=saver-ex1-2:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -321,16 +484,62 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  saver-ex3:
-    container_name: saver-ex3
+
+
+  saver-ex2-1:
+    container_name: saver-ex2-1
+    image: simple_saver:latest
+    environment:
+      - CLI_ID=23
+      - CLI_NAME=saver-ex2-1
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
+      - CLI_SAVER_OUTPUT=results_ex2.csv
+      - CLI_GETTER_BATCH_LINES=100
+      - CLI_GETTER_ADDRESS=saver-ex2-1:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  saver-ex2-2:
+    container_name: saver-ex2-2
+    image: simple_saver:latest
+    environment:
+      - CLI_ID=24
+      - CLI_NAME=saver-ex2-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
+      - CLI_SAVER_OUTPUT=results_ex2.csv
+      - CLI_GETTER_BATCH_LINES=100
+      - CLI_GETTER_ADDRESS=saver-ex2-2:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+
+  saver-ex3-1:
+    container_name: saver-ex3-1
     image: saver_ex_3:latest
     environment:
-      - CLI_ID=16
+      - CLI_ID=25
+      - CLI_NAME=saver-ex3-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver_3
       - CLI_SAVER_OUTPUT=results_ex3
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex3:8080
+      - CLI_GETTER_ADDRESS=saver-ex3-1:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -339,16 +548,40 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  saver-ex4:
-    container_name: saver-ex4
+  saver-ex3-2:
+    container_name: saver-ex3-2
+    image: saver_ex_3:latest
+    environment:
+      - CLI_ID=26
+      - CLI_NAME=saver-ex3-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=saver_3
+      - CLI_SAVER_OUTPUT=results_ex3
+      - CLI_GETTER_BATCH_LINES=100
+      - CLI_GETTER_ADDRESS=saver-ex3-2:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./saver_ex_3/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+
+  saver-ex4-1:
+    container_name: saver-ex4-1
     image: simple_saver:latest
     environment:
-      - CLI_ID=17
+      - CLI_ID=27
+      - CLI_NAME=saver-ex4-1
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
-      - CLI_SAVER_OUTPUT=results_ex4
+      - CLI_SAVER_OUTPUT=results_ex4.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex4:8080
+      - CLI_GETTER_ADDRESS=saver-ex4-1:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -357,17 +590,43 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  saver-ex4-2:
+    container_name: saver-ex4-2
+    image: simple_saver:latest
+    environment:
+      - CLI_ID=28
+      - CLI_NAME=saver-ex4-2
+      - CLI_LOG_LEVEL=INFO
+      - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
+      - CLI_SAVER_OUTPUT=results_ex4.csv
+      - CLI_GETTER_BATCH_LINES=100
+      - CLI_GETTER_ADDRESS=saver-ex4-2:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./simple_saver/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
   server:
     container_name: server
     image: server:latest
     environment:
-      - CLI_ID=18
+      - CLI_ID=29
+      - CLI_NAME=server
       - CLI_LOG_LEVEL=INFO
-      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080,saver-ex4:8080
+      - CLI_GETTER_ADDRESSES_1=saver-ex1-1:8080,saver-ex1-2:8080
+      - CLI_GETTER_ADDRESSES_2=saver-ex2-1:8080,saver-ex2-2:8080
+      - CLI_GETTER_ADDRESSES_3=saver-ex3-1:8080,saver-ex3-2:8080
+      - CLI_GETTER_ADDRESSES_4=saver-ex4-1:8080,saver-ex4-2:8080
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
       - CLI_QUEUES_FLIGHTROWS=flight_row_processor
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
     networks:
       - testing_net
     volumes:
@@ -375,22 +634,37 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      saver-ex1:
+    
+      saver-ex1-1:
         condition: service_started
-      saver-ex2:
+      saver-ex2-1:
         condition: service_started
-      saver-ex3:
+      saver-ex3-1:
         condition: service_started
-      saver-ex4:
+      saver-ex4-1:
         condition: service_started
+    
+      saver-ex1-2:
+        condition: service_started
+      saver-ex2-2:
+        condition: service_started
+      saver-ex3-2:
+        condition: service_started
+      saver-ex4-2:
+        condition: service_started
+    
+    
       distance_completer-1:
         condition: service_started
-
+    
+      distance_completer-2:
+        condition: service_started
+    
   client:
     container_name: client
     image: client:latest
     environment:
-      - CLI_ID=19
+      - CLI_ID=30
       - CLI_LOG_LEVEL=INFO
       - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
@@ -403,6 +677,44 @@ services:
     depends_on:
       server:
         condition: service_started
+
+
+  healthchecker-1:
+    container_name: healthchecker-1
+    image: healthchecker:latest
+    environment:
+      - CLI_ID=31
+      - CLI_LOG_LEVEL=INFO
+      - CLI_NAME=healthchecker-1
+      - CLI_HEALTHCHECKER_ADDRESS=healthchecker-1:8080
+      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=2:healthchecker-2:8081
+      - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-1:8081
+      - CLI_HEALTHCHECKER_ELECTION_ID=1
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-2:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./healthchecker/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  healthchecker-2:
+    container_name: healthchecker-2
+    image: healthchecker:latest
+    environment:
+      - CLI_ID=32
+      - CLI_LOG_LEVEL=INFO
+      - CLI_NAME=healthchecker-2
+      - CLI_HEALTHCHECKER_ADDRESS=healthchecker-2:8080
+      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=1:healthchecker-1:8081
+      - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-2:8081
+      - CLI_HEALTHCHECKER_ELECTION_ID=2
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+    networks:
+      - testing_net
+    volumes:
+      - ./healthchecker/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
 
 networks:
   testing_net:

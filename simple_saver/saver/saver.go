@@ -4,8 +4,8 @@ import (
 	"fmt"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -18,8 +18,8 @@ type SimpleSaver struct {
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qMiddleware *middleware.QueueMiddleware, c *Config) *SimpleSaver {
-	consumer := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
+func NewSimpleSaver(qFactory queuefactory.QueueProtocolFactory, c *Config) *SimpleSaver {
+	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 	return &SimpleSaver{c: c, consumer: consumer}
 }
 

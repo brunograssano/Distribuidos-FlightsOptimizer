@@ -11,13 +11,15 @@ import (
 
 // Ex4JourneySaverConfig The configuration of the application
 type Ex4JourneySaverConfig struct {
-	ID                   string
-	InputQueueName       string
-	OutputQueueNameAccum string
-	OutputQueueNameSaver string
-	RabbitAddress        string
-	InternalSaversCount  uint
-	RoutingKeyInput      uint
+	ID                      string
+	InputQueueName          string
+	OutputQueueNameAccum    string
+	OutputQueueNameSaver    string
+	RabbitAddress           string
+	InternalSaversCount     uint
+	RoutingKeyInput         uint
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -37,6 +39,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "outputs", "saver")
 	_ = v.BindEnv("internal", "savers", "count")
 	_ = v.BindEnv("rabbitmq", "rk", "input")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -77,6 +81,17 @@ func GetConfig(env *viper.Viper) (*Ex4JourneySaverConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	rkInput := env.GetUint("rabbitmq.rk.input")
 
 	internalSaversCount := env.GetUint("internal.savers.count")
@@ -98,12 +113,14 @@ func GetConfig(env *viper.Viper) (*Ex4JourneySaverConfig, error) {
 		rkInput)
 
 	return &Ex4JourneySaverConfig{
-		ID:                   id,
-		InputQueueName:       inputQueueName,
-		OutputQueueNameAccum: outputQueueNameAccum,
-		OutputQueueNameSaver: outputQueueNameSaver,
-		RabbitAddress:        rabbitAddress,
-		InternalSaversCount:  internalSaversCount,
-		RoutingKeyInput:      rkInput,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputQueueNameAccum:    outputQueueNameAccum,
+		OutputQueueNameSaver:    outputQueueNameSaver,
+		RabbitAddress:           rabbitAddress,
+		InternalSaversCount:     internalSaversCount,
+		RoutingKeyInput:         rkInput,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

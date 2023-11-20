@@ -2,7 +2,9 @@ package main
 
 import (
 	"data_processor/processor"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,16 +17,19 @@ func main() {
 		log.Fatalf("Main - DataProcessor | Error initializing env | %s", err)
 	}
 
-	processorConfig, err := processor.GetConfig(env)
+	config, err := processor.GetConfig(env)
 	if err != nil {
 		log.Fatalf("Main - DataProcessor | Error initializing config | %s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware(processorConfig.RabbitAddress)
-	for i := 0; i < processorConfig.GoroutinesCount; i++ {
-		r := processor.NewDataProcessor(i, qMiddleware, processorConfig)
+	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
+	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	for i := 0; i < config.GoroutinesCount; i++ {
+		r := processor.NewDataProcessor(i, qFactory, config)
 		go r.ProcessData()
 	}
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 }

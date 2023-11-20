@@ -6,3 +6,5 @@ rabbitmq:
 internal:
   dispatcher:
     count: 6
+heartbeat:
+  time: 5

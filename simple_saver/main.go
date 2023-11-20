@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"log"
 	"simple_saver/saver"
@@ -16,22 +18,25 @@ func main() {
 		log.Fatalf("Main - Simple Saver | Error initializing env | %s", err)
 	}
 
-	saverConfig, err := saver.GetConfig(env)
+	config, err := saver.GetConfig(env)
 	if err != nil {
 		log.Fatalf("Main - Simple Saver | Error initializing config | %s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware(saverConfig.RabbitAddress)
-	simpleSaver := saver.NewSimpleSaver(qMiddleware, saverConfig)
+	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
+	qFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
+	simpleSaver := saver.NewSimpleSaver(qFactory, config)
 	go simpleSaver.SaveData()
 
-	getterConf := getters.NewGetterConfig(saverConfig.ID, []string{saverConfig.OutputFileName}, saverConfig.GetterAddress, saverConfig.GetterBatchLines)
+	getterConf := getters.NewGetterConfig(config.ID, []string{config.OutputFileName}, config.GetterAddress, config.GetterBatchLines)
 	getter, err := getters.NewGetter(getterConf)
 	if err != nil {
 		log.Fatalf("Main - Simple Saver | Error initializing Getter | %s", err)
 	}
 	go getter.ReturnResults()
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 	getter.Close()
 }

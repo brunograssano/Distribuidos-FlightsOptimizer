@@ -11,11 +11,14 @@ import (
 )
 
 type FilterConfig struct {
-	ID               string
-	InputQueueName   string
-	OutputQueueNames []string
-	GoroutinesCount  int
-	RabbitAddress    string
+	ID                      string
+	InputQueueName          string
+	OutputQueueNames        []string
+	OutputExchangeNames     []string
+	GoroutinesCount         int
+	RabbitAddress           string
+	AddressesHealthCheckers []string
+	ServiceName             string
 }
 
 func InitEnv() (*viper.Viper, error) {
@@ -29,7 +32,11 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("log", "level")
 	_ = v.BindEnv("rabbitmq", "queues", "input")
 	_ = v.BindEnv("rabbitmq", "queues", "output")
+	_ = v.BindEnv("rabbitmq", "exchange", "outputs")
 	_ = v.BindEnv("filter", "goroutines")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
+
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
 		log.Warnf("FilterConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
@@ -59,6 +66,15 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	}
 	outputQueueNamesArray := strings.Split(outputQueueNames, utils.CommaSeparator)
 
+	outputExchangesNames := env.GetString("rabbitmq.exchange.outputs")
+	var outputExchangesNamesArray []string
+	if outputQueueNames == "" {
+		log.Warnf("Missing output exchanges. Setting it as empty array")
+		outputExchangesNamesArray = []string{}
+	} else {
+		outputExchangesNamesArray = strings.Split(outputExchangesNames, utils.CommaSeparator)
+	}
+
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
 		return nil, errors.New("missing rabbitmq address")
@@ -70,19 +86,34 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 		goroutinesCount = utils.DefaultGoroutines
 	}
 
-	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | goroutinesCount: %v",
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
+	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | outputExchangesNames: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		inputQueueName,
 		outputQueueNamesArray,
+		outputExchangesNamesArray,
 		goroutinesCount,
 	)
 
 	return &FilterConfig{
-		ID:               id,
-		InputQueueName:   inputQueueName,
-		OutputQueueNames: outputQueueNamesArray,
-		GoroutinesCount:  goroutinesCount,
-		RabbitAddress:    rabbitAddress,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputQueueNames:        outputQueueNamesArray,
+		OutputExchangeNames:     outputExchangesNamesArray,
+		GoroutinesCount:         goroutinesCount,
+		RabbitAddress:           rabbitAddress,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

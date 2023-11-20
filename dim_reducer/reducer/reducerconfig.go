@@ -11,12 +11,14 @@ import (
 
 // Config The configuration of the application
 type Config struct {
-	ID              string
-	InputQueueName  string
-	OutputQueueName string
-	ColumnsToKeep   []string
-	GoroutinesCount int
-	RabbitAddress   string
+	ID                      string
+	InputQueueName          string
+	OutputQueueName         string
+	ColumnsToKeep           []string
+	GoroutinesCount         int
+	RabbitAddress           string
+	AddressesHealthCheckers []string
+	ServiceName             string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -39,6 +41,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "output")
 	_ = v.BindEnv("reducer", "columns")
 	_ = v.BindEnv("reducer", "goroutines")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables, so we shouldn't
@@ -84,6 +88,17 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 
 	columnsToKeep := strings.Split(columnsInList, utils.CommaSeparator)
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	goroutinesCount := env.GetInt("reducer.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("Config | Not a valid value '%v' for goroutines count, using default.", goroutinesCount)
@@ -97,11 +112,13 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		inputQueueName, outputQueueName, columnsToKeep, goroutinesCount)
 
 	return &Config{
-		ID:              id,
-		InputQueueName:  inputQueueName,
-		OutputQueueName: outputQueueName,
-		ColumnsToKeep:   columnsToKeep,
-		GoroutinesCount: goroutinesCount,
-		RabbitAddress:   rabbitAddress,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputQueueName:         outputQueueName,
+		ColumnsToKeep:           columnsToKeep,
+		GoroutinesCount:         goroutinesCount,
+		RabbitAddress:           rabbitAddress,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

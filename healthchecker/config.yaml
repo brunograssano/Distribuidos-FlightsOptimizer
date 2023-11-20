@@ -1,0 +1,8 @@
+log:
+  level: "info"
+
+healthchecker:
+  restart:
+    time: 16
+  check:
+    time: 6

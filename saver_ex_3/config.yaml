@@ -7,3 +7,5 @@ saver:
   count: 6
 dispatchers:
   count: 2
+heartbeat:
+  time: 5

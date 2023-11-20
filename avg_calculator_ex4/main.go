@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,16 +21,20 @@ func main() {
 		log.Fatalf("Main - Ex4 Avg Calculator | Error initializing Config | %s", err)
 	}
 
-	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(config.InputQueueName, true))
 	var toJourneySavers []queueProtocol.ProducerProtocolInterface
-	for i := uint(0); i < config.SaversCount; i++ {
-		producer := qMiddleware.CreateExchangeProducer(config.OutputQueueName, fmt.Sprintf("%v", i), "direct", true)
-		toJourneySavers = append(toJourneySavers, queueProtocol.NewProducerQueueProtocolHandler(producer))
-	}
+	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
+	qFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
+	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
+	inputQueue := qFanoutFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
 
+	for i := uint(0); i < config.SaversCount; i++ {
+		producer := qFactory.CreateProducer(config.OutputQueueName)
+		toJourneySavers = append(toJourneySavers, producer)
+	}
 	avgCalculator := NewAvgCalculator(toJourneySavers, inputQueue, config)
 	go avgCalculator.CalculateAvgLoop()
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 }

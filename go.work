@@ -16,4 +16,5 @@ use (
 	./server
 	./avg_calculator_ex4
 	./ex4_sink
+	./healthchecker
 )

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
-	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,18 +19,20 @@ func main() {
 		log.Fatalf("Main - Ex4 Journey Saver | Error initializing Config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-
+	qFactory := queuefactory.NewDirectExchangeConsumerSimpleProdQueueFactory(qMiddleware, config.RoutingKeyInput)
+	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameAccum, "")
+	qFanoutFactorySink := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameSaver, "")
 	for i := uint(0); i < config.InternalSaversCount; i++ {
-		consumerQueue := qMiddleware.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.RoutingKeyInput+i), true)
-		err = consumerQueue.BindTo(config.InputQueueName, fmt.Sprintf("%v", config.RoutingKeyInput+i), "direct")
-		inputQ := queues.NewConsumerQueueProtocolHandler(consumerQueue)
-		prodToAccum := queues.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(config.OutputQueueNameAccum, true))
-		prodToSink := queues.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(config.OutputQueueNameSaver, true))
+		inputQ := qFactory.CreateConsumer(config.InputQueueName)
+		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
+		prodToSink := qFanoutFactorySink.CreateProducer(config.OutputQueueNameSaver)
 		js := NewJourneySaver(inputQ, prodToAccum, prodToSink)
 		go js.SavePricesForJourneys()
 	}
 
+	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
+	endSigHB <- true
 	qMiddleware.Close()
 
 }

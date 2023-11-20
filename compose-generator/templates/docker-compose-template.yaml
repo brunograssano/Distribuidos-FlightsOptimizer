@@ -24,10 +24,12 @@ services:
     image: dim_reducer:latest
     environment:
       - CLI_ID={{i}}
+      - CLI_NAME=dim_reducer_reducer-ex1-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
       - CLI_REDUCER_COLUMNS=legId,route,totalFare
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -43,10 +45,12 @@ services:
     image: dim_reducer:latest
     environment:
       - CLI_ID={{reducers1 + i}}
+      - CLI_NAME=dim_reducer_reducer-ex2-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -63,9 +67,12 @@ services:
     image: filter_escalas:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + i}}
+      - CLI_NAME=filter_stopovers-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
-      - CLI_RABBITMQ_QUEUES_OUTPUT=saver_3,dim_reducer_saver_1
+      - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_1
+      - CLI_RABBITMQ_EXCHANGE_OUTPUTS=saver_3
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -81,10 +88,12 @@ services:
     image: data_processor:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + stopovers + i}}
+      - CLI_NAME=data_processor-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -100,9 +109,11 @@ services:
     image: filter_distancias:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + stopovers + processors + i}}
+      - CLI_NAME=filter_distances-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -118,6 +129,7 @@ services:
     image: distance_completer:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + i}}
+      - CLI_NAME=distance_completer-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT_FLIGHTS=distance_calculator
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORT=airports_saver
@@ -126,6 +138,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
       - CLI_COMPLETER_FILENAME=flightrows.csv
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -141,12 +154,14 @@ services:
     image: ex4_journey_saver:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + i}}
+      - CLI_NAME=ex4_saver-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
       - CLI_RABBITMQ_RK_INPUT={{6*(i-1)}}
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -162,10 +177,12 @@ services:
     image: dispatcher_ex4:latest
     environment:
       - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + i}}
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_NAME=ex4_dispatcher-{{i}}
+      - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT={{6*ex4Savers}}
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -179,15 +196,18 @@ services:
 {% endfor %}
 {% endfor %}
 
-  avg_calculator_ex4:
-    container_name: avg_calculator_ex4
+{% for i in range(1, calculators + 1) %}
+  avg_calculator_ex4-{{i}}:
+    container_name: avg_calculator_ex4-{{i}}
     image: avg_calculator_ex4:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 1}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + i}}
+      - CLI_NAME=avg_calculator_ex4-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT={{6*ex4Savers}}
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -195,16 +215,20 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
-  ex4_sink:
-    container_name: ex4_sink
+{% for i in range(1, sinks + 1) %}
+  ex4_sink-{{i}}:
+    container_name: ex4_sink-{{i}}
     image: ex4_sink:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 2}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + i}}
+      - CLI_NAME=ex4_sink-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
       - CLI_SAVERS_COUNT={{6*ex4Savers}}
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -212,18 +236,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
-
-  saver-ex1:
-    container_name: saver-ex1
+{% for i in range(1, savers + 1) %}
+  saver-ex1-{{i}}:
+    container_name: saver-ex1-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 3}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + i}}
+      - CLI_NAME=saver-ex1-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
       - CLI_SAVER_OUTPUT=results_ex1.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex1:8080
+      - CLI_GETTER_ADDRESS=saver-ex1-{{i}}:8080
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -231,17 +258,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
-  saver-ex2:
-    container_name: saver-ex2
+{% for i in range(1, savers + 1) %}
+  saver-ex2-{{i}}:
+    container_name: saver-ex2-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 4}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + savers +i}}
+      - CLI_NAME=saver-ex2-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
       - CLI_SAVER_OUTPUT=results_ex2.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex2:8080
+      - CLI_GETTER_ADDRESS=saver-ex2-{{i}}:8080
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -249,17 +280,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
-  saver-ex3:
-    container_name: saver-ex3
+{% for i in range(1, savers + 1) %}
+  saver-ex3-{{i}}:
+    container_name: saver-ex3-{{i}}
     image: saver_ex_3:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 5}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 2*savers + i}}
+      - CLI_NAME=saver-ex3-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver_3
       - CLI_SAVER_OUTPUT=results_ex3
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex3:8080
+      - CLI_GETTER_ADDRESS=saver-ex3-{{i}}:8080
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -267,17 +302,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
-  saver-ex4:
-    container_name: saver-ex4
+{% for i in range(1, savers + 1) %}
+  saver-ex4-{{i}}:
+    container_name: saver-ex4-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 6}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 3*savers + i}}
+      - CLI_NAME=saver-ex4-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
       - CLI_SAVER_OUTPUT=results_ex4.csv
       - CLI_GETTER_BATCH_LINES=100
-      - CLI_GETTER_ADDRESS=saver-ex4:8080
+      - CLI_GETTER_ADDRESS=saver-ex4-{{i}}:8080
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -285,18 +324,24 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+{% endfor %}
 
   server:
     container_name: server
     image: server:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers  + 7}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 1}}
+      - CLI_NAME=server
       - CLI_LOG_LEVEL=INFO
-      - CLI_GETTER_ADDRESSES=saver-ex1:8080,saver-ex2:8080,saver-ex3:8080,saver-ex4:8080
+      - CLI_GETTER_ADDRESSES_1={% for i in range (1, savers + 1) %}saver-ex1-{{i}}:8080{{ "," if not loop.last else "" }}{% endfor %}
+      - CLI_GETTER_ADDRESSES_2={% for i in range (1, savers + 1) %}saver-ex2-{{i}}:8080{{ "," if not loop.last else "" }}{% endfor %}
+      - CLI_GETTER_ADDRESSES_3={% for i in range (1, savers + 1) %}saver-ex3-{{i}}:8080{{ "," if not loop.last else "" }}{% endfor %}
+      - CLI_GETTER_ADDRESSES_4={% for i in range (1, savers + 1) %}saver-ex4-{{i}}:8080{{ "," if not loop.last else "" }}{% endfor %}
       - CLI_QUEUES_AIRPORTS_EXCHANGE_TYPE=fanout
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
       - CLI_QUEUES_FLIGHTROWS=flight_row_processor
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}healthchecker-{{hc}}:8080{{ "," if not loop.last else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:
@@ -304,22 +349,25 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      saver-ex1:
+    {% for i in range (1, savers + 1) %}
+      saver-ex1-{{i}}:
         condition: service_started
-      saver-ex2:
+      saver-ex2-{{i}}:
         condition: service_started
-      saver-ex3:
+      saver-ex3-{{i}}:
         condition: service_started
-      saver-ex4:
+      saver-ex4-{{i}}:
         condition: service_started
-      distance_completer-1:
+    {% endfor %}
+    {% for i in range(1,completers + 1) %}
+      distance_completer-{{i}}:
         condition: service_started
-
+    {% endfor %}
   client:
     container_name: client
     image: client:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + 8}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 2}}
       - CLI_LOG_LEVEL=INFO
       - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
@@ -332,6 +380,26 @@ services:
     depends_on:
       server:
         condition: service_started
+
+{% for i in range (1, healthcheckers+1) %}
+  healthchecker-{{i}}:
+    container_name: healthchecker-{{i}}
+    image: healthchecker:latest
+    environment:
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 2 + i}}
+      - CLI_LOG_LEVEL=INFO
+      - CLI_NAME=healthchecker-{{i}}
+      - CLI_HEALTHCHECKER_ADDRESS=healthchecker-{{i}}:8080
+      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}{{ hc|string+":healthchecker-"+hc|string+":8081" if not hc==i else "" }}{{ "," if not loop.last and not hc == i and not(i == healthcheckers and hc == (i-1)) else "" }}{% endfor %}
+      - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-{{i}}:8081
+      - CLI_HEALTHCHECKER_ELECTION_ID={{i}}
+      - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}{{ "healthchecker-"+hc|string+":8080" if not hc==i else "" }}{{ "," if not loop.last and not hc == i and not(i == healthcheckers and hc == (i-1)) else "" }}{% endfor %}
+    networks:
+      - testing_net
+    volumes:
+      - ./healthchecker/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+{% endfor %}
 
 networks:
   testing_net:

@@ -12,14 +12,18 @@ import (
 
 // SaverConfig The configuration of the application
 type SaverConfig struct {
-	ID                  string
-	InputQueueName      string
-	OutputFilePrefix    string
-	RabbitAddress       string
-	GetterAddress       string
-	GetterBatchLines    uint
-	InternalSaversCount uint
-	DispatchersCount    uint
+	ID                      string
+	InputQueueName          string
+	OutputFilePrefix        string
+	RabbitAddress           string
+	GetterAddress           string
+	GetterBatchLines        uint
+	InternalSaversCount     uint
+	DispatchersCount        uint
+	HealthCheckerAddresses  []string
+	ContainerName           string
+	ServiceName             string
+	AddressesHealthCheckers []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -44,6 +48,8 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("dispatchers", "count")
 	_ = v.BindEnv("getter", "address")
 	_ = v.BindEnv("getter", "batch", "lines")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
 
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
@@ -88,6 +94,17 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		return nil, errors.New("missing getter address")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	getterBatchLines := env.GetUint("getter.batch.lines")
 	if getterBatchLines > utils.MaxBatchLines || getterBatchLines == 0 {
 		log.Errorf("Saver3Config | invalid getter batch lines. Setting to default")
@@ -117,13 +134,15 @@ func GetConfig(env *viper.Viper) (*SaverConfig, error) {
 		dispatchersCount)
 
 	return &SaverConfig{
-		ID:                  id,
-		InputQueueName:      inputQueueName,
-		OutputFilePrefix:    outputFilenamesStr,
-		RabbitAddress:       rabbitAddress,
-		GetterAddress:       getterAddress,
-		GetterBatchLines:    getterBatchLines,
-		InternalSaversCount: internalSaversCount,
-		DispatchersCount:    dispatchersCount,
+		ID:                      id,
+		InputQueueName:          inputQueueName,
+		OutputFilePrefix:        outputFilenamesStr,
+		RabbitAddress:           rabbitAddress,
+		GetterAddress:           getterAddress,
+		GetterBatchLines:        getterBatchLines,
+		InternalSaversCount:     internalSaversCount,
+		DispatchersCount:        dispatchersCount,
+		AddressesHealthCheckers: healthCheckerAddresses,
+		ServiceName:             serviceName,
 	}, nil
 }

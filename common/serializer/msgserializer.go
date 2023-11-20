@@ -139,3 +139,17 @@ func DeserializeFromString(dynMapStr string) *dataStructures.DynamicMap {
 	}
 	return dataStructures.NewDynamicMap(dynMapData)
 }
+
+func DeserializeUDPPacket(packetBytes []byte) *dataStructures.UDPPacket {
+	return &dataStructures.UDPPacket{
+		PacketType: packetBytes[0],
+		NodeID:     packetBytes[1],
+	}
+}
+
+func SerializeUDPPacket(packet *dataStructures.UDPPacket) []byte {
+	udpPacketBytes := make([]byte, 2)
+	udpPacketBytes[0] = packet.PacketType
+	udpPacketBytes[1] = packet.NodeID
+	return udpPacketBytes
+}

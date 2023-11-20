@@ -6,8 +6,8 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
-	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
+	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,17 +17,15 @@ type Ex3Handler struct {
 	journeyDispatcher        []*dispatcher.JourneyDispatcher
 	savers                   []*SaverForEx3
 	getter                   *getters.Getter
-	qMiddleware              *middleware.QueueMiddleware
 	channels                 []chan *dataStructures.Message
 	finishedSignals          chan string
 	outputFilenames          []string
 	quantityFinishedByClient map[string]uint
 }
 
-// NewEx3Handler Creates a new exercise 4 handler
-func NewEx3Handler(c *SaverConfig) *Ex3Handler {
+// NewEx3Handler Creates a new exercise 3 handler
+func NewEx3Handler(c *SaverConfig, qFactory queuefactory.QueueProtocolFactory) *Ex3Handler {
 	var channels []chan *dataStructures.Message
-	qMiddleware := middleware.NewQueueMiddleware(c.RabbitAddress)
 
 	// Creation of the JourneySavers, they handle the prices per journey
 	var internalSavers []*SaverForEx3
@@ -53,9 +51,9 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	log.Infof("Ex3Handler | Creating dispatchers...")
 	var jds []*dispatcher.JourneyDispatcher
 	for i := uint(0); i < c.DispatchersCount; i++ {
-		// We create the input queue to the EX4 service
-		inputQueue := queueProtocol.NewConsumerQueueProtocolHandler(qMiddleware.CreateConsumer(c.InputQueueName, true))
-		prodToInput := queueProtocol.NewProducerQueueProtocolHandler(qMiddleware.CreateProducer(c.InputQueueName, true))
+		// We create the input queue to the EX3 service
+		inputQueue := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
+		prodToInput := qFactory.CreateProducer(c.ID)
 		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 
@@ -68,7 +66,6 @@ func NewEx3Handler(c *SaverConfig) *Ex3Handler {
 	return &Ex3Handler{
 		c:                        c,
 		journeyDispatcher:        jds,
-		qMiddleware:              qMiddleware,
 		channels:                 channels,
 		savers:                   internalSavers,
 		getter:                   getter,

@@ -21,6 +21,8 @@ type CompleterConfig struct {
 	GoroutinesCount            int
 	RabbitAddress              string
 	AirportsFilename           string
+	ServiceName                string
+	AddressesHealthCheckers    []string
 }
 
 func InitEnv() (*viper.Viper, error) {
@@ -42,6 +44,9 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "input", "airportexchange")
 	_ = v.BindEnv("rabbitmq", "address")
 	_ = v.BindEnv("queues", "airports", "exchange", "type")
+	_ = v.BindEnv("name")
+	_ = v.BindEnv("healthchecker", "addresses")
+
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
 		log.Warnf("DistCompleterConfig | Warning Message | Configuration could not be read from config file. Using env variables instead")
@@ -90,6 +95,17 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
+	serviceName := env.GetString("name")
+	if serviceName == "" {
+		return nil, errors.New("missing name")
+	}
+
+	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
+	if healthCheckerAddressesString == "" {
+		return nil, errors.New("missing healthchecker addresses")
+	}
+	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
+
 	goroutinesCount := env.GetInt("completer.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("DistCompleterConfig | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
@@ -129,5 +145,7 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		ExchangeNameAirports:       airportExchangeName,
 		ExchangeType:               exchangeType,
 		RoutingKeyExchangeAirports: airportRoutingKey,
+		AddressesHealthCheckers:    healthCheckerAddresses,
+		ServiceName:                serviceName,
 	}, nil
 }

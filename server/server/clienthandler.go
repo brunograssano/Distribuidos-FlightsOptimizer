@@ -5,6 +5,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/communication"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
+	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -17,19 +18,19 @@ const maxSleep = 32
 type ClientHandler struct {
 	rowsSent           uint
 	conn               *socketsProtocol.SocketProtocolHandler
-	outQueueAirports   middleware.ProducerInterface
-	outQueueFlightRows middleware.ProducerInterface
-	GetterAddresses    []string
+	outQueueAirports   queues.ProducerProtocolInterface
+	outQueueFlightRows queues.ProducerProtocolInterface
+	GetterAddresses    map[uint8][]string
 	clientId           string
 }
 
-func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses []string) *ClientHandler {
+func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses map[uint8][]string) *ClientHandler {
 	sph := socketsProtocol.NewSocketProtocolHandler(conn)
 	return &ClientHandler{
 		conn:               sph,
 		rowsSent:           0,
-		outQueueAirports:   outQueueAirports,
-		outQueueFlightRows: outQueueFlightRows,
+		outQueueAirports:   queues.NewProducerQueueProtocolHandler(outQueueAirports),
+		outQueueFlightRows: queues.NewProducerQueueProtocolHandler(outQueueFlightRows),
 		GetterAddresses:    GetterAddresses,
 		clientId:           "",
 	}
@@ -67,26 +68,21 @@ func (ch *ClientHandler) handleGetterMessage(
 }
 
 func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocolHandler) error {
-
-	for i := 0; i < len(ch.GetterAddresses); i++ {
+	for ex, addresses := range ch.GetterAddresses {
 		currSleep := 2
-		socketGetter, err := communication.NewActiveTCPSocket(ch.GetterAddresses[i])
-		if err != nil {
-			log.Errorf("ClientHandler | Error trying to connect to getter for exercise %v | %v | Ending getter conn and returning error.", i+1, err)
-			_ = socketGetter.Close()
-			return err
-		}
+		socketGetter := ch.connectToGetter(addresses, ex)
+
 		getterSPH := socketsProtocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
 		initialMessage := &dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: ch.clientId}
-		err = getterSPH.Write(initialMessage)
+		err := getterSPH.Write(initialMessage)
 		if err != nil {
-			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", ex, err)
 		}
 		for {
 
 			msg, err := getterSPH.Read()
 			if err != nil {
-				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", i+1, err)
+				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", ex, err)
 				_ = socketGetter.Close()
 				return err
 			}
@@ -95,6 +91,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 				break
 			}
 			if shouldReconnect {
+				//TODO: Ver que hacemos con esto. Reconectar a otro server? Ver hasta donde llego la respuesta?
 				newSPH, err := exponentialBackoffConnection(&currSleep, socketGetter)
 				if err != nil {
 					return err
@@ -102,7 +99,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 				getterSPH = newSPH
 				err = getterSPH.Write(initialMessage)
 				if err != nil {
-					log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+					log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", ex, err)
 				}
 			}
 			if err != nil {
@@ -110,6 +107,20 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 			}
 		}
 		_ = socketGetter.Close()
+	}
+	return nil
+}
+
+func (ch *ClientHandler) connectToGetter(addresses []string, ex uint8) *communication.ActiveTCPSocket {
+	// TODO si fallo con todos exponential backoff
+	for _, address := range addresses {
+		socketGetter, err := communication.NewActiveTCPSocket(address)
+		if err != nil {
+			log.Errorf("ClientHandler | Error trying to connect to getter for exercise %v | %v | Ending getter conn and returning error. | Address: %v", ex+1, err, address)
+		}
+		if socketGetter != nil {
+			return socketGetter
+		}
 	}
 	return nil
 }
@@ -131,7 +142,7 @@ func exponentialBackoffConnection(currSleep *int, socketGetter *communication.Ac
 
 func (ch *ClientHandler) handleAirportMessage(message *dataStructures.Message) error {
 	log.Debugf("ClientHandler | Sending airports to exchange...")
-	err := ch.outQueueAirports.Send(serializer.SerializeMsg(message))
+	err := ch.outQueueAirports.Send(message)
 	if err != nil {
 		log.Errorf("ClientHandler | Error sending airports to exchange | %v", err)
 		return err
@@ -140,7 +151,7 @@ func (ch *ClientHandler) handleAirportMessage(message *dataStructures.Message) e
 }
 
 func (ch *ClientHandler) handleFlightRowMessage(message *dataStructures.Message) error {
-	err := ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
+	err := ch.outQueueFlightRows.Send(message)
 	ch.rowsSent += uint(len(message.DynMaps))
 	if err != nil {
 		return err
@@ -156,7 +167,7 @@ func (ch *ClientHandler) handleEOFFlightRows(message *dataStructures.Message) er
 	dynMap.AddColumn(utils.LocalReceived, serializer.SerializeUint(uint32(0)))
 	message.DynMaps = append(message.DynMaps, dynMap)
 	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
-	return ch.outQueueFlightRows.Send(serializer.SerializeMsg(message))
+	return ch.outQueueFlightRows.Send(message)
 }
 
 func (ch *ClientHandler) handleMessage(message *dataStructures.Message, cliSPH *socketsProtocol.SocketProtocolHandler) (bool, error) {
