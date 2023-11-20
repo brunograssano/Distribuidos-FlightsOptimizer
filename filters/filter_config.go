@@ -14,6 +14,7 @@ type FilterConfig struct {
 	ID                      string
 	InputQueueName          string
 	OutputQueueNames        []string
+	OutputExchangeNames     []string
 	GoroutinesCount         int
 	RabbitAddress           string
 	AddressesHealthCheckers []string
@@ -31,6 +32,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("log", "level")
 	_ = v.BindEnv("rabbitmq", "queues", "input")
 	_ = v.BindEnv("rabbitmq", "queues", "output")
+	_ = v.BindEnv("rabbitmq", "exchange", "outputs")
 	_ = v.BindEnv("filter", "goroutines")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
@@ -64,6 +66,15 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	}
 	outputQueueNamesArray := strings.Split(outputQueueNames, utils.CommaSeparator)
 
+	outputExchangesNames := env.GetString("rabbitmq.exchange.outputs")
+	var outputExchangesNamesArray []string
+	if outputQueueNames == "" {
+		log.Warnf("Missing output exchanges. Setting it as empty array")
+		outputExchangesNamesArray = []string{}
+	} else {
+		outputExchangesNamesArray = strings.Split(outputExchangesNames, utils.CommaSeparator)
+	}
+
 	rabbitAddress := env.GetString("rabbitmq.address")
 	if rabbitAddress == "" {
 		return nil, errors.New("missing rabbitmq address")
@@ -86,11 +97,12 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 	}
 	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
 
-	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | goroutinesCount: %v",
+	log.Infof("FilterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueNames: %v | outputQueueNames: %v | outputExchangesNames: %v | goroutinesCount: %v",
 		id,
 		env.GetString("log.level"),
 		inputQueueName,
 		outputQueueNamesArray,
+		outputExchangesNamesArray,
 		goroutinesCount,
 	)
 
@@ -98,6 +110,7 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 		ID:                      id,
 		InputQueueName:          inputQueueName,
 		OutputQueueNames:        outputQueueNamesArray,
+		OutputExchangeNames:     outputExchangesNamesArray,
 		GoroutinesCount:         goroutinesCount,
 		RabbitAddress:           rabbitAddress,
 		AddressesHealthCheckers: healthCheckerAddresses,

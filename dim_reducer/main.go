@@ -23,9 +23,13 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	queueFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	fanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueName, "")
 	for i := 0; i < config.GoroutinesCount; i++ {
-		r := reducer.NewReducer(i, queueFactory, config)
+		consumer := simpleFactory.CreateConsumer(config.InputQueueName)
+		producer := fanoutFactory.CreateProducer(config.OutputQueueName)
+		prodToCons := simpleFactory.CreateProducer(config.InputQueueName)
+		r := reducer.NewReducer(i, consumer, producer, prodToCons, config)
 		go r.ReduceDims()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)

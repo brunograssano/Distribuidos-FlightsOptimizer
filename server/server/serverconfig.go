@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ import (
 type ServerConfig struct {
 	ID                      string
 	ServerAddress           string
-	GetterAddresses         []string
+	GetterAddresses         map[uint8][]string
 	ExchangeNameAirports    string
 	ExchangeTypeAirports    string
 	ExchangeRKAirports      string
@@ -33,7 +34,10 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("id")
 	_ = v.BindEnv("log", "level")
 	_ = v.BindEnv("server", "address")
-	_ = v.BindEnv("getter", "addresses")
+	_ = v.BindEnv("getter", "addresses", "1")
+	_ = v.BindEnv("getter", "addresses", "2")
+	_ = v.BindEnv("getter", "addresses", "3")
+	_ = v.BindEnv("getter", "addresses", "4")
 	_ = v.BindEnv("rabbitmq", "address")
 	_ = v.BindEnv("queues", "airports", "exchange", "type")
 	_ = v.BindEnv("queues", "airports", "exchange", "name")
@@ -71,11 +75,15 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 		return nil, errors.New("missing rabbit address")
 	}
 
-	getterAddressesStr := env.GetString("getter.addresses")
-	if getterAddressesStr == "" {
-		return nil, errors.New("missing getter address")
+	getterAddressesMap := make(map[uint8][]string)
+	for i := uint8(1); i < 5; i++ {
+		getterAddressesStr := env.GetString(fmt.Sprintf("getter.addresses.%v", i))
+		if getterAddressesStr == "" {
+			return nil, errors.New(fmt.Sprintf("missing getter address %v", i))
+		}
+		getterAddresses := strings.Split(getterAddressesStr, utils.CommaSeparator)
+		getterAddressesMap[i] = getterAddresses
 	}
-	getterAddresses := strings.Split(getterAddressesStr, utils.CommaSeparator)
 
 	typeExchangeAirports := env.GetString("queues.airports.exchange.type")
 	if typeExchangeAirports == "" {
@@ -111,14 +119,14 @@ func GetConfig(env *viper.Viper) (*ServerConfig, error) {
 	log.Infof("ServerConfig | action: config | result: success | id: %s | log_level: %s | getterAddresses: %v | serverAddress: %v ",
 		id,
 		env.GetString("log.level"),
-		getterAddresses,
+		getterAddressesMap,
 		serverAddress,
 	)
 
 	return &ServerConfig{
 		ID:                      id,
 		ServerAddress:           serverAddress,
-		GetterAddresses:         getterAddresses,
+		GetterAddresses:         getterAddressesMap,
 		ExchangeNameAirports:    nameExchangeAirports,
 		ExchangeTypeAirports:    typeExchangeAirports,
 		ExchangeRKAirports:      rkExchangeAirports,

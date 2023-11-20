@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -19,9 +20,10 @@ func main() {
 		log.Fatalf("Main - Ex4 Sink | Error initializing Config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
-	inputQueue := qFactory.CreateConsumer(config.InputQueueName)
-	toSaver4 := qFactory.CreateProducer(config.OutputQueueName)
+	qFanoutInputFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
+	qFanoutOutputFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueName, "")
+	inputQueue := qFanoutInputFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
+	toSaver4 := qFanoutOutputFactory.CreateProducer(config.OutputQueueName)
 
 	sink := NewJourneySink(inputQueue, toSaver4, config.SaversCount)
 	go sink.HandleJourneys()

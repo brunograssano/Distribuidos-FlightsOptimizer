@@ -3,7 +3,6 @@ package reducer
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
-	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,10 +16,13 @@ type Reducer struct {
 }
 
 // NewReducer Creates a new reducer
-func NewReducer(reducerId int, queueFactory queuefactory.QueueProtocolFactory, c *Config) *Reducer {
-	consumer := queueFactory.CreateConsumer(c.InputQueueName)
-	producer := queueFactory.CreateProducer(c.OutputQueueName)
-	prodToCons := queueFactory.CreateProducer(c.InputQueueName)
+func NewReducer(
+	reducerId int,
+	consumer queueProtocol.ConsumerProtocolInterface,
+	producer queueProtocol.ProducerProtocolInterface,
+	prodToCons queueProtocol.ProducerProtocolInterface,
+	c *Config,
+) *Reducer {
 	return &Reducer{
 		reducerId:  reducerId,
 		c:          c,

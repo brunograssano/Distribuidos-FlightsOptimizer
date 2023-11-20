@@ -52,8 +52,8 @@ func NewEx3Handler(c *SaverConfig, qFactory queuefactory.QueueProtocolFactory) *
 	var jds []*dispatcher.JourneyDispatcher
 	for i := uint(0); i < c.DispatchersCount; i++ {
 		// We create the input queue to the EX3 service
-		inputQueue := qFactory.CreateConsumer(c.InputQueueName)
-		prodToInput := qFactory.CreateProducer(c.InputQueueName)
+		inputQueue := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
+		prodToInput := qFactory.CreateProducer(c.ID)
 		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
 	}
 

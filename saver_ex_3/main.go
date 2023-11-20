@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("Main - Saver Ex3 | Error initializing config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	qFactory := queuefactory.NewTopicFactory(qMiddleware, []string{"", config.ID}, config.InputQueueName)
 	saverEx3 := ex3.NewEx3Handler(config, qFactory)
 	go saverEx3.StartHandler()
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)

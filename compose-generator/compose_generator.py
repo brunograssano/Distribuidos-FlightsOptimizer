@@ -17,6 +17,8 @@ def generate_compose():
     ex4Dispatchers = ask_for_int_input("How many dispatchers for ex4? ")
     healthCheckers = ask_for_int_input("How many healthCheckers? ")
     calculators = ask_for_int_input("How many Average Calculators? ")
+    savers = ask_for_int_input("How many Replicas for Savers? ")
+    sinks = ask_for_int_input("How many Replicas for Sink Ex4? ")
 
     env = Environment(loader=FileSystemLoader("templates/"))
 
@@ -34,7 +36,9 @@ def generate_compose():
             ex4Savers=ex4Savers,
             ex4Dispatchers=ex4Dispatchers,
             healthcheckers=healthCheckers,
-            calculators=calculators
+            calculators=calculators,
+            savers=savers,
+            sinks=sinks
         )
     )
         

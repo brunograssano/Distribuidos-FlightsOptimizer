@@ -20,11 +20,11 @@ type ClientHandler struct {
 	conn               *socketsProtocol.SocketProtocolHandler
 	outQueueAirports   queues.ProducerProtocolInterface
 	outQueueFlightRows queues.ProducerProtocolInterface
-	GetterAddresses    []string
+	GetterAddresses    map[uint8][]string
 	clientId           string
 }
 
-func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses []string) *ClientHandler {
+func NewClientHandler(conn *communication.TCPSocket, outQueueAirports middleware.ProducerInterface, outQueueFlightRows middleware.ProducerInterface, GetterAddresses map[uint8][]string) *ClientHandler {
 	sph := socketsProtocol.NewSocketProtocolHandler(conn)
 	return &ClientHandler{
 		conn:               sph,
@@ -68,26 +68,21 @@ func (ch *ClientHandler) handleGetterMessage(
 }
 
 func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocolHandler) error {
-
-	for i := 0; i < len(ch.GetterAddresses); i++ {
+	for ex, addresses := range ch.GetterAddresses {
 		currSleep := 2
-		socketGetter, err := communication.NewActiveTCPSocket(ch.GetterAddresses[i])
-		if err != nil {
-			log.Errorf("ClientHandler | Error trying to connect to getter for exercise %v | %v | Ending getter conn and returning error.", i+1, err)
-			_ = socketGetter.Close()
-			return err
-		}
+		socketGetter := ch.connectToGetter(addresses, ex)
+
 		getterSPH := socketsProtocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
 		initialMessage := &dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: ch.clientId}
-		err = getterSPH.Write(initialMessage)
+		err := getterSPH.Write(initialMessage)
 		if err != nil {
-			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", ex, err)
 		}
 		for {
 
 			msg, err := getterSPH.Read()
 			if err != nil {
-				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", i+1, err)
+				log.Errorf("ClientHandler | Error trying to read from getter #%v | %v | Ending loop...", ex, err)
 				_ = socketGetter.Close()
 				return err
 			}
@@ -96,6 +91,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 				break
 			}
 			if shouldReconnect {
+				//TODO: Ver que hacemos con esto. Reconectar a otro server? Ver hasta donde llego la respuesta?
 				newSPH, err := exponentialBackoffConnection(&currSleep, socketGetter)
 				if err != nil {
 					return err
@@ -103,7 +99,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 				getterSPH = newSPH
 				err = getterSPH.Write(initialMessage)
 				if err != nil {
-					log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", i+1, err)
+					log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", ex, err)
 				}
 			}
 			if err != nil {
@@ -111,6 +107,20 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 			}
 		}
 		_ = socketGetter.Close()
+	}
+	return nil
+}
+
+func (ch *ClientHandler) connectToGetter(addresses []string, ex uint8) *communication.ActiveTCPSocket {
+	// TODO si fallo con todos exponential backoff
+	for _, address := range addresses {
+		socketGetter, err := communication.NewActiveTCPSocket(address)
+		if err != nil {
+			log.Errorf("ClientHandler | Error trying to connect to getter for exercise %v | %v | Ending getter conn and returning error. | Address: %v", ex+1, err, address)
+		}
+		if socketGetter != nil {
+			return socketGetter
+		}
 	}
 	return nil
 }

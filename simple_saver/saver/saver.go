@@ -19,7 +19,7 @@ type SimpleSaver struct {
 
 // NewSimpleSaver Creates a new saver for the results
 func NewSimpleSaver(qFactory queuefactory.QueueProtocolFactory, c *Config) *SimpleSaver {
-	consumer := qFactory.CreateConsumer(c.InputQueueName)
+	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 	return &SimpleSaver{c: c, consumer: consumer}
 }
 

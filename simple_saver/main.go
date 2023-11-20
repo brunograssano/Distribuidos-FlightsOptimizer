@@ -24,7 +24,8 @@ func main() {
 	}
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	simpleSaver := saver.NewSimpleSaver(queuefactory.NewSimpleQueueFactory(qMiddleware), config)
+	qFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
+	simpleSaver := saver.NewSimpleSaver(qFactory, config)
 	go simpleSaver.SaveData()
 
 	getterConf := getters.NewGetterConfig(config.ID, []string{config.OutputFileName}, config.GetterAddress, config.GetterBatchLines)

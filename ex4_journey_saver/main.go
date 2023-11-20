@@ -21,10 +21,11 @@ func main() {
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewDirectExchangeConsumerSimpleProdQueueFactory(qMiddleware, config.RoutingKeyInput)
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameAccum, "")
+	qFanoutFactorySink := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameSaver, "")
 	for i := uint(0); i < config.InternalSaversCount; i++ {
 		inputQ := qFactory.CreateConsumer(config.InputQueueName)
 		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
-		prodToSink := qFactory.CreateProducer(config.OutputQueueNameSaver)
+		prodToSink := qFanoutFactorySink.CreateProducer(config.OutputQueueNameSaver)
 		js := NewJourneySaver(inputQ, prodToAccum, prodToSink)
 		go js.SavePricesForJourneys()
 	}
