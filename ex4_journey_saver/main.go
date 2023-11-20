@@ -20,9 +20,10 @@ func main() {
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewDirectExchangeConsumerSimpleProdQueueFactory(qMiddleware, config.RoutingKeyInput)
+	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameAccum, "")
 	for i := uint(0); i < config.InternalSaversCount; i++ {
 		inputQ := qFactory.CreateConsumer(config.InputQueueName)
-		prodToAccum := qFactory.CreateProducer(config.OutputQueueNameAccum)
+		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
 		prodToSink := qFactory.CreateProducer(config.OutputQueueNameSaver)
 		js := NewJourneySaver(inputQ, prodToAccum, prodToSink)
 		go js.SavePricesForJourneys()

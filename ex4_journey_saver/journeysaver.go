@@ -18,11 +18,12 @@ type JourneySaver struct {
 	accumProducer          queueProtocol.ProducerProtocolInterface
 	avgAndMaxProducer      queueProtocol.ProducerProtocolInterface
 	partialResultsByClient map[string]*PartialResult
+	processedClients       map[string]bool
 }
 
 // NewJourneySaver Creates a new JourneySaver
 func NewJourneySaver(consumer queueProtocol.ConsumerProtocolInterface, accumProducer queueProtocol.ProducerProtocolInterface, avgAndMaxProducer queueProtocol.ProducerProtocolInterface) *JourneySaver {
-	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, partialResultsByClient: make(map[string]*PartialResult)}
+	return &JourneySaver{consumer: consumer, accumProducer: accumProducer, avgAndMaxProducer: avgAndMaxProducer, partialResultsByClient: make(map[string]*PartialResult), processedClients: make(map[string]bool)}
 }
 
 func (js *JourneySaver) saveRowsInFiles(dynMaps []*dataStructure.DynamicMap, clientId string) {
@@ -233,7 +234,10 @@ func (js *JourneySaver) SavePricesForJourneys() {
 				log.Errorf("JourneySaver | Error getting finalAvg")
 			}
 			log.Infof("JourneySaver | Received Final Avg: %v. Now sending Average for Journeys...", finalAvg)
-			js.sendAverageForJourneys(finalAvg, msg.ClientId)
+			_, exists := js.processedClients[msg.ClientId]
+			if !exists {
+				js.sendAverageForJourneys(finalAvg, msg.ClientId)
+			}
 
 		}
 	}
@@ -241,4 +245,5 @@ func (js *JourneySaver) SavePricesForJourneys() {
 
 func (js *JourneySaver) clearInternalState(clientId string) {
 	delete(js.partialResultsByClient, clientId)
+	js.processedClients[clientId] = true
 }

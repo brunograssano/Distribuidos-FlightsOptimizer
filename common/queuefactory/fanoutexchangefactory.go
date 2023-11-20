@@ -16,8 +16,8 @@ func NewFanoutExchangeQueueFactory(qMiddleware middleware.QueueMiddlewareI, exch
 	return &FanoutExchangeQueueFactory{qMiddleware: qMiddleware, exchangeName: exchangeName, routingKey: routingKey}
 }
 
-func (s *FanoutExchangeQueueFactory) CreateProducer(queueName string) queues.ProducerProtocolInterface {
-	producer := s.qMiddleware.CreateProducer(queueName, true)
+func (s *FanoutExchangeQueueFactory) CreateProducer(_ string) queues.ProducerProtocolInterface {
+	producer := s.qMiddleware.CreateExchangeProducer(s.exchangeName, s.routingKey, "fanout", true)
 	return queues.NewProducerQueueProtocolHandler(producer)
 }
 
