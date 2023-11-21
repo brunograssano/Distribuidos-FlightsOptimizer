@@ -2,13 +2,11 @@ package ex3
 
 import (
 	"fmt"
-	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
-	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,33 +15,29 @@ type Ex3Handler struct {
 	journeyDispatcher        []*dispatcher.JourneyDispatcher
 	savers                   []*SaverForEx3
 	getter                   *getters.Getter
-	channels                 []chan *dataStructures.Message
 	finishedSignals          chan string
 	outputFilenames          []string
 	quantityFinishedByClient map[string]uint
 }
 
 // NewEx3Handler Creates a new exercise 3 handler
-func NewEx3Handler(c *SaverConfig, qFactory queuefactory.QueueProtocolFactory) *Ex3Handler {
-	var channels []chan *dataStructures.Message
+func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtocolFactory, internalQFactory queuefactory.QueueProtocolFactory) *Ex3Handler {
 
 	// Creation of the JourneySavers, they handle the prices per journey
-	var internalSavers []*SaverForEx3
+	var internalSaversConsumers []*SaverForEx3
 	var outputFileNames []string
 	finishSignal := make(chan string, c.InternalSaversCount)
-	var toInternalSaversChannels []queueProtocol.ProducerProtocolInterface
+	var toInternalSavers []queueProtocol.ProducerProtocolInterface
 	log.Infof("Ex3Handler | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
-		internalSaverChannel := make(chan *dataStructures.Message, utils.BufferSizeChannels)
-		channels = append(channels, internalSaverChannel)
-		internalSavers = append(internalSavers, NewSaverForEx3(
-			queueProtocol.NewConsumerChannel(internalSaverChannel),
+		internalSaversConsumers = append(internalSaversConsumers, NewSaverForEx3(
+			internalQFactory.CreateConsumer(fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)),
 			c,
 			finishSignal,
 			i,
 		))
 		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v", c.OutputFilePrefix, i))
-		toInternalSaversChannels = append(toInternalSaversChannels, queueProtocol.NewProducerChannel(internalSaverChannel))
+		toInternalSavers = append(toInternalSavers, internalQFactory.CreateProducer(fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)))
 		log.Infof("Ex3Handler | Created Saver #%v correctly...", i)
 	}
 
@@ -52,9 +46,9 @@ func NewEx3Handler(c *SaverConfig, qFactory queuefactory.QueueProtocolFactory) *
 	var jds []*dispatcher.JourneyDispatcher
 	for i := uint(0); i < c.DispatchersCount; i++ {
 		// We create the input queue to the EX3 service
-		inputQueue := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
-		prodToInput := qFactory.CreateProducer(c.ID)
-		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSaversChannels))
+		inputQueue := dispatchersQFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
+		prodToInput := dispatchersQFactory.CreateProducer(c.ID)
+		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSavers))
 	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)
@@ -66,8 +60,7 @@ func NewEx3Handler(c *SaverConfig, qFactory queuefactory.QueueProtocolFactory) *
 	return &Ex3Handler{
 		c:                        c,
 		journeyDispatcher:        jds,
-		channels:                 channels,
-		savers:                   internalSavers,
+		savers:                   internalSaversConsumers,
 		getter:                   getter,
 		finishedSignals:          finishSignal,
 		outputFilenames:          outputFileNames,
@@ -122,11 +115,6 @@ func (se3 *Ex3Handler) StartHandler() {
 // Close Closes the handler of the exercise 4
 func (se3 *Ex3Handler) Close() {
 	log.Infof("Ex3Handler | Closing resources...")
-	log.Infof("Ex3Handler | Starting channel closing...")
-	for idx, channel := range se3.channels {
-		log.Infof("Ex3Handler | Closing channel #%v", idx)
-		close(channel)
-	}
 	close(se3.finishedSignals)
 	log.Infof("Ex3Handler | Closing Getter")
 	se3.getter.Close()

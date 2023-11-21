@@ -22,7 +22,7 @@ func main() {
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewTopicFactory(qMiddleware, []string{"", config.ID}, config.InputQueueName)
-	saverEx3 := ex3.NewEx3Handler(config, qFactory)
+	saverEx3 := ex3.NewEx3Handler(config, qFactory, queuefactory.NewSimpleQueueFactory(qMiddleware))
 	go saverEx3.StartHandler()
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
