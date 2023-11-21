@@ -6,7 +6,6 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"net"
 	"strconv"
 	"strings"
 )
@@ -17,8 +16,8 @@ type Config struct {
 	Address        string
 	RestartTime    uint
 	CheckTime      uint
-	UdpAddress     *net.UDPAddr
-	NetAddresses   map[uint8]*net.UDPAddr
+	UdpAddress     []string
+	NetAddresses   map[uint8][]string
 	ElectionId     uint8
 	HealthCheckers []string
 	Name           string
@@ -94,37 +93,20 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 	if udpAddressString == "" {
 		return nil, errors.New("missing udpAddress")
 	}
-	ipAndPort := strings.Split(udpAddressString, ":")
-	port, err := strconv.Atoi(ipAndPort[1])
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("port error when converting to int: %v", err))
-	}
-	ip, err := net.LookupIP(ipAndPort[0])
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("ip error when doing lookup: %v", err))
-	}
-	udpAddress := &net.UDPAddr{IP: ip[0], Port: port}
+	udpAddress := strings.Split(udpAddressString, ":")
 
 	electionParticipantsIdsAndAddresses := env.GetString("healthchecker.election.id.addresses")
-	electionParticipants := make(map[uint8]*net.UDPAddr)
+	electionParticipants := make(map[uint8][]string)
 	if electionParticipantsIdsAndAddresses != "" {
 		idsWithAddresses := strings.Split(electionParticipantsIdsAndAddresses, ",")
 		for _, idAndAddress := range idsWithAddresses {
 			idIpPort := strings.Split(idAndAddress, ":")
-			port, err := strconv.Atoi(idIpPort[2])
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("error converting port to int: %v", err))
+			idNodeStr := idIpPort[0]
+			idNode, err := strconv.Atoi(idNodeStr)
+			if err != nil || idNode > 255 {
+				return nil, errors.New(fmt.Sprintf("election node id error when converting to int8: %v", err))
 			}
-			ipUDP, err := net.LookupIP(idIpPort[1])
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("ip error when doing lookup: %v", err))
-			}
-			udpAddr := &net.UDPAddr{IP: ipUDP[0], Port: port}
-			nodeId, err := strconv.Atoi(idIpPort[0])
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("error converting id to int: %v", err))
-			}
-			electionParticipants[uint8(nodeId)] = udpAddr
+			electionParticipants[uint8(idNode)] = idIpPort[1:]
 		}
 	} else {
 		log.Warnf("HealthChecker Config | There is only one healthchecker")
@@ -150,7 +132,7 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		restartTime,
 		checkTime,
 		myElectionId,
-		udpAddressString,
+		udpAddress,
 		electionParticipantsIdsAndAddresses,
 		hcAddresses,
 		name,

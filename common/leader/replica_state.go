@@ -19,8 +19,8 @@ type ReplicaState struct {
 	leaderDown    chan bool
 }
 
-func NewReplicaState(leaderAddress *net.UDPAddr, nodeId uint8, leaderDown chan bool) (*ReplicaState, error) {
-	udpCli, err := communication.NewUdpClient(fmt.Sprintf("%v:%v", leaderAddress.IP.String(), leaderAddress.Port))
+func NewReplicaState(leaderAddress []string, nodeId uint8, leaderDown chan bool) (*ReplicaState, error) {
+	udpCli, err := communication.NewUdpClient(fmt.Sprintf("%v:%v", leaderAddress[0], leaderAddress[1]))
 	if err != nil {
 		log.Errorf("ReplicaState | Error instantiating udp Client | %v", err)
 		return nil, err

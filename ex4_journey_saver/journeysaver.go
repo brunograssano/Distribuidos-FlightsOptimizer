@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // JourneySaver Handles the prices of the assigned journeys
@@ -184,7 +185,7 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32, clientId string
 		dynMap := make(map[string][]byte)
 		dynMap[utils.Avg] = serializer.SerializeFloat(journeyAverage)
 		dynMap[utils.Max] = serializer.SerializeFloat(journeyMax)
-		dynMap[utils.Journey] = serializer.SerializeString(fileStr)
+		dynMap[utils.Journey] = serializer.SerializeString(strings.Split(fileStr, "_")[0])
 		data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
 		msg := &dataStructure.Message{
 			TypeMessage: dataStructure.FlightRows,
@@ -233,10 +234,13 @@ func (js *JourneySaver) SavePricesForJourneys() {
 			if err != nil {
 				log.Errorf("JourneySaver | Error getting finalAvg")
 			}
-			log.Infof("JourneySaver | Received Final Avg: %v. Now sending Average for Journeys...", finalAvg)
+			log.Infof("JourneySaver | Received Final Avg: %v | Client %v | Checking if it was already processed...", finalAvg, msg.ClientId)
 			_, exists := js.processedClients[msg.ClientId]
 			if !exists {
+				log.Infof("JourneySaver | It was not processed | Client %v | Now sending Average for Journeys...", msg.ClientId)
 				js.sendAverageForJourneys(finalAvg, msg.ClientId)
+			} else {
+				log.Infof("JourneySaver | Message was duplicated | Client %v | Discarding it... ", msg.ClientId)
 			}
 
 		}

@@ -49,6 +49,10 @@ func (s *SimpleSaver) SaveData() {
 }
 
 func (s *SimpleSaver) handleFlightRows(msg *dataStructures.Message) error {
+	if filemanager.DirectoryExists(msg.ClientId) {
+		log.Warnf("SimpleSaver | Already processed client %v, discarding message...", msg.ClientId)
+		return nil
+	}
 	file := fmt.Sprintf("%v_%v.csv", s.c.OutputFileName, msg.ClientId)
 	writer, err := filemanager.NewFileWriter(file)
 	if err != nil {
