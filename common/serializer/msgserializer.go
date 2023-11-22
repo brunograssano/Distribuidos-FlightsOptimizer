@@ -17,10 +17,14 @@ func SerializeMsg(msg *dataStructures.Message) []byte {
 	nRows := SerializeUint(uint32(len(msg.DynMaps)))
 	sizeUuidBytes := SerializeUint(uint32(len(msg.ClientId)))
 	uuidBytes := SerializeString(msg.ClientId)
+	messageId := SerializeUint(uint32(msg.MessageId))
+	rowId := SerializeUint(uint32(msg.RowId))
 	serializedMsg = append(serializedMsg, typeBytes...)
 	serializedMsg = append(serializedMsg, nRows...)
 	serializedMsg = append(serializedMsg, sizeUuidBytes...)
 	serializedMsg = append(serializedMsg, uuidBytes...)
+	serializedMsg = append(serializedMsg, messageId...)
+	serializedMsg = append(serializedMsg, rowId...)
 	for _, row := range msg.DynMaps {
 		serializedRow := SerializeDynMap(row)
 		serializedMsg = append(serializedMsg, serializedRow...)
@@ -38,6 +42,10 @@ func DeserializeMsg(bytesMsg []byte) *dataStructures.Message {
 	offset += 4
 	clientId := DeserializeString(bytesMsg[offset : offset+sizeOfClientId])
 	offset += sizeOfClientId
+	messageId := uint(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
+	offset += 4
+	rowId := uint16(binary.BigEndian.Uint32(bytesMsg[offset : offset+2]))
+	offset += 2
 	var dynMaps []*dataStructures.DynamicMap
 	for i := 0; i < nRows; i++ {
 		dynMap, bytesRead := DeserializeDynMap(bytesMsg[offset:])
@@ -48,6 +56,8 @@ func DeserializeMsg(bytesMsg []byte) *dataStructures.Message {
 		TypeMessage: typeMsg,
 		DynMaps:     dynMaps,
 		ClientId:    clientId,
+		MessageId:   messageId,
+		RowId:       rowId,
 	}
 }
 
