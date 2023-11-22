@@ -7,6 +7,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	log "github.com/sirupsen/logrus"
 	"net"
+	"strconv"
 )
 
 type ElectionService interface {
@@ -18,22 +19,26 @@ type ElectionService interface {
 type LeaderElectionService struct {
 	currentState     BullyState
 	id               uint8
-	address          *net.UDPAddr
+	address          []string
 	leaderID         uint8
 	listener         *sockets.UdpProtocolhandler
-	netAddresses     map[uint8]*net.UDPAddr
+	netAddresses     map[uint8][]string
 	netClientSockets map[uint8]*sockets.UdpProtocolhandler
 	leaderDown       chan bool
 }
 
-func NewLeaderElectionService(id uint8, networkNodes map[uint8]*net.UDPAddr, myAddr *net.UDPAddr) *LeaderElectionService {
+func NewLeaderElectionService(id uint8, networkNodes map[uint8][]string, myAddr []string) *LeaderElectionService {
 	netClientSockets := make(map[uint8]*sockets.UdpProtocolhandler)
-	listenerSocketUdp, err := communication.NewUdpServer(myAddr.IP.String(), myAddr.Port)
+	port, err := strconv.Atoi(myAddr[1])
+	if err != nil {
+		log.Errorf("LeaderElectionService | Error converting port from string to int | %v", err)
+	}
+	listenerSocketUdp, err := communication.NewUdpServer(myAddr[0], port)
 	if err != nil {
 		log.Fatalf("LeaderElectionService %v | Error trying to create UDP Server Socket | %v", id, err)
 	}
 	for idNode, udpAddr := range networkNodes {
-		udpCli, err := communication.NewUdpClient(fmt.Sprintf("%v:%v", udpAddr.IP.String(), udpAddr.Port))
+		udpCli, err := communication.NewUdpClient(fmt.Sprintf("%v:%v", udpAddr[0], udpAddr[1]))
 		if err != nil {
 			log.Errorf("LeaderElectionService | Error trying to create UDP Client Socket | %v", err)
 		}

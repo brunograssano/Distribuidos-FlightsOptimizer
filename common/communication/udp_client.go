@@ -8,24 +8,39 @@ import (
 )
 
 type UdpClient struct {
-	conn net.Conn
+	conn    net.Conn
+	address string
 }
 
 const UdpReadTimeout = 400
 
 func NewUdpClient(address string) (*UdpClient, error) {
+	conn, err := connectUDP(address)
+	return &UdpClient{
+			conn:    conn,
+			address: address,
+		},
+		err
+}
+
+func connectUDP(address string) (net.Conn, error) {
 	conn, err := net.Dial("udp", address)
 	if err != nil {
 		log.Errorf("UdpClient | Error trying to create | %v", err)
 		return nil, err
 	}
-	return &UdpClient{
-			conn: conn,
-		},
-		nil
+	return conn, nil
 }
 
 func (u *UdpClient) Receive(sizeToRecv uint) ([]byte, *net.UDPAddr, error) {
+	if u.conn == nil {
+		conn, err := connectUDP(u.address)
+		if err != nil {
+			log.Errorf("UdpClient | Error trying to create | %v", err)
+			return []byte{}, nil, err
+		}
+		u.conn = conn
+	}
 	err := u.conn.SetReadDeadline(time.Now().Add(UdpReadTimeout * time.Millisecond))
 	if err != nil {
 		log.Errorf("UdpClient | Error setting read timeout | %v", err)
@@ -46,6 +61,14 @@ func (u *UdpClient) Receive(sizeToRecv uint) ([]byte, *net.UDPAddr, error) {
 }
 
 func (u *UdpClient) Send(message []byte, _ *net.UDPAddr) (int, error) {
+	if u.conn == nil {
+		conn, err := connectUDP(u.address)
+		if err != nil {
+			log.Errorf("UdpClient | Error trying to create | %v", err)
+			return 0, err
+		}
+		u.conn = conn
+	}
 	sizeSent, err := u.conn.Write(message)
 	if err != nil {
 		log.Errorf("UdpServer | Error trying to Write | %v", err)
