@@ -75,11 +75,7 @@ func (fe *FilterStopovers) handleFlightRows(msg *dataStructures.Message) {
 	if len(filteredRows) > 0 {
 		log.Debugf("FilterStopovers %v | Sending filtered rows to next nodes. Input length: %v, output length: %v", fe.filterId, len(msg.DynMaps), len(filteredRows))
 		for _, producer := range fe.producers {
-			err := producer.Send(&dataStructures.Message{
-				TypeMessage: dataStructures.FlightRows,
-				DynMaps:     filteredRows,
-				ClientId:    msg.ClientId,
-			})
+			err := producer.Send(dataStructures.NewMessageWithData(msg, filteredRows))
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error trying to send message that passed filter...", fe.filterId)
 			}

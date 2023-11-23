@@ -26,7 +26,7 @@ func main() {
 		inputQ := qFactory.CreateConsumer(config.InputQueueName)
 		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
 		prodToSink := qFanoutFactorySink.CreateProducer(config.OutputQueueNameSaver)
-		js := NewJourneySaver(inputQ, prodToAccum, prodToSink)
+		js := NewJourneySaver(inputQ, prodToAccum, prodToSink, config.TotalSaversCount)
 		go js.SavePricesForJourneys()
 	}
 

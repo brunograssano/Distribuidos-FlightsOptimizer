@@ -1,6 +1,7 @@
 package queuefactory
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/duplicates"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
@@ -27,5 +28,5 @@ func (s *FanoutExchangeQueueFactory) CreateConsumer(queueName string) queues.Con
 	if err != nil {
 		log.Fatalf("FanoutExchangeQueueFactory | Error trying to bind the consumer's queue to the exchange | %v", err)
 	}
-	return queues.NewConsumerQueueProtocolHandler(consumer)
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
 }

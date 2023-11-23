@@ -67,7 +67,7 @@ func (r *Reducer) handleFlightRows(msg *dataStructures.Message) {
 		}
 		rows = append(rows, reducedData)
 	}
-	msg = &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: rows, ClientId: msg.ClientId}
+	msg = dataStructures.NewMessageWithData(msg, rows)
 	err := r.producer.Send(msg)
 	if err != nil {
 		log.Errorf("DimReducer %v | Error trying to send message to output queue", r.reducerId)

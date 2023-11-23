@@ -73,7 +73,7 @@ func (ch *ClientHandler) handleGetResults(cliSPH *socketsProtocol.SocketProtocol
 		socketGetter := ch.connectToGetter(addresses, ex)
 
 		getterSPH := socketsProtocol.NewSocketProtocolHandler(&socketGetter.TCPSocket)
-		initialMessage := &dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: ch.clientId}
+		initialMessage := dataStructures.NewGetResultsMessage(ch.clientId)
 		err := getterSPH.Write(initialMessage)
 		if err != nil {
 			log.Errorf("ClientHandler | Error trying to write to getter #%v | %v | Ending loop...", ex, err)

@@ -66,7 +66,7 @@ func (a *AvgCalculator) handleEofMsg(msg *dataStructure.Message) {
 
 	log.Debugf("AvgCalculator | New Accum Price: %v | New Accum Count: %v", a.valuesReceivedByClient[msg.ClientId].sumOfPrices, a.valuesReceivedByClient[msg.ClientId].sumOfRows)
 	if a.valuesReceivedByClient[msg.ClientId].numOfSavers == len(a.toJourneySavers) {
-		a.onFinishedClientId(msg.ClientId)
+		a.onFinishedClientId(msg)
 	}
 }
 
@@ -79,15 +79,16 @@ func (a *AvgCalculator) getPartialSumOfClient(msg *dataStructure.Message) Partia
 }
 
 // sendToJourneySavers Sends the average to the journey savers
-func (a *AvgCalculator) sendToJourneySavers(avg float32, clientId string) {
+func (a *AvgCalculator) sendToJourneySavers(avg float32, msg *dataStructure.Message) {
 	avgBytes := serializer.SerializeFloat(avg)
 	dynMap := make(map[string][]byte)
 	dynMap[utils.FinalAvg] = avgBytes
 	data := []*dataStructure.DynamicMap{dataStructure.NewDynamicMap(dynMap)}
-	msg := &dataStructure.Message{TypeMessage: dataStructure.FinalAvgMsg, DynMaps: data, ClientId: clientId}
+
 	for i, channel := range a.toJourneySavers {
-		log.Infof("AvgCalculator | Sending average for client %v to saver %v", clientId, i)
-		err := channel.Send(msg)
+		log.Infof("AvgCalculator | Sending average for client %v to saver %v", msg.ClientId, i)
+		msgToSend := dataStructure.NewTypeMessageWithDataAndMsgId(dataStructure.FinalAvgMsg, msg, data, msg.MessageId+uint(i)+1)
+		err := channel.Send(msgToSend)
 		if err != nil {
 			log.Errorf("AvgCalculator | Error sending avg | %v", err)
 		}
@@ -106,9 +107,9 @@ func (a *AvgCalculator) calculateAvg(sumOfRows int, sumOfPrices float32) float32
 	return avg
 }
 
-func (a *AvgCalculator) onFinishedClientId(clientId string) {
+func (a *AvgCalculator) onFinishedClientId(msg *dataStructure.Message) {
 	log.Infof("AvgCalculator | Received all local JourneySaver values, calculating average")
-	avg := a.calculateAvg(a.valuesReceivedByClient[clientId].sumOfRows, a.valuesReceivedByClient[clientId].sumOfPrices)
+	avg := a.calculateAvg(a.valuesReceivedByClient[msg.ClientId].sumOfRows, a.valuesReceivedByClient[msg.ClientId].sumOfPrices)
 	log.Infof("AvgCalculator | General Average is: %v | Now sending to journey savers...", avg)
-	a.sendToJourneySavers(avg, clientId)
+	a.sendToJourneySavers(avg, msg)
 }

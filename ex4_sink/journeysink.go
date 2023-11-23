@@ -51,7 +51,7 @@ func (j *JourneySink) handleEofMsg(msg *dataStructures.Message) {
 	j.journeySaversReceivedByClient[msg.ClientId]++
 	log.Infof("JourneySink | Received EOF of one journey saver | Accumulated %v | Total: %v ", j.journeySaversReceivedByClient[msg.ClientId], j.totalJourneySavers)
 	if j.journeySaversReceivedByClient[msg.ClientId] >= j.totalJourneySavers {
-		j.sendEofToNext(msg.ClientId)
+		j.sendEofToNext(msg)
 	}
 }
 
@@ -62,15 +62,11 @@ func (j *JourneySink) handleFlightRows(msg *dataStructures.Message) {
 	}
 }
 
-func (j *JourneySink) sendEofToNext(clientId string) {
+func (j *JourneySink) sendEofToNext(oldMsg *dataStructures.Message) {
 	log.Infof("JourneySink | Sending EOF to saver")
-	msg := &dataStructures.Message{
-		TypeMessage: dataStructures.EOFFlightRows,
-		ClientId:    clientId,
-	}
-	err := j.toSaver4Producer.Send(msg)
+	err := j.toSaver4Producer.Send(oldMsg)
 	if err != nil {
 		log.Errorf("JourneySink | Error sending EOF to saver | %v", err)
 	}
-	delete(j.journeySaversReceivedByClient, msg.ClientId)
+	delete(j.journeySaversReceivedByClient, oldMsg.ClientId)
 }

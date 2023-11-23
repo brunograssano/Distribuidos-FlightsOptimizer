@@ -82,16 +82,16 @@ func (d *DataProcessor) ProcessData() {
 			log.Debugf("DataProcessor %v | Received Batch of Rows. Now processing...", d.processorId)
 			ex123Rows, ex4Rows := d.processRows(msg.DynMaps)
 			log.Debugf("DataProcessor %v | Sending processed rows to next nodes...", d.processorId)
-			d.sendToEx123(ex123Rows, msg.ClientId)
-			d.sendToEx4(ex4Rows, msg.ClientId)
+			d.sendToEx123(ex123Rows, msg)
+			d.sendToEx4(ex4Rows, msg)
 		} else {
 			log.Warnf("DataProcessor %v | Warning Messsage | Received unknown type of message. Skipping it...", d.processorId)
 		}
 	}
 }
 
-func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap, clientId string) {
-	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex4Rows, ClientId: clientId}
+func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap, oldMsg *dataStructures.Message) {
+	msg := dataStructures.NewMessageWithData(oldMsg, ex4Rows)
 	err := d.producersEx4.Send(msg)
 	if err != nil {
 		log.Errorf("DataProcessor %v | Error trying to send to exercise 4 the serialized row | %v", d.processorId, err)
@@ -99,8 +99,8 @@ func (d *DataProcessor) sendToEx4(ex4Rows []*dataStructures.DynamicMap, clientId
 	log.Debugf("DataProcessor %v | Ending send of batch for Ex4...", d.processorId)
 }
 
-func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap, clientId string) {
-	msg := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: ex123Rows, ClientId: clientId}
+func (d *DataProcessor) sendToEx123(ex123Rows []*dataStructures.DynamicMap, oldMsg *dataStructures.Message) {
+	msg := dataStructures.NewMessageWithData(oldMsg, ex123Rows)
 	for _, producer := range d.producersEx123 {
 		err := producer.Send(msg)
 		if err != nil {

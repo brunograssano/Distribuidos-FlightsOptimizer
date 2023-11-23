@@ -20,6 +20,7 @@ type Ex4JourneySaverConfig struct {
 	RoutingKeyInput         uint
 	ServiceName             string
 	AddressesHealthCheckers []string
+	TotalSaversCount        uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -38,6 +39,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("rabbitmq", "queue", "outputs", "accum")
 	_ = v.BindEnv("rabbitmq", "queue", "outputs", "saver")
 	_ = v.BindEnv("internal", "savers", "count")
+	_ = v.BindEnv("total", "savers", "count")
 	_ = v.BindEnv("rabbitmq", "rk", "input")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
@@ -100,6 +102,11 @@ func GetConfig(env *viper.Viper) (*Ex4JourneySaverConfig, error) {
 		internalSaversCount = utils.DefaultGoroutines
 	}
 
+	totalSaversCount := env.GetUint("total.savers.count")
+	if totalSaversCount == 0 {
+		return nil, errors.New("missing total savers count")
+	}
+
 	if err := config.InitLogger(env.GetString("log.level")); err != nil {
 		return nil, err
 	}
@@ -122,5 +129,6 @@ func GetConfig(env *viper.Viper) (*Ex4JourneySaverConfig, error) {
 		RoutingKeyInput:         rkInput,
 		AddressesHealthCheckers: healthCheckerAddresses,
 		ServiceName:             serviceName,
+		TotalSaversCount:        totalSaversCount,
 	}, nil
 }

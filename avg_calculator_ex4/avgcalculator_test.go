@@ -37,9 +37,13 @@ func TestShouldReturnZeroIfTheSumIsZero(t *testing.T) {
 func TestShouldSendTheAverageToTheConsumers(t *testing.T) {
 	chan1 := make(chan *dataStructures.Message, 1)
 	chan2 := make(chan *dataStructures.Message, 1)
-	avgCalculator := &AvgCalculator{toJourneySavers: []queueProtocol.ProducerProtocolInterface{queueProtocol.NewProducerChannel(chan1), queueProtocol.NewProducerChannel(chan2)}}
+	avgCalculator := &AvgCalculator{
+		toJourneySavers: []queueProtocol.ProducerProtocolInterface{
+			queueProtocol.NewProducerChannel(chan1),
+			queueProtocol.NewProducerChannel(chan2),
+		}}
 
-	go avgCalculator.sendToJourneySavers(5, "1")
+	go avgCalculator.sendToJourneySavers(5, &dataStructures.Message{ClientId: "1", MessageId: 0, RowId: 0})
 
 	assertAvgFromChannel(t, 5, chan1)
 	assertAvgFromChannel(t, 5, chan2)

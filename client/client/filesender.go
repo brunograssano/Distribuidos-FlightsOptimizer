@@ -27,11 +27,13 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 	rows := make([]*dataStructures.DynamicMap, 0, conf.Batch)
 	addedToMsg := uint(0)
 
+	messageId := uint(0)
 	skipHeader(reader)
 	for reader.CanRead() {
 		line := reader.ReadLine()
 		if addedToMsg >= conf.Batch {
-			msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid}
+			msg := dataStructures.NewCompleteMessage(parser.GetMsgType(), rows, conf.Uuid, messageId)
+			messageId++
 			err = conn.Write(msg)
 			if err != nil {
 				log.Errorf("FileSend | Error trying to send file | %v", err)
@@ -54,9 +56,11 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 		return err
 	}
 	if addedToMsg > 0 {
-		msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid}
+		msg := dataStructures.NewCompleteMessage(parser.GetMsgType(), rows, conf.Uuid, messageId)
+		messageId++
+		// TODO verificar error
 		err = conn.Write(msg)
 	}
 
-	return conn.Write(&dataStructures.Message{TypeMessage: parser.GetEofMsgType(), ClientId: conf.Uuid})
+	return conn.Write(dataStructures.NewCompleteMessage(parser.GetEofMsgType(), []*dataStructures.DynamicMap{}, conf.Uuid, messageId))
 }
