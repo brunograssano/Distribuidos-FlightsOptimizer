@@ -2,6 +2,7 @@ package queuefactory
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/duplicates"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
@@ -30,5 +31,5 @@ func (d *DirectExchangeConsumerSimpleProdQueueFactory) CreateConsumer(queueName 
 		log.Fatalf("DirectExchangeConsumerSimpleProdQueueFactory | Error creating consumer: %v", err)
 	}
 	d.counter++
-	return queues.NewConsumerQueueProtocolHandler(consumerQueue)
+	return queues.NewConsumerQueueProtocolHandler(consumerQueue, duplicates.NewDuplicatesHandler())
 }

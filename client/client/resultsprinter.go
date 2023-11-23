@@ -19,7 +19,7 @@ func printResults(dynMaps []*dataStructures.DynamicMap) {
 
 func RequestResults(uuid string, conn *socketsProtocol.SocketProtocolHandler) {
 	log.Infof("Results printer | Requesting results")
-	msg := &dataStructures.Message{TypeMessage: dataStructures.GetResults, ClientId: uuid}
+	msg := dataStructures.NewGetResultsMessage(uuid)
 	err := conn.Write(msg)
 	if err != nil {
 		log.Errorf("Results printer | Error requesting results | %v", err)

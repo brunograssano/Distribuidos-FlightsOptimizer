@@ -32,7 +32,7 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 	for reader.CanRead() {
 		line := reader.ReadLine()
 		if addedToMsg >= conf.Batch {
-			msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid, MessageId: messageId}
+			msg := dataStructures.NewCompleteMessage(parser.GetMsgType(), rows, conf.Uuid, messageId)
 			messageId++
 			err = conn.Write(msg)
 			if err != nil {
@@ -56,10 +56,11 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 		return err
 	}
 	if addedToMsg > 0 {
-		msg := &dataStructures.Message{TypeMessage: parser.GetMsgType(), DynMaps: rows, ClientId: conf.Uuid, MessageId: messageId}
+		msg := dataStructures.NewCompleteMessage(parser.GetMsgType(), rows, conf.Uuid, messageId)
 		messageId++
+		// TODO verificar error
 		err = conn.Write(msg)
 	}
 
-	return conn.Write(&dataStructures.Message{TypeMessage: parser.GetEofMsgType(), ClientId: conf.Uuid, MessageId: messageId})
+	return conn.Write(dataStructures.NewCompleteMessage(parser.GetEofMsgType(), []*dataStructures.DynamicMap{}, conf.Uuid, messageId))
 }

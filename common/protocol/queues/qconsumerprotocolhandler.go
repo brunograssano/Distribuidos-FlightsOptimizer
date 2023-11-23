@@ -2,6 +2,7 @@ package queues
 
 import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+	"github.com/brunograssano/Distribuidos-TP1/common/duplicates"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	log "github.com/sirupsen/logrus"
@@ -12,29 +13,38 @@ type ConsumerQueueProtocolHandler struct {
 	status            bool
 	lastMsg           *dataStructures.Message
 	consumedByClients map[string]int
+	duplicatesHandler duplicates.DuplicateDetector
 }
 
-func NewConsumerQueueProtocolHandler(consumer middleware.ConsumerInterface) *ConsumerQueueProtocolHandler {
+func NewConsumerQueueProtocolHandler(consumer middleware.ConsumerInterface, duplicatesHandler duplicates.DuplicateDetector) *ConsumerQueueProtocolHandler {
 	return &ConsumerQueueProtocolHandler{
 		consumer:          consumer,
 		lastMsg:           nil,
 		consumedByClients: make(map[string]int),
+		duplicatesHandler: duplicatesHandler,
 	}
 }
 
 func (q *ConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
-	err := q.notifyStatusOfLastMessage()
-	if err != nil {
-		log.Errorf("ConsumerQueueProtocolHandler | Error notifying status of last message | %v", err)
+	var msg *dataStructures.Message
+	for {
+		err := q.notifyStatusOfLastMessage()
+		if err != nil {
+			log.Errorf("ConsumerQueueProtocolHandler | Error notifying status of last message | %v", err)
+		}
+		bytes, ok := q.consumer.Pop()
+		if !ok {
+			return nil, false
+		}
+		msg = serializer.DeserializeMsg(bytes)
+		q.lastMsg = msg
+		if !q.duplicatesHandler.IsDuplicate(msg) {
+			break
+		} else {
+			log.Warnf("ConsumerQueueProtocolhandler | Got Duplicated Message: %v-%v-%v| Discarding it...", msg.ClientId, msg.MessageId, msg.RowId)
+		}
 	}
-
-	bytes, ok := q.consumer.Pop()
-	if !ok {
-		return nil, ok
-	}
-	msg := serializer.DeserializeMsg(bytes)
-	q.lastMsg = msg
-	return msg, ok
+	return msg, true
 }
 
 func (q *ConsumerQueueProtocolHandler) GetReceivedMessages(clientId string) int {
@@ -55,6 +65,9 @@ func (q *ConsumerQueueProtocolHandler) SetStatusOfLastMessage(status bool) {
 }
 
 func (q *ConsumerQueueProtocolHandler) notifyStatusOfLastMessage() error {
+	if q.status && q.lastMsg != nil {
+		q.duplicatesHandler.SaveMessageSeen(q.lastMsg)
+	}
 	err := q.consumer.SignalFinishedMessage(q.status)
 	if err != nil {
 		log.Errorf("ConsumerProtocolHandler | Error trying to notify status of last message | %v", err)

@@ -277,6 +277,7 @@ services:
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
+      - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=0
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
     networks:
@@ -298,6 +299,7 @@ services:
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
+      - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=6
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
     networks:
@@ -739,4 +741,3 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.25.125.0/24

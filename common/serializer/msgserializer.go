@@ -44,8 +44,8 @@ func DeserializeMsg(bytesMsg []byte) *dataStructures.Message {
 	offset += sizeOfClientId
 	messageId := uint(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
 	offset += 4
-	rowId := uint16(binary.BigEndian.Uint32(bytesMsg[offset : offset+2]))
-	offset += 2
+	rowId := uint16(binary.BigEndian.Uint32(bytesMsg[offset : offset+4]))
+	offset += 4
 	var dynMaps []*dataStructures.DynamicMap
 	for i := 0; i < nRows; i++ {
 		dynMap, bytesRead := DeserializeDynMap(bytesMsg[offset:])

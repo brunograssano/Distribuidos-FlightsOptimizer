@@ -208,6 +208,6 @@ func (dc *DistanceCompleter) handleFlightRows(msg *dataStructures.Message) {
 		nextBatch = append(nextBatch, row)
 	}
 	log.Debugf("DistanceCompleter %v | Finished processing batch. Sending to next queue...", dc.completerId)
-	msgToSend := &dataStructures.Message{TypeMessage: dataStructures.FlightRows, DynMaps: nextBatch, ClientId: msg.ClientId}
+	msgToSend := dataStructures.NewMessageWithData(msg, nextBatch)
 	dc.sendNext(msgToSend)
 }

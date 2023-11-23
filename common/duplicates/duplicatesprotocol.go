@@ -6,6 +6,7 @@ const maxMessagesPerClient = 200
 
 type DuplicateDetector interface {
 	IsDuplicate(message *dataStructures.Message) bool
+	SaveMessageSeen(message *dataStructures.Message)
 }
 
 type DuplicatesHandler struct {
@@ -17,15 +18,20 @@ func NewDuplicatesHandler() *DuplicatesHandler {
 	return &DuplicatesHandler{lastMessagesSeen: make(map[string]map[uint]uint16)}
 }
 
-func (dh *DuplicatesHandler) deleteOldMessagesFromMap(clientId string) {
-	lenOfMessages := 0
+func (dh *DuplicatesHandler) getLengthAndShortestKey(clientId string) (int, int) {
 	shortestKey := -1
+	lenOfMessages := 0
 	for key := range dh.lastMessagesSeen[clientId] {
 		lenOfMessages++
 		if int(key) < shortestKey || shortestKey == -1 {
 			shortestKey = int(key)
 		}
 	}
+	return lenOfMessages, shortestKey
+}
+
+func (dh *DuplicatesHandler) deleteOldMessagesFromMap(clientId string) {
+	lenOfMessages, shortestKey := dh.getLengthAndShortestKey(clientId)
 	if lenOfMessages == maxMessagesPerClient {
 		delete(dh.lastMessagesSeen[clientId], uint(shortestKey))
 	}
@@ -38,13 +44,25 @@ func (dh *DuplicatesHandler) IsDuplicate(message *dataStructures.Message) bool {
 		dh.lastMessagesSeen[message.ClientId] = make(map[uint]uint16)
 		isDuplicate = false
 	}
+	lenOfMessages, shortestKey := dh.getLengthAndShortestKey(message.ClientId)
+	if lenOfMessages == maxMessagesPerClient && message.MessageId < uint(shortestKey) {
+		return true
+	}
 	lastRowSeenFromMessage, exists := dh.lastMessagesSeen[message.ClientId][message.MessageId]
 	if !exists || lastRowSeenFromMessage < message.RowId {
-		if !exists {
-			dh.deleteOldMessagesFromMap(message.ClientId)
-		}
-		dh.lastMessagesSeen[message.ClientId][message.MessageId] = message.RowId
 		isDuplicate = false
 	}
 	return isDuplicate
+}
+
+func (dh *DuplicatesHandler) SaveMessageSeen(message *dataStructures.Message) {
+	_, exists := dh.lastMessagesSeen[message.ClientId]
+	if !exists {
+		dh.lastMessagesSeen[message.ClientId] = make(map[uint]uint16)
+	}
+	_, exists = dh.lastMessagesSeen[message.ClientId][message.MessageId]
+	if !exists {
+		dh.deleteOldMessagesFromMap(message.ClientId)
+	}
+	dh.lastMessagesSeen[message.ClientId][message.MessageId] = message.RowId
 }

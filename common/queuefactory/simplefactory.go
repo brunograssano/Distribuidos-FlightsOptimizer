@@ -1,6 +1,7 @@
 package queuefactory
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/duplicates"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 )
@@ -20,5 +21,5 @@ func (s *SimpleQueueFactory) CreateProducer(queueName string) queues.ProducerPro
 
 func (s *SimpleQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
 	consumer := s.qMiddleware.CreateConsumer(queueName, true)
-	return queues.NewConsumerQueueProtocolHandler(consumer)
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
 }

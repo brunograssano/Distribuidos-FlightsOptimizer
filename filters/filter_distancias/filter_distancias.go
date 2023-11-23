@@ -80,11 +80,7 @@ func (fd *FilterDistances) handleFlightRows(msg *dataStructures.Message) {
 	if len(filteredRows) > 0 {
 		log.Debugf("FilterDistances %v | Sending filtered rows to next nodes | Input length: %v | Output length: %v", fd.filterId, len(msg.DynMaps), len(filteredRows))
 		for _, producer := range fd.producers {
-			err := producer.Send(&dataStructures.Message{
-				TypeMessage: dataStructures.FlightRows,
-				DynMaps:     filteredRows,
-				ClientId:    msg.ClientId,
-			})
+			err := producer.Send(dataStructures.NewMessageWithData(msg, filteredRows))
 			if err != nil {
 				log.Errorf("FilterDistances %v | Error trying to send message that passed filter | %v", fd.filterId, err)
 			}
