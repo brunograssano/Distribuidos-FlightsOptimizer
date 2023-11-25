@@ -12,6 +12,10 @@ type ProducerQueueProtocolHandler struct {
 	totalSentByClient map[string]int
 }
 
+const oldFile = "producer_chk_old.csv"
+const currFile = "producer_chk.csv"
+const tmpFile = "producer_chk_tmp.csv"
+
 func NewProducerQueueProtocolHandler(producer middleware.ProducerInterface) *ProducerQueueProtocolHandler {
 	return &ProducerQueueProtocolHandler{
 		producer:          producer,

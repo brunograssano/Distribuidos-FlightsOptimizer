@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -23,6 +24,7 @@ type DataProcessor struct {
 	ex123Columns   []string
 	ex4Columns     []string
 	inputQueueProd queueProtocol.ProducerProtocolInterface
+	checkpointer   *checkpointer.CheckpointerHandler
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
@@ -34,6 +36,10 @@ func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Con
 	}
 	producersEx4 := qFactory.CreateProducer(c.OutputQueueNameEx4)
 	inputQProd := qFactory.CreateProducer(c.InputQueueName)
+	checkpointers := []checkpointer.Checkpointable{producersEx4}
+	for i := 0; i < len(producersEx123); i++ {
+		checkpointers = append(checkpointers, producersEx123[i])
+	}
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,
@@ -43,6 +49,7 @@ func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Con
 		ex123Columns:   []string{utils.LegId, utils.StartingAirport, utils.DestinationAirport, utils.TravelDuration, utils.TotalFare, utils.TotalTravelDistance, utils.SegmentsAirlineName, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.StartingAirport, utils.DestinationAirport, utils.TotalFare},
 		inputQueueProd: inputQProd,
+		checkpointer:   checkpointer.NewCheckpointerHandler(checkpointers),
 	}
 }
 
@@ -86,6 +93,10 @@ func (d *DataProcessor) ProcessData() {
 			d.sendToEx4(ex4Rows, msg)
 		} else {
 			log.Warnf("DataProcessor %v | Warning Messsage | Received unknown type of message. Skipping it...", d.processorId)
+		}
+		err := d.checkpointer.DoCheckpoint()
+		if err != nil {
+			log.Errorf("DataProcessor #%v | Error on checkpointing | %v", d.processorId, err)
 		}
 	}
 }
