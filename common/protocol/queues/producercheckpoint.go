@@ -10,9 +10,13 @@ import (
 	"strings"
 )
 
-func (q *ProducerQueueProtocolHandler) DoCheckpoint(errors chan error) {
+const oldFile = "producer_chk_old.csv"
+const currFile = "producer_chk_curr.csv"
+const tmpFile = "producer_chk_tmp.csv"
+
+func (q *ProducerQueueProtocolHandler) DoCheckpoint(errors chan error, id int) {
 	log.Debugf("ProducerQueueProtocolHandler | Performing checkpoint")
-	fileWriter, err := filemanager.NewFileWriter(fmt.Sprintf(tmpFile))
+	fileWriter, err := filemanager.NewFileWriter(fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile))
 	if err != nil {
 		log.Errorf("ProducerQueueProtocolHandler | Error trying to create tmp checkpoint file | %v", err)
 		errors <- err
@@ -32,44 +36,85 @@ func (q *ProducerQueueProtocolHandler) DoCheckpoint(errors chan error) {
 	errors <- nil
 }
 
-func (q *ProducerQueueProtocolHandler) Commit() {
-	err := filemanager.DeleteFile(oldFile)
-	if err != nil {
-		log.Errorf("ProducerQueueProtocolHandler | Error deleting old file | %v", err)
+func (q *ProducerQueueProtocolHandler) Commit(id int) {
+	log.Debugf("ProducerQueueProtocolHandler | Commiting checkpoint for id: %v_%v", id, q.producer.GetName())
+	q.handleOldFile(id)
+	q.handleCurrFile(id)
+	q.handleTmpFile(id)
+}
+
+func (q *ProducerQueueProtocolHandler) handleTmpFile(id int) {
+	tmpFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile)
+	currFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), currFile)
+	if !filemanager.DirectoryExists(tmpFileName) {
+		log.Errorf("ProducerQueueProtocolHandler | Tmp file %v does not exist", tmpFileName)
+		return
 	}
-	err = filemanager.RenameFile(currFile, oldFile)
-	if err != nil {
-		log.Errorf("ProducerQueueProtocolHandler | Error renaming current checkpoint file | %v", err)
-	}
-	err = filemanager.RenameFile(tmpFile, currFile)
+	log.Debugf("ProducerQueueProtocolHandler | Renaming TMP Checkpoint into Current")
+	err := filemanager.RenameFile(tmpFileName, currFileName)
 	if err != nil {
 		log.Errorf("ProducerQueueProtocolHandler | Error renaming tmp file to current | %v", err)
 	}
 }
 
-func (q *ProducerQueueProtocolHandler) Abort() {
-	err := filemanager.DeleteFile(tmpFile)
+func (q *ProducerQueueProtocolHandler) handleCurrFile(id int) {
+	currFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), currFile)
+	oldFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), oldFile)
+	if !filemanager.DirectoryExists(currFileName) {
+		log.Debugf("ProducerQueueProtocolHandler | CurrFile %v does not exist", currFileName)
+		return
+	}
+	log.Debugf("ProducerQueueProtocolHandler | Renaming Current into Old Checkpoint")
+	err := filemanager.RenameFile(currFileName, oldFileName)
+	if err != nil {
+		log.Errorf("ProducerQueueProtocolHandler | Error renaming current checkpoint file | %v", err)
+	}
+}
+
+func (q *ProducerQueueProtocolHandler) handleOldFile(id int) {
+	oldFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), oldFile)
+	if !filemanager.DirectoryExists(oldFileName) {
+		log.Debugf("ProducerQueueProtocolHandler | OldFile %v does not exist", oldFileName)
+		return
+	}
+	log.Debugf("ProducerQueueProtocolHandler | Deleting Old Checkpoint")
+	err := filemanager.DeleteFile(oldFileName)
+	if err != nil {
+		log.Errorf("ProducerQueueProtocolHandler | Error deleting old file | %v", err)
+	}
+}
+
+func (q *ProducerQueueProtocolHandler) Abort(id int) {
+	tmpFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile)
+	log.Debugf("ProducerQueueProtocolHandler | Aborting Checkpoint | Deleting TMP Checkpoint File")
+	err := filemanager.DeleteFile(tmpFileName)
 	if err != nil {
 		log.Errorf("ProducerQueueProtocolHandler | Error deleting tmp file | %v", err)
 	}
 }
 
-func (q *ProducerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType) {
+func (q *ProducerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType, id int) {
+	oldFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), oldFile)
+	currFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), currFile)
 	if typeOfRecovery == checkpointer.Old {
-		if q.HasPendingCheckpoints() {
-			checkpointer.CopyOldIntoCurrent(oldFile, currFile)
+		if q.HasPendingCheckpoints(id) {
+			checkpointer.CopyOldIntoCurrent(oldFileName, currFileName)
 		}
-		q.readCheckpointAsState(oldFile)
+		q.readCheckpointAsState(oldFileName)
 	} else if typeOfRecovery == checkpointer.Curr {
-		q.readCheckpointAsState(currFile)
+		q.readCheckpointAsState(currFileName)
 	}
 }
 
-func (q *ProducerQueueProtocolHandler) HasPendingCheckpoints() bool {
-	return filemanager.DirectoryExists(tmpFile)
+func (q *ProducerQueueProtocolHandler) HasPendingCheckpoints(id int) bool {
+	return filemanager.DirectoryExists(fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile))
 }
 
 func (q *ProducerQueueProtocolHandler) readCheckpointAsState(fileToRestore string) {
+	if !filemanager.DirectoryExists(fileToRestore) {
+		log.Infof("ProducerQueueProtocolHandler | Does not have a checkpoint")
+		return
+	}
 	log.Infof("ProducerQueueProtocolHandler | Restoring checkpoint: %v", fileToRestore)
 	fileReader, err := filemanager.NewFileReader(fileToRestore)
 	if err != nil {

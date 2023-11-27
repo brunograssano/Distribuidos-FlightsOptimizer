@@ -28,18 +28,17 @@ type DataProcessor struct {
 }
 
 // NewDataProcessor Creates a new DataProcessor structure
-func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Config) *DataProcessor {
+func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Config, chkHandler *checkpointer.CheckpointerHandler) *DataProcessor {
 	consumer := qFactory.CreateConsumer(c.InputQueueName)
 	var producersEx123 []queueProtocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
-		producersEx123 = append(producersEx123, qFactory.CreateProducer(queueName))
+		prod := qFactory.CreateProducer(queueName)
+		producersEx123 = append(producersEx123, prod)
+		chkHandler.AddCheckpointable(prod, id)
 	}
 	producersEx4 := qFactory.CreateProducer(c.OutputQueueNameEx4)
 	inputQProd := qFactory.CreateProducer(c.InputQueueName)
-	checkpointers := []checkpointer.Checkpointable{producersEx4}
-	for i := 0; i < len(producersEx123); i++ {
-		checkpointers = append(checkpointers, producersEx123[i])
-	}
+	chkHandler.AddCheckpointable(producersEx4, id)
 	return &DataProcessor{
 		processorId:    id,
 		c:              c,
@@ -49,7 +48,7 @@ func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Con
 		ex123Columns:   []string{utils.LegId, utils.StartingAirport, utils.DestinationAirport, utils.TravelDuration, utils.TotalFare, utils.TotalTravelDistance, utils.SegmentsAirlineName, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.StartingAirport, utils.DestinationAirport, utils.TotalFare},
 		inputQueueProd: inputQProd,
-		checkpointer:   checkpointer.NewCheckpointerHandler(checkpointers),
+		checkpointer:   chkHandler,
 	}
 }
 
@@ -94,7 +93,7 @@ func (d *DataProcessor) ProcessData() {
 		} else {
 			log.Warnf("DataProcessor %v | Warning Messsage | Received unknown type of message. Skipping it...", d.processorId)
 		}
-		err := d.checkpointer.DoCheckpoint()
+		err := d.checkpointer.DoCheckpoint(d.processorId)
 		if err != nil {
 			log.Errorf("DataProcessor #%v | Error on checkpointing | %v", d.processorId, err)
 		}

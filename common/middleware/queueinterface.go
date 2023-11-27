@@ -2,6 +2,7 @@ package middleware
 
 type ProducerInterface interface {
 	Send(data []byte) error
+	GetName() string
 }
 
 type ConsumerInterface interface {

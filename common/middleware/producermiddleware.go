@@ -11,6 +11,7 @@ type Producer struct {
 	ProducerInterface
 	rabbitMQChannel *amqp.Channel
 	queue           amqp.Queue
+	name            string
 }
 
 const TimeoutSeconds = 5
@@ -20,6 +21,7 @@ func NewProducer(channel *amqp.Channel, name string, durable bool) *Producer {
 	return &Producer{
 		rabbitMQChannel: channel,
 		queue:           queue,
+		name:            name,
 	}
 }
 
@@ -41,4 +43,8 @@ func (queue *Producer) Send(data []byte) error {
 		return fmt.Errorf("failed to Publish content into queue: %v", err)
 	}
 	return nil
+}
+
+func (q *Producer) GetName() string {
+	return q.name
 }

@@ -6,24 +6,33 @@ import (
 )
 
 type CheckpointerHandler struct {
-	checkpointers []Checkpointable
+	checkpointersById map[int][]Checkpointable
 }
 
-func NewCheckpointerHandler(checkpointers []Checkpointable) *CheckpointerHandler {
+func NewCheckpointerHandler() *CheckpointerHandler {
 	return &CheckpointerHandler{
-		checkpointers,
+		checkpointersById: make(map[int][]Checkpointable),
 	}
 }
 
-func (c *CheckpointerHandler) DoCheckpoint() error {
-	responses := make(chan error, len(c.checkpointers))
+func (c *CheckpointerHandler) AddCheckpointable(checkpointable Checkpointable, id int) {
+	_, exists := c.checkpointersById[id]
+	if !exists {
+		c.checkpointersById[id] = []Checkpointable{}
+	}
+	c.checkpointersById[id] = append(c.checkpointersById[id], checkpointable)
+}
+
+func (c *CheckpointerHandler) DoCheckpoint(idCheckpointer int) error {
+	checkpointers := c.checkpointersById[idCheckpointer]
+	responses := make(chan error, len(checkpointers))
 	log.Debugf("CheckpointerHandler | Initializing Checkpointing...")
-	for _, checkpointable := range c.checkpointers {
-		go checkpointable.DoCheckpoint(responses)
+	for _, checkpointable := range checkpointers {
+		go checkpointable.DoCheckpoint(responses, idCheckpointer)
 	}
 	doCommit := true
-	log.Debugf("CheckpointerHandller | Checking for checkpointers responses...")
-	for i := 0; i < len(c.checkpointers); i++ {
+	log.Debugf("CheckpointerHandller | Checking for checkpointersById responses...")
+	for i := 0; i < len(checkpointers); i++ {
 		err := <-responses
 		if err != nil {
 			log.Errorf("CheckpointerHandler | Error trying to checkpoint | %v", err)
@@ -32,15 +41,31 @@ func (c *CheckpointerHandler) DoCheckpoint() error {
 	}
 	if doCommit {
 		log.Debugf("CheckpointerHandler | Commiting Checkpoint...")
-		for _, checkpointable := range c.checkpointers {
-			go checkpointable.Commit()
+		for _, checkpointable := range checkpointers {
+			go checkpointable.Commit(idCheckpointer)
 		}
 		return nil
 	}
 
 	log.Debugf("CheckpointerHandler | Aborting Checkpoint...")
-	for _, checkpointable := range c.checkpointers {
-		go checkpointable.Abort()
+	for _, checkpointable := range checkpointers {
+		go checkpointable.Abort(idCheckpointer)
 	}
 	return fmt.Errorf("error trying to do checkpoint, operation was aborted")
+}
+
+func (c *CheckpointerHandler) RestoreCheckpoint() {
+	checkpointType := Curr
+	for _, checkpointablesForProcess := range c.checkpointersById {
+		for idx, checkpointable := range checkpointablesForProcess {
+			if checkpointable.HasPendingCheckpoints(idx) {
+				checkpointType = Old
+			}
+		}
+	}
+	for _, checkpointablesForProcess := range c.checkpointersById {
+		for idx, checkpointable := range checkpointablesForProcess {
+			go checkpointable.RestoreCheckpoint(checkpointType, idx)
+		}
+	}
 }

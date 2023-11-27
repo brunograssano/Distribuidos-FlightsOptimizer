@@ -1,11 +1,11 @@
 package checkpointer
 
 type Checkpointable interface {
-	DoCheckpoint(chan error)
-	RestoreCheckpoint(fileType CheckpointType)
-	HasPendingCheckpoints() bool
-	Commit()
-	Abort()
+	DoCheckpoint(chan error, int)
+	RestoreCheckpoint(CheckpointType, int)
+	HasPendingCheckpoints(int) bool
+	Commit(int)
+	Abort(int)
 }
 
 type CheckpointType uint8
