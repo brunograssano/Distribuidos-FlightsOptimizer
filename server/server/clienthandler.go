@@ -174,10 +174,24 @@ func (ch *ClientHandler) handleMessage(message *dataStructures.Message, cliSPH *
 	log.Debugf("ClientHandler | Received Message | {type: %v, rowCount:%v}", message.TypeMessage, len(message.DynMaps))
 	ch.clientId = message.ClientId
 	if message.TypeMessage == dataStructures.Airports || message.TypeMessage == dataStructures.EOFAirports {
-		return false, ch.handleAirportMessage(message)
+		if message.TypeMessage == dataStructures.EOFAirports {
+			log.Infof("ClientHandler | Got EOF Airports | ClientId: %v", message.ClientId)
+		}
+		err := ch.handleAirportMessage(message)
+		if message.TypeMessage == dataStructures.EOFAirports {
+			log.Infof("ClientHandler | Sending ACK for EOF Airports | ClientId: %v", message.ClientId)
+			err = cliSPH.Write(dataStructures.NewCompleteMessage(dataStructures.EofAck, []*dataStructures.DynamicMap{}, message.ClientId, message.MessageId))
+		}
+		return false, err
 	}
 	if message.TypeMessage == dataStructures.EOFFlightRows {
-		return false, ch.handleEOFFlightRows(message)
+		log.Infof("ClientHandler | Got EOF FlightRows | ClientId: %v", message.ClientId)
+		err := ch.handleEOFFlightRows(message)
+		if err == nil {
+			log.Infof("ClientHandler | Sending ACK for EOF FlightRows | ClientId: %v", message.ClientId)
+			err = cliSPH.Write(dataStructures.NewCompleteMessage(dataStructures.EofAck, []*dataStructures.DynamicMap{}, message.ClientId, message.MessageId))
+		}
+		return false, err
 	}
 	if message.TypeMessage == dataStructures.FlightRows {
 		return false, ch.handleFlightRowMessage(message)
