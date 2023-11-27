@@ -25,9 +25,13 @@ func NewHealthChecker(healthCheckerConfig *Config, election leader.ElectionServi
 	if err != nil {
 		log.Fatalf("HealthChecker | Error instantiating server | %v", err)
 	}
+	containersTimes := make(map[string]time.Time)
+	for _, containerName := range healthCheckerConfig.Containers {
+		containersTimes[containerName] = time.Now()
+	}
 	return &HealthChecker{
 		server:             server,
-		timesLastHeartbeat: make(map[string]time.Time),
+		timesLastHeartbeat: containersTimes,
 		config:             healthCheckerConfig,
 		endSignal:          make(chan bool, 1),
 		election:           election,
