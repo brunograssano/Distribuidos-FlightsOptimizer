@@ -395,6 +395,7 @@ services:
       - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-{{i}}:8081
       - CLI_HEALTHCHECKER_ELECTION_ID={{i}}
       - CLI_HEALTHCHECKER_ADDRESSES={% for hc in range(1,healthcheckers + 1) %}{{ "healthchecker-"+hc|string+":8080" if not hc==i else "" }}{{ "," if not loop.last and not hc == i and not(i == healthcheckers and hc == (i-1)) else "" }}{% endfor %}
+      - CLI_HEALTHCHECKER_CONTAINERS={% for i in range(1,reducers1 + 1) %}dim_reducer_reducer-ex1-{{i}},{%endfor%}{% for i in range(1,reducers2 + 1) %}dim_reducer_reducer-ex2-{{i}},{%endfor%}{% for i in range(1,stopovers + 1) %}filter_stopovers-{{i}},{%endfor%}{% for i in range(1,processors + 1) %}data_processor-{{i}},{%endfor%}{% for i in range(1,distances + 1) %}filter_distances-{{i}},{%endfor%}{% for i in range(1,completers + 1) %}distance_completer-{{i}},{%endfor%}{% for i in range(1,ex4Savers + 1) %}ex4_saver-{{i}},{%endfor%}{% for i in range(1,ex4Dispatchers + 1) %}ex4_dispatcher-{{i}},{%endfor%}{% for i in range(1, calculators + 1) %}avg_calculator_ex4-{{i}},{%endfor%}{% for i in range(1, sinks + 1) %}ex4_sink-{{i}},{%endfor%}{% for i in range(1, savers + 1) %}saver-ex1-{{i}},saver-ex2-{{i}},saver-ex3-{{i}},saver-ex4-{{i}},{%endfor%}server,{% for hc in range(1,healthcheckers + 1) %}{{ "healthchecker-"+hc|string if not hc==i else "" }}{{ "," if not loop.last and not hc == i and not(i == healthcheckers and hc == (i-1)) else "" }}{% endfor %}
     networks:
       - testing_net
     volumes:

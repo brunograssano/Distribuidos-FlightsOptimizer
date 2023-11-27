@@ -277,6 +277,7 @@ services:
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
+      - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=0
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
     networks:
@@ -298,6 +299,7 @@ services:
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_SAVER=sink_ex4_queue
       - CLI_INTERNAL_SAVERS_COUNT=6
+      - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=6
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
     networks:
@@ -691,6 +693,7 @@ services:
       - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-1:8081
       - CLI_HEALTHCHECKER_ELECTION_ID=1
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_CONTAINERS=dim_reducer_reducer-ex1-1,dim_reducer_reducer-ex1-2,dim_reducer_reducer-ex2-1,dim_reducer_reducer-ex2-2,filter_stopovers-1,filter_stopovers-2,data_processor-1,data_processor-2,filter_distances-1,filter_distances-2,distance_completer-1,distance_completer-2,ex4_saver-1,ex4_saver-2,ex4_dispatcher-1,ex4_dispatcher-2,avg_calculator_ex4-1,avg_calculator_ex4-2,ex4_sink-1,ex4_sink-2,saver-ex1-1,saver-ex2-1,saver-ex3-1,saver-ex4-1,saver-ex1-2,saver-ex2-2,saver-ex3-2,saver-ex4-2,server,healthchecker-2,healthchecker-3
     networks:
       - testing_net
     volumes:
@@ -709,6 +712,7 @@ services:
       - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-2:8081
       - CLI_HEALTHCHECKER_ELECTION_ID=2
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_CONTAINERS=dim_reducer_reducer-ex1-1,dim_reducer_reducer-ex1-2,dim_reducer_reducer-ex2-1,dim_reducer_reducer-ex2-2,filter_stopovers-1,filter_stopovers-2,data_processor-1,data_processor-2,filter_distances-1,filter_distances-2,distance_completer-1,distance_completer-2,ex4_saver-1,ex4_saver-2,ex4_dispatcher-1,ex4_dispatcher-2,avg_calculator_ex4-1,avg_calculator_ex4-2,ex4_sink-1,ex4_sink-2,saver-ex1-1,saver-ex2-1,saver-ex3-1,saver-ex4-1,saver-ex1-2,saver-ex2-2,saver-ex3-2,saver-ex4-2,server,healthchecker-1,healthchecker-3
     networks:
       - testing_net
     volumes:
@@ -727,6 +731,7 @@ services:
       - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-3:8081
       - CLI_HEALTHCHECKER_ELECTION_ID=3
       - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
+      - CLI_HEALTHCHECKER_CONTAINERS=dim_reducer_reducer-ex1-1,dim_reducer_reducer-ex1-2,dim_reducer_reducer-ex2-1,dim_reducer_reducer-ex2-2,filter_stopovers-1,filter_stopovers-2,data_processor-1,data_processor-2,filter_distances-1,filter_distances-2,distance_completer-1,distance_completer-2,ex4_saver-1,ex4_saver-2,ex4_dispatcher-1,ex4_dispatcher-2,avg_calculator_ex4-1,avg_calculator_ex4-2,ex4_sink-1,ex4_sink-2,saver-ex1-1,saver-ex2-1,saver-ex3-1,saver-ex4-1,saver-ex1-2,saver-ex2-2,saver-ex3-2,saver-ex4-2,server,healthchecker-1,healthchecker-2
     networks:
       - testing_net
     volumes:
