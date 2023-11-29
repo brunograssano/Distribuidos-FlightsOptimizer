@@ -86,6 +86,7 @@ func sendEOFAndWaitForACK(conn *socketsProtocol.SocketProtocolHandler, parser pa
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 	if msg.TypeMessage == dataStructures.EofAck {
 		log.Infof("FileSend | Got ACK for the sent EOF | Finishing File Send Loop...")
