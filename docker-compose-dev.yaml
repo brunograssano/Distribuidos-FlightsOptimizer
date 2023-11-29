@@ -699,6 +699,9 @@ services:
     volumes:
       - ./healthchecker/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   healthchecker-2:
     container_name: healthchecker-2
@@ -718,6 +721,9 @@ services:
     volumes:
       - ./healthchecker/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   healthchecker-3:
     container_name: healthchecker-3
@@ -737,6 +743,9 @@ services:
     volumes:
       - ./healthchecker/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 
 networks:

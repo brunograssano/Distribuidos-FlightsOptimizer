@@ -40,32 +40,46 @@ func (c *CheckpointerHandler) DoCheckpoint(idCheckpointer int) error {
 		}
 	}
 	if doCommit {
-		log.Debugf("CheckpointerHandler | Commiting Checkpoint...")
+		log.Debugf("CheckpointerHandler | Commiting Checkpoint for %v", idCheckpointer)
 		for _, checkpointable := range checkpointers {
-			go checkpointable.Commit(idCheckpointer)
+			go checkpointable.Commit(idCheckpointer, responses)
 		}
+		waitForResponses(len(checkpointers), responses)
+		log.Debugf("CheckpointerHandler | Commited Checkpoint for %v", idCheckpointer)
 		return nil
 	}
 
-	log.Debugf("CheckpointerHandler | Aborting Checkpoint...")
+	log.Debugf("CheckpointerHandler | Aborting Checkpoint for %v", idCheckpointer)
 	for _, checkpointable := range checkpointers {
-		go checkpointable.Abort(idCheckpointer)
+		go checkpointable.Abort(idCheckpointer, responses)
 	}
+	waitForResponses(len(checkpointers), responses)
+	log.Debugf("CheckpointerHandler | Aborted Checkpoint for %v", idCheckpointer)
 	return fmt.Errorf("error trying to do checkpoint, operation was aborted")
 }
 
+func waitForResponses(waitForCheckpointables int, responses chan error) {
+	for i := 0; i < waitForCheckpointables; i++ {
+		<-responses
+	}
+}
+
 func (c *CheckpointerHandler) RestoreCheckpoint() {
+	responses := make(chan error, len(c.checkpointersById))
 	checkpointType := Curr
-	for _, checkpointablesForProcess := range c.checkpointersById {
-		for idx, checkpointable := range checkpointablesForProcess {
-			if checkpointable.HasPendingCheckpoints(idx) {
+	for id, checkpointablesForProcess := range c.checkpointersById {
+		for _, checkpointable := range checkpointablesForProcess {
+			if checkpointable.HasPendingCheckpoints(id) {
 				checkpointType = Old
 			}
 		}
 	}
-	for _, checkpointablesForProcess := range c.checkpointersById {
-		for idx, checkpointable := range checkpointablesForProcess {
-			go checkpointable.RestoreCheckpoint(checkpointType, idx)
+	for id, checkpointablesForProcess := range c.checkpointersById {
+		for _, checkpointable := range checkpointablesForProcess {
+			go checkpointable.RestoreCheckpoint(checkpointType, id, responses)
 		}
+	}
+	for i := 0; i < len(c.checkpointersById); i++ {
+		<-responses
 	}
 }

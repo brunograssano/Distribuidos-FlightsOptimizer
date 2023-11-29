@@ -36,11 +36,12 @@ func (q *ProducerQueueProtocolHandler) DoCheckpoint(errors chan error, id int) {
 	errors <- nil
 }
 
-func (q *ProducerQueueProtocolHandler) Commit(id int) {
+func (q *ProducerQueueProtocolHandler) Commit(id int, response chan error) {
 	log.Debugf("ProducerQueueProtocolHandler | Commiting checkpoint for id: %v_%v", id, q.producer.GetName())
 	q.handleOldFile(id)
 	q.handleCurrFile(id)
 	q.handleTmpFile(id)
+	response <- nil
 }
 
 func (q *ProducerQueueProtocolHandler) handleTmpFile(id int) {
@@ -84,26 +85,33 @@ func (q *ProducerQueueProtocolHandler) handleOldFile(id int) {
 	}
 }
 
-func (q *ProducerQueueProtocolHandler) Abort(id int) {
+func (q *ProducerQueueProtocolHandler) Abort(id int, response chan error) {
 	tmpFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile)
 	log.Debugf("ProducerQueueProtocolHandler | Aborting Checkpoint | Deleting TMP Checkpoint File")
 	err := filemanager.DeleteFile(tmpFileName)
 	if err != nil {
 		log.Errorf("ProducerQueueProtocolHandler | Error deleting tmp file | %v", err)
 	}
+	response <- nil
 }
 
-func (q *ProducerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType, id int) {
+func (q *ProducerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType, id int, result chan error) {
 	oldFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), oldFile)
 	currFileName := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), currFile)
 	if typeOfRecovery == checkpointer.Old {
 		if q.HasPendingCheckpoints(id) {
 			checkpointer.CopyOldIntoCurrent(oldFileName, currFileName)
+			tmpFile := fmt.Sprintf("%v_%v_%v", id, q.producer.GetName(), tmpFile)
+			err := filemanager.DeleteFile(tmpFile)
+			if err != nil {
+				log.Errorf("ProducerQueueProtocolHandler %v | Error deleting TMP file when restoring checkpoint: %v", id, tmpFile)
+			}
 		}
 		q.readCheckpointAsState(oldFileName)
 	} else if typeOfRecovery == checkpointer.Curr {
 		q.readCheckpointAsState(currFileName)
 	}
+	result <- nil
 }
 
 func (q *ProducerQueueProtocolHandler) HasPendingCheckpoints(id int) bool {
@@ -123,6 +131,7 @@ func (q *ProducerQueueProtocolHandler) readCheckpointAsState(fileToRestore strin
 	defer utils.CloseFileAndNotifyError(fileReader)
 	for fileReader.CanRead() {
 		line := fileReader.ReadLine()
+		log.Debugf("Linea leida del checkpoint: %v", line)
 		clientIdAndSent := strings.Split(line, "=")
 		clientId := clientIdAndSent[0]
 		sent, err := strconv.Atoi(clientIdAndSent[1])
@@ -135,5 +144,5 @@ func (q *ProducerQueueProtocolHandler) readCheckpointAsState(fileToRestore strin
 	if err != nil {
 		log.Errorf("ProducerQueueProtocolHandler | Error reading from checkpoint | %v", err)
 	}
-	log.Infof("ProducerQueueProtocolHandler | Restored checkpoint successfully")
+	log.Infof("ProducerQueueProtocolHandler | Restored checkpoint successfully | State recovered: %v", q.totalSentByClient)
 }
