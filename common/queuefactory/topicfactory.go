@@ -31,5 +31,5 @@ func (t *TopicFactory) CreateConsumer(queueName string) queues.ConsumerProtocolI
 		}
 	}
 
-	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler(consumer.GetName()))
 }

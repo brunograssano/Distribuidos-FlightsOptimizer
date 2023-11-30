@@ -26,12 +26,12 @@ func (c *CheckpointerHandler) AddCheckpointable(checkpointable Checkpointable, i
 func (c *CheckpointerHandler) DoCheckpoint(idCheckpointer int) error {
 	checkpointers := c.checkpointersById[idCheckpointer]
 	responses := make(chan error, len(checkpointers))
-	log.Debugf("CheckpointerHandler | Initializing Checkpointing...")
+	log.Debugf("CheckpointerHandler | Initializing Checkpointing for %v...", idCheckpointer)
 	for _, checkpointable := range checkpointers {
 		go checkpointable.DoCheckpoint(responses, idCheckpointer)
 	}
 	doCommit := true
-	log.Debugf("CheckpointerHandller | Checking for checkpointersById responses...")
+	log.Debugf("CheckpointerHandller | Checking for checkpointersById responses for %v...", idCheckpointer)
 	for i := 0; i < len(checkpointers); i++ {
 		err := <-responses
 		if err != nil {
@@ -65,7 +65,11 @@ func waitForResponses(waitForCheckpointables int, responses chan error) {
 }
 
 func (c *CheckpointerHandler) RestoreCheckpoint() {
-	responses := make(chan error, len(c.checkpointersById))
+	totalCheckpointables := 0
+	for _, checkpointablesForProcess := range c.checkpointersById {
+		totalCheckpointables += len(checkpointablesForProcess)
+	}
+	responses := make(chan error, totalCheckpointables)
 	checkpointType := Curr
 	for id, checkpointablesForProcess := range c.checkpointersById {
 		for _, checkpointable := range checkpointablesForProcess {
@@ -74,12 +78,13 @@ func (c *CheckpointerHandler) RestoreCheckpoint() {
 			}
 		}
 	}
+
 	for id, checkpointablesForProcess := range c.checkpointersById {
 		for _, checkpointable := range checkpointablesForProcess {
 			go checkpointable.RestoreCheckpoint(checkpointType, id, responses)
 		}
 	}
-	for i := 0; i < len(c.checkpointersById); i++ {
+	for i := 0; i < totalCheckpointables; i++ {
 		<-responses
 	}
 }

@@ -31,5 +31,5 @@ func (d *DirectExchangeConsumerSimpleProdQueueFactory) CreateConsumer(queueName 
 		log.Fatalf("DirectExchangeConsumerSimpleProdQueueFactory | Error creating consumer: %v", err)
 	}
 	d.counter++
-	return queues.NewConsumerQueueProtocolHandler(consumerQueue, duplicates.NewDuplicatesHandler())
+	return queues.NewConsumerQueueProtocolHandler(consumerQueue, duplicates.NewDuplicatesHandler(consumerQueue.GetName()))
 }

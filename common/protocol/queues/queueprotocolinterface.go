@@ -14,6 +14,7 @@ type ProducerProtocolInterface interface {
 }
 
 type ConsumerProtocolInterface interface {
+	checkpointer.Checkpointable
 	protocol.DataCleaner
 	Pop() (*dataStructures.Message, bool)
 	GetReceivedMessages(string) int

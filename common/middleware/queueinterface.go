@@ -9,4 +9,5 @@ type ConsumerInterface interface {
 	Pop() ([]byte, bool)
 	BindTo(nameExchange string, routingKey string, kind string) error
 	SignalFinishedMessage(processedCorrectly bool) error
+	GetName() string
 }

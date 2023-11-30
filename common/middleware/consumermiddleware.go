@@ -81,3 +81,7 @@ func (queue *Consumer) SignalFinishedMessage(processedCorrectly bool) error {
 	}
 	return nil
 }
+
+func (queue *Consumer) GetName() string {
+	return queue.queue.Name
+}
