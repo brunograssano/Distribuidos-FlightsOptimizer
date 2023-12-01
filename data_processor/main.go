@@ -25,13 +25,14 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
-	checkpointerHandler := checkpointer.NewCheckpointerHandler()
+
 	var dataProcs []*processor.DataProcessor
 	for i := 0; i < config.GoroutinesCount; i++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		r := processor.NewDataProcessor(i, qFactory, config, checkpointerHandler)
 		dataProcs = append(dataProcs, r)
+		checkpointerHandler.RestoreCheckpoint()
 	}
-	checkpointerHandler.RestoreCheckpoint()
 
 	for i := 0; i < len(dataProcs); i++ {
 		go dataProcs[i].ProcessData()
