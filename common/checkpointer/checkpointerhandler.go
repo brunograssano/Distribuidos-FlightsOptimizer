@@ -70,16 +70,14 @@ func (c *CheckpointerHandler) RestoreCheckpoint() {
 		totalCheckpointables += len(checkpointablesForProcess)
 	}
 	responses := make(chan error, totalCheckpointables)
-	checkpointType := Curr
+
 	for id, checkpointablesForProcess := range c.checkpointersById {
+		checkpointType := Curr
 		for _, checkpointable := range checkpointablesForProcess {
 			if checkpointable.HasPendingCheckpoints(id) {
 				checkpointType = Old
 			}
 		}
-	}
-
-	for id, checkpointablesForProcess := range c.checkpointersById {
 		for _, checkpointable := range checkpointablesForProcess {
 			go checkpointable.RestoreCheckpoint(checkpointType, id, responses)
 		}

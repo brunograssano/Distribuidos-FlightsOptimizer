@@ -81,31 +81,43 @@ func PendingCheckpointExists(id int, name string, tmpFile string) bool {
 	return filemanager.DirectoryExists(fmt.Sprintf("%v_%v_%v", id, name, tmpFile))
 }
 
-func GetFileToRead(typeOfRecovery CheckpointType, id int, name string, oldFileProd string, currFileProd string, tmpFileProd string) string {
-	fileToRead := fmt.Sprintf("%v_%v_%v", id, name, currFileProd)
-	if typeOfRecovery == Old {
-		fileToRead = getOldestCheckpointFileToRead(id, name, oldFileProd, currFileProd, tmpFileProd)
+func GetFileToRead(typeOfRecovery CheckpointType, id int, name string, oldFile string, currFile string, tmpFile string) string {
+	if typeOfRecovery == Curr {
+		currFileName := fmt.Sprintf("%v_%v_%v", id, name, currFile)
+		if filemanager.DirectoryExists(currFileName) {
+			log.Infof("CheckpointFileManager | Restoring OLD file | Old and Current exist but TMP does not | Type of Recovery: CURRENT")
+			return currFileName
+		}
+		log.Warnf("CheckpointFileManager | No file to restore | Current does not exist | Type of Recovery: CURRENT")
+		return ""
 	}
-	return fileToRead
+	return getOldestCheckpointFileToRead(id, name, oldFile, currFile, tmpFile)
 }
 
 func getOldestCheckpointFileToRead(id int, name string, oldFile string, currFile string, tmpFile string) string {
 	oldFileName := fmt.Sprintf("%v_%v_%v", id, name, oldFile)
 	currFileName := fmt.Sprintf("%v_%v_%v", id, name, currFile)
 	tmpFileName := fmt.Sprintf("%v_%v_%v", id, name, tmpFile)
-	if !filemanager.DirectoryExists(currFileName) {
+	oldExists := filemanager.DirectoryExists(oldFileName)
+	currExists := filemanager.DirectoryExists(currFileName)
+	tmpExists := filemanager.DirectoryExists(tmpFileName)
+	if oldExists && currExists && tmpExists {
+		log.Infof("CheckpointFileManager | Restoring CURRENT file | All 3 files exist | Type of Recovery: OLD")
+		// Written TMP with data but could not commit nor abort.
+		return currFileName
+	}
+	if !currExists {
+		// Was about to rename TMP into current but couldn't. Last usable checkpoint is OLD.
 		log.Warnf("CheckpointFileManager | Current File Name to checkpoint does not exist | %v", currFileName)
+		log.Infof("CheckpointFileManager | Restoring OLD file | Current does not exist | Type of Recovery: OLD")
+		return oldFileName
 	}
-	if PendingCheckpointExists(id, name, tmpFile) {
-		CopyOldIntoCurrent(oldFileName, currFileName)
-		err := filemanager.DeleteFile(tmpFileName)
-		if err != nil {
-			log.Errorf("CheckpointFileManager %v | Error deleting TMP file when restoring checkpoint: %v", id, tmpFileName)
-		}
+	if !oldExists {
+		//Was about to rename current to old but crashed
+		log.Infof("CheckpointFileManager | Restoring CURRENT file | Old file does not exists | Type of Recovery: OLD")
+		return currFileName
 	}
-	fileToRead := oldFileName
-	if !filemanager.DirectoryExists(oldFileName) {
-		fileToRead = currFileName
-	}
-	return fileToRead
+	//TMP was already renamed. Checkpoint finished but got OLD, so have to recover the previous commited (OLD).
+	log.Infof("CheckpointFileManager | Restoring OLD file | Old and Current exist but TMP does not | Type of Recovery: OLD")
+	return oldFileName
 }

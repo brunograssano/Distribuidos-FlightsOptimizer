@@ -1,7 +1,9 @@
 package queues
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
+	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,14 +31,20 @@ func (q *ConsumerQueueProtocolHandler) Commit(id int, response chan error) {
 }
 
 func (q *ConsumerQueueProtocolHandler) Abort(id int, response chan error) {
+	checkpointer.DeleteTmpFile(id, q.consumer.GetName(), tmpFileProd)
 	duplicatesResponse := make(chan error, 1)
 	q.duplicatesHandler.Abort(id, duplicatesResponse)
-	checkpointer.DeleteTmpFile(id, q.consumer.GetName(), tmpFileProd)
 	<-duplicatesResponse
 	response <- nil
 }
 
 func (q *ConsumerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType, id int, result chan error) {
+	oldFileName := fmt.Sprintf("%v_%v_%v", id, q.consumer.GetName(), oldFileCons)
+	currFileName := fmt.Sprintf("%v_%v_%v", id, q.consumer.GetName(), currFileCons)
+	if !filemanager.DirectoryExists(currFileName) && !filemanager.DirectoryExists(oldFileName) {
+		result <- nil
+		return
+	}
 	duplicatesResult := make(chan error, 1)
 	q.duplicatesHandler.RestoreCheckpoint(typeOfRecovery, id, duplicatesResult)
 	fileToRead := checkpointer.GetFileToRead(typeOfRecovery, id, q.consumer.GetName(), oldFileCons, currFileCons, tmpFileCons)
@@ -46,5 +54,5 @@ func (q *ConsumerQueueProtocolHandler) RestoreCheckpoint(typeOfRecovery checkpoi
 }
 
 func (q *ConsumerQueueProtocolHandler) HasPendingCheckpoints(id int) bool {
-	return checkpointer.PendingCheckpointExists(id, q.consumer.GetName(), tmpFileProd) || q.duplicatesHandler.HasPendingCheckpoints(id)
+	return checkpointer.PendingCheckpointExists(id, q.consumer.GetName(), tmpFileProd)
 }

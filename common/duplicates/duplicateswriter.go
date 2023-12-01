@@ -2,6 +2,7 @@ package duplicates
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -15,5 +16,6 @@ func (dh *DuplicatesHandler) GetCheckpointString() string {
 		}
 		linesToWrite.WriteString("\n")
 	}
+	log.Info("%v %v", dh.queueName, dh.lastMessagesSeen)
 	return linesToWrite.String()
 }
