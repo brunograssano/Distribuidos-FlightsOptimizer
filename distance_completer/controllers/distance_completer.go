@@ -3,6 +3,7 @@ package controllers
 import (
 	"distance_completer/config"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -21,17 +22,20 @@ type DistanceCompleter struct {
 	consumer     queueProtocol.ConsumerProtocolInterface
 	producer     queueProtocol.ProducerProtocolInterface
 	prodForCons  queueProtocol.ProducerProtocolInterface
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
 func NewDistanceCompleter(
 	id int,
 	qFactory queuefactory.QueueProtocolFactory,
 	c *config.CompleterConfig,
+	chkHandler *checkpointer.CheckpointerHandler,
 ) *DistanceCompleter {
 	consumer := qFactory.CreateConsumer(c.InputQueueFlightsName)
 	producer := qFactory.CreateProducer(c.OutputQueueName)
 	producerForCons := qFactory.CreateProducer(c.InputQueueFlightsName)
-
+	chkHandler.AddCheckpointable(consumer, id)
+	chkHandler.AddCheckpointable(producer, id)
 	return &DistanceCompleter{
 		completerId:  id,
 		airportsMaps: make(map[string]map[string][2]float32),
@@ -39,6 +43,7 @@ func NewDistanceCompleter(
 		consumer:     consumer,
 		producer:     producer,
 		prodForCons:  producerForCons,
+		checkpointer: chkHandler,
 	}
 }
 
@@ -157,6 +162,10 @@ func (dc *DistanceCompleter) CompleteDistances() {
 			dc.handleFlightRows(msg)
 		} else {
 			log.Warnf("DistanceCompleter %v | Warning Message | Unknown type of message: %v. Skipping it...", dc.completerId, msg.TypeMessage)
+		}
+		err := dc.checkpointer.DoCheckpoint(dc.completerId)
+		if err != nil {
+			log.Errorf("DistanceCompleter #%v | Error on checkpointing | %v", dc.completerId, err)
 		}
 	}
 }

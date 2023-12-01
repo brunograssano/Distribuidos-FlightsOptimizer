@@ -2,6 +2,7 @@ package main
 
 import (
 	"filters_config"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -23,7 +24,9 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	var services []*FilterStopovers
 	for i := 0; i < config.GoroutinesCount; i++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		inputQueue := qFactory.CreateConsumer(config.InputQueueName)
 		prodToCons := qFactory.CreateProducer(config.InputQueueName)
 		outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(config.OutputQueueNames)+len(config.OutputExchangeNames))
@@ -34,9 +37,13 @@ func main() {
 			qTopicFactory := queuefactory.NewTopicFactory(qMiddleware, []string{""}, config.OutputExchangeNames[i])
 			outputQueues[len(config.OutputQueueNames)+i] = qTopicFactory.CreateProducer("")
 		}
-		fe := NewFilterStopovers(i, inputQueue, outputQueues, prodToCons, config)
+		fe := NewFilterStopovers(i, inputQueue, outputQueues, prodToCons, config, checkpointerHandler)
+		services = append(services, fe)
+		checkpointerHandler.RestoreCheckpoint()
+	}
+	for i := 0; i < config.GoroutinesCount; i++ {
 		log.Infof("Main - Filter Stopovers | Spawning GoRoutine - Filter #%v", i)
-		go fe.FilterStopovers()
+		go services[i].FilterStopovers()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs

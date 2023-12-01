@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -21,6 +22,7 @@ func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 	var dispatchers []*dispatcher.JourneyDispatcher
 	log.Infof("DispatcherEx4 | Creating %v dispatchers...", dispatcherConfig.DispatchersCount)
 	for idx := uint(0); idx < dispatcherConfig.DispatchersCount; idx++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		exchangeFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
 		inputQueue := simpleFactory.CreateConsumer(dispatcherConfig.InputQueueName)
 		prodToInput := simpleFactory.CreateProducer(dispatcherConfig.InputQueueName)
@@ -29,7 +31,9 @@ func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 			outputQueue := exchangeFactory.CreateProducer(dispatcherConfig.OutputExchangeName)
 			outputQueues = append(outputQueues, outputQueue)
 		}
-		dispatchers = append(dispatchers, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, outputQueues))
+		tmpDispatcher := dispatcher.NewJourneyDispatcher(idx, inputQueue, prodToInput, outputQueues, checkpointerHandler)
+		dispatchers = append(dispatchers, tmpDispatcher)
+		checkpointerHandler.RestoreCheckpoint()
 	}
 	return &DispatcherEx4{
 		dispatchers: dispatchers,

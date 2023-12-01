@@ -35,6 +35,7 @@ func main() {
 	}
 
 	for i := 0; i < len(dataProcs); i++ {
+		log.Infof("Main Data Processor | Spawning GoRoutine - Processor #%v", i)
 		go dataProcs[i].ProcessData()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)

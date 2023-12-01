@@ -9,7 +9,6 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"strings"
 )
 
@@ -78,7 +77,6 @@ func (d *DataProcessor) processRows(rows []*dataStructures.DynamicMap) ([]*dataS
 // ProcessData General loop that listens to the queue, preprocess the data, and passes it to the next steps
 func (d *DataProcessor) ProcessData() {
 	defer log.Infof("DataProcessor %v | Closing goroutine...", d.processorId)
-	counter := 0
 	for {
 		msg, ok := d.consumer.Pop()
 		if !ok {
@@ -94,11 +92,6 @@ func (d *DataProcessor) ProcessData() {
 			log.Debugf("DataProcessor %v | Sending processed rows to next nodes...", d.processorId)
 			d.sendToEx123(ex123Rows, msg)
 			d.sendToEx4(ex4Rows, msg)
-
-			if counter > 5 {
-				os.Exit(137)
-			}
-			counter++
 		} else {
 			log.Warnf("DataProcessor %v | Warning Messsage | Received unknown type of message. Skipping it...", d.processorId)
 		}

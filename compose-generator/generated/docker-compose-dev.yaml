@@ -1,6 +1,6 @@
 
 version: '3.9'
-name: tp1
+name: tp2
 services:
   rabbitmq:
     container_name: rabbitmq
