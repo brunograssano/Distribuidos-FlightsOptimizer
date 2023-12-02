@@ -91,6 +91,10 @@ func (sph *SocketProtocolHandler) Write(msg *dataStructures.Message) error {
 	return nil
 }
 
+func (sph *SocketProtocolHandler) Reconnect() error {
+	return sph.sock.Reconnect()
+}
+
 func (sph *SocketProtocolHandler) Close() {
 	utils.CloseSocketAndNotifyError(sph.sock)
 }
