@@ -2,7 +2,10 @@ package filemanager
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"os"
 )
 
@@ -10,6 +13,7 @@ type FileReader struct {
 	FileManager
 	scanner *bufio.Reader
 	text    string
+	err     error
 }
 
 // NewFileReader Creates a new reader of a file.
@@ -43,6 +47,8 @@ func (f *FileReader) ReadLineAsBytes() []byte {
 func (f *FileReader) CanRead() bool {
 	str, err := f.scanner.ReadString('\n')
 	if err != nil {
+		f.text = str
+		f.err = err
 		return false
 	}
 	f.text = str
@@ -51,5 +57,8 @@ func (f *FileReader) CanRead() bool {
 
 // Err Returns an error if it was encountered
 func (f *FileReader) Err() error {
-	return nil
+	if errors.Is(f.err, io.EOF) && f.text == "" {
+		return nil
+	}
+	return errors.Join(f.err, fmt.Errorf("last line: %v", f.text))
 }

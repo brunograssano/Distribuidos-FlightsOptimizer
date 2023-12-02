@@ -1,6 +1,7 @@
 package duplicates
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -13,8 +14,8 @@ const oldFileDup = "duplicates_chk_old.csv"
 const currFileDup = "duplicates_chk_curr.csv"
 const tmpFileDup = "duplicates_chk_tmp.csv"
 
-func (dh *DuplicatesHandler) DoCheckpoint(errors chan error, id int) {
-	checkpointer.DoCheckpointWithParser(errors, id, dh, dh.queueName, tmpFileDup)
+func (dh *DuplicatesHandler) DoCheckpoint(errors chan error, id int, chkId int) {
+	checkpointer.DoCheckpointWithParser(errors, id, dh, dh.queueName, tmpFileDup, chkId)
 }
 
 func (dh *DuplicatesHandler) Commit(id int, response chan error) {
@@ -30,9 +31,18 @@ func (dh *DuplicatesHandler) Abort(id int, response chan error) {
 	response <- nil
 }
 
-func (dh *DuplicatesHandler) RestoreCheckpoint(typeOfRecovery checkpointer.CheckpointType, id int, result chan error) {
-	fileToRead := checkpointer.GetFileToRead(typeOfRecovery, id, dh.queueName, oldFileDup, currFileDup, tmpFileDup)
-	dh.readCheckpointAsState(fileToRead)
+func (dh *DuplicatesHandler) RestoreCheckpoint(checkpointToRestore int, id int, result chan error) {
+	checkpointIds := checkpointer.GetCurrentValidCheckpoints(id, dh.queueName, currFileDup, oldFileDup)
+	filesArray := []string{
+		fmt.Sprintf("%v_%v_%v", id, dh.queueName, oldFileDup),
+		fmt.Sprintf("%v_%v_%v", id, dh.queueName, currFileDup),
+	}
+	for idx, chkId := range checkpointIds {
+		if chkId == checkpointToRestore {
+			dh.readCheckpointAsState(filesArray[idx])
+			break
+		}
+	}
 	result <- nil
 }
 
@@ -47,6 +57,8 @@ func (dh *DuplicatesHandler) readCheckpointAsState(fileToRestore string) {
 		log.Fatalf("DuplicatesHandler | Error trying to read checkpoint file: %v | %v", fileToRestore, err)
 	}
 	defer utils.CloseFileAndNotifyError(fileReader)
+
+	filemanager.SkipHeader(fileReader)
 	for fileReader.CanRead() {
 		line := fileReader.ReadLine()
 		clientIdAndMessages := strings.Split(line, ",")
@@ -73,6 +85,6 @@ func (dh *DuplicatesHandler) readCheckpointAsState(fileToRestore string) {
 	log.Infof("DuplicatesHandler | Restored checkpoint successfully: %v | State recovered: %v", fileToRestore, dh.lastMessagesSeen)
 }
 
-func (dh *DuplicatesHandler) HasPendingCheckpoints(id int) bool {
-	return checkpointer.PendingCheckpointExists(id, dh.queueName, tmpFileDup)
+func (dh *DuplicatesHandler) GetCheckpointVersions(id int) [2]int {
+	return checkpointer.GetCurrentValidCheckpoints(id, dh.queueName, currFileDup, oldFileDup)
 }

@@ -5,9 +5,10 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 )
 
-func DoCheckpointWithParser(errors chan error, id int, writer CheckpointWriter, name string, tmpFile string) {
+func DoCheckpointWithParser(errors chan error, id int, writer CheckpointWriter, name string, tmpFile string, chkId int) {
 	tmpFileName := fmt.Sprintf("%v_%v_%v", id, name, tmpFile)
 	log.Debugf("CheckpointFileManager | Performing checkpoint: %v", tmpFileName)
 	fileWriter, err := filemanager.NewFileWriter(tmpFileName)
@@ -17,6 +18,12 @@ func DoCheckpointWithParser(errors chan error, id int, writer CheckpointWriter, 
 		return
 	}
 	defer utils.CloseFileAndNotifyError(fileWriter)
+	err = fileWriter.WriteLine(fmt.Sprintf("%v\n", chkId))
+	if err != nil {
+		log.Errorf("CheckpointFileManager | Error writing checkpoint version %v for %v", chkId, tmpFileName)
+		errors <- err
+		return
+	}
 	linesToWrite := writer.GetCheckpointString()
 	err = fileWriter.WriteLine(linesToWrite)
 	if err != nil {
@@ -77,47 +84,31 @@ func DeleteTmpFile(id int, name string, tmpFile string) {
 	}
 }
 
-func PendingCheckpointExists(id int, name string, tmpFile string) bool {
-	return filemanager.DirectoryExists(fmt.Sprintf("%v_%v_%v", id, name, tmpFile))
+func GetCurrentValidCheckpoints(id int, name string, currFile string, oldFile string) [2]int {
+	oldId := getIdFromFile(id, name, oldFile)
+	currId := getIdFromFile(id, name, currFile)
+	return [2]int{oldId, currId}
 }
 
-func GetFileToRead(typeOfRecovery CheckpointType, id int, name string, oldFile string, currFile string, tmpFile string) string {
-	if typeOfRecovery == Curr {
-		currFileName := fmt.Sprintf("%v_%v_%v", id, name, currFile)
-		if filemanager.DirectoryExists(currFileName) {
-			log.Infof("CheckpointFileManager | Restoring OLD file | Old and Current exist but TMP does not | Type of Recovery: CURRENT")
-			return currFileName
+func getIdFromFile(id int, name string, file string) int {
+	fileName := fmt.Sprintf("%v_%v_%v", id, name, file)
+	if !filemanager.DirectoryExists(fileName) {
+		return -1
+	}
+	fileReader, err := filemanager.NewFileReader(fileName)
+	if err != nil {
+		log.Errorf("QueueProtocolCheckpointWriter | Error creating file reader for %v | %v", fileName, err)
+		return -1
+	}
+	defer utils.CloseFileAndNotifyError(fileReader)
+	if fileReader.CanRead() {
+		idAsString := fileReader.ReadLine()
+		idAsInt, err := strconv.Atoi(idAsString)
+		if err != nil {
+			log.Errorf("QueueProtocolCheckpointWriter | Error converting old file id into int | %v", err)
+			return -1
 		}
-		log.Warnf("CheckpointFileManager | No file to restore | Current does not exist | Type of Recovery: CURRENT")
-		return ""
+		return idAsInt
 	}
-	return getOldestCheckpointFileToRead(id, name, oldFile, currFile, tmpFile)
-}
-
-func getOldestCheckpointFileToRead(id int, name string, oldFile string, currFile string, tmpFile string) string {
-	oldFileName := fmt.Sprintf("%v_%v_%v", id, name, oldFile)
-	currFileName := fmt.Sprintf("%v_%v_%v", id, name, currFile)
-	tmpFileName := fmt.Sprintf("%v_%v_%v", id, name, tmpFile)
-	oldExists := filemanager.DirectoryExists(oldFileName)
-	currExists := filemanager.DirectoryExists(currFileName)
-	tmpExists := filemanager.DirectoryExists(tmpFileName)
-	if oldExists && currExists && tmpExists {
-		log.Infof("CheckpointFileManager | Restoring CURRENT file | All 3 files exist | Type of Recovery: OLD")
-		// Written TMP with data but could not commit nor abort.
-		return currFileName
-	}
-	if !currExists {
-		// Was about to rename TMP into current but couldn't. Last usable checkpoint is OLD.
-		log.Warnf("CheckpointFileManager | Current File Name to checkpoint does not exist | %v", currFileName)
-		log.Infof("CheckpointFileManager | Restoring OLD file | Current does not exist | Type of Recovery: OLD")
-		return oldFileName
-	}
-	if !oldExists {
-		//Was about to rename current to old but crashed
-		log.Infof("CheckpointFileManager | Restoring CURRENT file | Old file does not exists | Type of Recovery: OLD")
-		return currFileName
-	}
-	//TMP was already renamed. Checkpoint finished but got OLD, so have to recover the previous commited (OLD).
-	log.Infof("CheckpointFileManager | Restoring OLD file | Old and Current exist but TMP does not | Type of Recovery: OLD")
-	return oldFileName
+	return -1
 }

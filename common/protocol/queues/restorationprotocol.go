@@ -19,11 +19,9 @@ func readCheckpointAsState(fileToRestore string, clientsData map[string]int) {
 		log.Fatalf("ProtocolRecover | Error trying to read checkpoint file: %v | %v", fileToRestore, err)
 	}
 	defer utils.CloseFileAndNotifyError(fileReader)
+	filemanager.SkipHeader(fileReader)
 	for fileReader.CanRead() {
 		line := fileReader.ReadLineAsBytes()
-		if line[len(line)-1] != '\n' {
-			log.Fatalf("ProtocolRecover | Read a line that did not have \\n at the end | Line was: %v | File: %v", string(line), fileToRestore)
-		}
 		line = line[:len(line)-1]
 		clientIdAndSent := strings.Split(string(line), "=")
 		clientId := clientIdAndSent[0]
