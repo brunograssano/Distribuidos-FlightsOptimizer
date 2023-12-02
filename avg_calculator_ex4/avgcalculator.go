@@ -1,27 +1,39 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
+
+const accumCheckpointId = 0
 
 type AvgCalculator struct {
 	toJourneySavers        []queueProtocol.ProducerProtocolInterface
 	pricesConsumer         queueProtocol.ConsumerProtocolInterface
 	c                      *AvgCalculatorConfig
 	valuesReceivedByClient map[string]PartialSum
+	checkpointer           *checkpointer.CheckpointerHandler
 }
 
-func NewAvgCalculator(toJourneySavers []queueProtocol.ProducerProtocolInterface, pricesConsumer queueProtocol.ConsumerProtocolInterface, c *AvgCalculatorConfig) *AvgCalculator {
-	return &AvgCalculator{
+func NewAvgCalculator(
+	toJourneySavers []queueProtocol.ProducerProtocolInterface,
+	pricesConsumer queueProtocol.ConsumerProtocolInterface,
+	c *AvgCalculatorConfig,
+	chkHandler *checkpointer.CheckpointerHandler) *AvgCalculator {
+	avgCalculator := &AvgCalculator{
 		toJourneySavers:        toJourneySavers,
 		pricesConsumer:         pricesConsumer,
 		c:                      c,
 		valuesReceivedByClient: make(map[string]PartialSum),
+		checkpointer:           chkHandler,
 	}
+	chkHandler.AddCheckpointable(avgCalculator, accumCheckpointId)
+	return avgCalculator
 }
 
 // CalculateAvgLoop Waits for the final results from the journey savers,
@@ -29,6 +41,7 @@ func NewAvgCalculator(toJourneySavers []queueProtocol.ProducerProtocolInterface,
 func (a *AvgCalculator) CalculateAvgLoop() {
 	log.Infof("AvgCalculator | Started Avg Calculator loop")
 	log.Infof("AvgCalculator | Starting await of internalSavers | Now waiting for %v savers...", len(a.toJourneySavers))
+	counter := 0
 	for {
 		msg, ok := a.pricesConsumer.Pop()
 		if !ok {
@@ -41,7 +54,15 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 			log.Warnf("AvgCalculator | Warning Message | Received a message that was not expected | Skipping...")
 			continue
 		}
+		if counter > 2 {
+			os.Exit(137)
+		}
+		counter++
 		a.handleEofMsg(msg)
+		err := a.checkpointer.DoCheckpoint(accumCheckpointId)
+		if err != nil {
+			log.Errorf("AvgCalculator | Error on checkpointing | %v", err)
+		}
 	}
 }
 
