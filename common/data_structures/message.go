@@ -111,3 +111,4 @@ const Later = 5
 const EOFGetter = 6
 const FinalAvgMsg = 7
 const HeartBeat = 8
+const EofAck = 9
