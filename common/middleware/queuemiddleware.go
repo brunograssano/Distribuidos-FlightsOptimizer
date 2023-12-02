@@ -6,15 +6,15 @@ import (
 )
 
 type QueueMiddlewareI interface {
-	CreateConsumer(name string, durable bool, idDLQ string) ConsumerInterface
+	CreateConsumer(name string, durable bool) ConsumerInterface
 	CreateProducer(name string, durable bool) ProducerInterface
 	CreateExchangeProducer(nameExchange string, routingKey string, typeExchange string, durable bool) ProducerInterface
 	Close()
 }
 
 type QueueMiddleware struct {
-	channels []*amqp.Channel
-	conn     *amqp.Connection
+	channel *amqp.Channel
+	conn    *amqp.Connection
 }
 
 func NewQueueMiddleware(address string) *QueueMiddleware {
@@ -22,43 +22,33 @@ func NewQueueMiddleware(address string) *QueueMiddleware {
 	conn, err := amqp.Dial(address)
 	FailOnError(err, "Failed to connect via Dial to RabbitMQ.")
 	log.Infof("QueueMiddleware | Connected to RabbitMQ")
-	return &QueueMiddleware{
-		channels: []*amqp.Channel{},
-		conn:     conn,
-	}
-
-}
-
-func (qm *QueueMiddleware) createChannel() *amqp.Channel {
-	ch, err := qm.conn.Channel()
+	ch, err := conn.Channel()
 	FailOnError(err, "Failed to create RabbitMQ Channel.")
 	log.Infof("QueueMiddleware | Created RabbitMQ Channel")
-	qm.channels = append(qm.channels, ch)
-	return ch
+	return &QueueMiddleware{
+		channel: ch,
+		conn:    conn,
+	}
 }
 
-func (qm *QueueMiddleware) CreateConsumer(name string, durable bool, idDLQ string) ConsumerInterface {
-	return NewConsumer(qm.createChannel(), name, durable, idDLQ)
+func (qm *QueueMiddleware) CreateConsumer(name string, durable bool) ConsumerInterface {
+	return NewConsumer(qm.channel, name, durable)
 }
 
 func (qm *QueueMiddleware) CreateProducer(name string, durable bool) ProducerInterface {
-	return NewProducer(qm.createChannel(), name, durable)
+	return NewProducer(qm.channel, name, durable)
 }
 
 func (qm *QueueMiddleware) CreateExchangeProducer(nameExchange string, routingKey string, typeExchange string, durable bool) ProducerInterface {
-	return NewExchangeProducer(qm.createChannel(), nameExchange, routingKey, typeExchange, durable)
+	return NewExchangeProducer(qm.channel, nameExchange, routingKey, typeExchange, durable)
 }
 
 func (qm *QueueMiddleware) Close() {
-
-	for i, channel := range qm.channels {
-		err := channel.Close()
-		if err != nil {
-			log.Errorf("QueueMiddleware | Error closing QueueMiddleware Channel %v | %v", i, err)
-		}
+	err := qm.channel.Close()
+	if err != nil {
+		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Channel | %v", err)
 	}
-
-	err := qm.conn.Close()
+	err = qm.conn.Close()
 	if err != nil {
 		log.Errorf("QueueMiddleware | Error closing QueueMiddleware Connection | %v", err)
 	}

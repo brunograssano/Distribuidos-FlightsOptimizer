@@ -22,8 +22,8 @@ func (s *FanoutExchangeQueueFactory) CreateProducer(_ string) queues.ProducerPro
 	return queues.NewProducerQueueProtocolHandler(producer)
 }
 
-func (s *FanoutExchangeQueueFactory) CreateConsumer(queueName string, idDLQ string) queues.ConsumerProtocolInterface {
-	consumer := s.qMiddleware.CreateConsumer(queueName, true, idDLQ)
+func (s *FanoutExchangeQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
+	consumer := s.qMiddleware.CreateConsumer(queueName, true)
 	err := consumer.BindTo(s.exchangeName, s.routingKey, "fanout")
 	if err != nil {
 		log.Fatalf("FanoutExchangeQueueFactory | Error trying to bind the consumer's queue to the exchange | %v", err)

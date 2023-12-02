@@ -32,9 +32,8 @@ func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtoco
 	log.Infof("Ex3Handler | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
 		checkpointerHandler := checkpointer.NewCheckpointerHandler()
-		nameQueue := fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)
 		internalSaversConsumers = append(internalSaversConsumers, NewSaverForEx3(
-			internalQFactory.CreateConsumer(nameQueue, nameQueue),
+			internalQFactory.CreateConsumer(fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)),
 			c,
 			finishSignal,
 			i,
@@ -52,8 +51,7 @@ func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtoco
 	for i := uint(0); i < c.DispatchersCount; i++ {
 		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		// We create the input queue to the EX3 service
-		queueName := fmt.Sprintf("%v-%v", c.InputQueueName, c.ID)
-		inputQueue := dispatchersQFactory.CreateConsumer(queueName, fmt.Sprintf("%v-%v", queueName, i))
+		inputQueue := dispatchersQFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 		prodToInput := dispatchersQFactory.CreateProducer(c.ID)
 		tmpDispatcher := dispatcher.NewJourneyDispatcher(i, inputQueue, prodToInput, toInternalSavers, checkpointerHandler)
 		jds = append(jds, tmpDispatcher)

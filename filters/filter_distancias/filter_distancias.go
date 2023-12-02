@@ -2,7 +2,6 @@ package main
 
 import (
 	"filters_config"
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
@@ -28,7 +27,7 @@ func NewFilterDistances(
 	conf *filters_config.FilterConfig,
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *FilterDistances {
-	inputQueue := qFactory.CreateConsumer(conf.InputQueueName, fmt.Sprintf("%v-%v-%v", conf.ID, conf.InputQueueName, filterId))
+	inputQueue := qFactory.CreateConsumer(conf.InputQueueName)
 	prodToCons := qFactory.CreateProducer(conf.InputQueueName)
 	outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {

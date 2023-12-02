@@ -31,7 +31,7 @@ func NewDistanceCompleter(
 	c *config.CompleterConfig,
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *DistanceCompleter {
-	consumer := qFactory.CreateConsumer(c.InputQueueFlightsName, fmt.Sprintf("%v-%v-%v", c.ID, id, c.InputQueueFlightsName))
+	consumer := qFactory.CreateConsumer(c.InputQueueFlightsName)
 	producer := qFactory.CreateProducer(c.OutputQueueName)
 	producerForCons := qFactory.CreateProducer(c.InputQueueFlightsName)
 	chkHandler.AddCheckpointable(consumer, id)

@@ -27,8 +27,7 @@ func NewAirportSaver(
 	qFactory queuefactory.QueueProtocolFactory,
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *AirportSaver {
-	iQueueName := fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID)
-	consumer := qFactory.CreateConsumer(iQueueName, iQueueName)
+	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID))
 	// We do a checkpoint to remember duplicates
 	chkHandler.AddCheckpointable(consumer, airportsSaverId)
 	return &AirportSaver{

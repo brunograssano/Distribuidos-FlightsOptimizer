@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -24,7 +23,7 @@ func main() {
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameAccum, "")
 	qFanoutFactorySink := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameSaver, "")
 	for i := uint(0); i < config.InternalSaversCount; i++ {
-		inputQ := qFactory.CreateConsumer(config.InputQueueName, fmt.Sprintf("%v-%v-%v", config.ID, i, config.InputQueueName))
+		inputQ := qFactory.CreateConsumer(config.InputQueueName)
 		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
 		prodToSink := qFanoutFactorySink.CreateProducer(config.OutputQueueNameSaver)
 		js := NewJourneySaver(inputQ, prodToAccum, prodToSink, config.TotalSaversCount)

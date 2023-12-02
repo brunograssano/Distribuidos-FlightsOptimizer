@@ -27,7 +27,7 @@ func NewSimpleSaver(
 	c *Config,
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *SimpleSaver {
-	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID), fmt.Sprintf("%v_%v", c.ID, c.InputQueueName))
+	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 	chkHandler.AddCheckpointable(consumer, saverId)
 	return &SimpleSaver{c: c, consumer: consumer, checkpointer: chkHandler}
 }

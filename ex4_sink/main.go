@@ -22,8 +22,7 @@ func main() {
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFanoutInputFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
 	qFanoutOutputFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueName, "")
-	iQueueName := fmt.Sprintf("%v-%v", config.InputQueueName, config.ID)
-	inputQueue := qFanoutInputFactory.CreateConsumer(iQueueName, iQueueName)
+	inputQueue := qFanoutInputFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
 	toSaver4 := qFanoutOutputFactory.CreateProducer(config.OutputQueueName)
 
 	sink := NewJourneySink(inputQueue, toSaver4, config.SaversCount)
