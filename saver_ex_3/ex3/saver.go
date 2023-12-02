@@ -9,6 +9,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"os"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func NewSaverForEx3(
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *SaverForEx3 {
 	chkHandler.AddCheckpointable(consumer, id)
-	return &SaverForEx3{
+	saver := &SaverForEx3{
 		c:                     c,
 		consumer:              consumer,
 		finishSig:             finishSig,
@@ -39,6 +40,8 @@ func NewSaverForEx3(
 		regsToPersistByClient: make(map[string]map[string][2]*dataStructures.DynamicMap),
 		checkpointer:          chkHandler,
 	}
+	chkHandler.AddCheckpointable(saver, id)
+	return saver
 }
 
 // SaveData Saves the results from the queue in a file

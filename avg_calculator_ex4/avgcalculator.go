@@ -7,7 +7,6 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 const accumCheckpointId = 0
@@ -41,7 +40,6 @@ func NewAvgCalculator(
 func (a *AvgCalculator) CalculateAvgLoop() {
 	log.Infof("AvgCalculator | Started Avg Calculator loop")
 	log.Infof("AvgCalculator | Starting await of internalSavers | Now waiting for %v savers...", len(a.toJourneySavers))
-	counter := 0
 	for {
 		msg, ok := a.pricesConsumer.Pop()
 		if !ok {
@@ -54,10 +52,6 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 			log.Warnf("AvgCalculator | Warning Message | Received a message that was not expected | Skipping...")
 			continue
 		}
-		if counter > 2 {
-			os.Exit(137)
-		}
-		counter++
 		a.handleEofMsg(msg)
 		err := a.checkpointer.DoCheckpoint(accumCheckpointId)
 		if err != nil {
