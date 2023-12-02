@@ -3,6 +3,7 @@ package controllers
 import (
 	"distance_completer/config"
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -12,21 +13,28 @@ import (
 	"strings"
 )
 
+const airportsSaverId = 0
+
 type AirportSaver struct {
-	c          *config.CompleterConfig
-	consumer   queues.ConsumerProtocolInterface
-	fileSavers map[string]*filemanager.FileWriter
+	c            *config.CompleterConfig
+	consumer     queues.ConsumerProtocolInterface
+	fileSavers   map[string]*filemanager.FileWriter
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
 func NewAirportSaver(
 	conf *config.CompleterConfig,
 	qFactory queuefactory.QueueProtocolFactory,
+	chkHandler *checkpointer.CheckpointerHandler,
 ) *AirportSaver {
 	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", conf.InputQueueAirportsName, conf.ID))
+	// We do a checkpoint to remember duplicates
+	chkHandler.AddCheckpointable(consumer, airportsSaverId)
 	return &AirportSaver{
-		c:          conf,
-		consumer:   consumer,
-		fileSavers: make(map[string]*filemanager.FileWriter),
+		c:            conf,
+		consumer:     consumer,
+		fileSavers:   make(map[string]*filemanager.FileWriter),
+		checkpointer: chkHandler,
 	}
 }
 
@@ -78,6 +86,10 @@ func (as *AirportSaver) SaveAirports() {
 			as.handleAirports(msg)
 		} else {
 			log.Warnf("AirportsSaver | Received Unknown Type of Message | Type was: %v", msg.TypeMessage)
+		}
+		err := as.checkpointer.DoCheckpoint(airportsSaverId)
+		if err != nil {
+			log.Errorf("AirportsSaver | Error on checkpointing | %v", err)
 		}
 	}
 }

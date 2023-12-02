@@ -7,13 +7,11 @@ import (
 )
 
 type ProducerProtocolInterface interface {
-	checkpointer.Checkpointable
-	protocol.DataCleaner
 	Send(msg *dataStructures.Message) error
-	GetSentMessages(string) int
 }
 
 type ConsumerProtocolInterface interface {
+	checkpointer.Checkpointable
 	protocol.DataCleaner
 	Pop() (*dataStructures.Message, bool)
 	GetReceivedMessages(string) int

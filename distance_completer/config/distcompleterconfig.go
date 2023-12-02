@@ -23,6 +23,7 @@ type CompleterConfig struct {
 	AirportsFilename           string
 	ServiceName                string
 	AddressesHealthCheckers    []string
+	TotalEofNodes              uint
 }
 
 func InitEnv() (*viper.Viper, error) {
@@ -46,6 +47,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("queues", "airports", "exchange", "type")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
+	_ = v.BindEnv("total", "nodes", "for", "eof")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -122,6 +124,11 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		return nil, errors.New("missing filename")
 	}
 
+	TotalEofNodes := env.GetUint("total.nodes.for.eof")
+	if TotalEofNodes == 0 {
+		return nil, errors.New("missing total nodes for eof")
+	}
+
 	log.Infof("DistCompleterConfig | action: config | result: success | id: %s | log_level: %s | inputQueueAirportName: %v | inputQueueFlightName: %v | outputQueueNames: %v | goroutinesCount: %v | airportsFilename: %v | exchangeName: %v | routingKey: %v",
 		id,
 		env.GetString("log.level"),
@@ -147,5 +154,6 @@ func GetConfig(env *viper.Viper) (*CompleterConfig, error) {
 		RoutingKeyExchangeAirports: airportRoutingKey,
 		AddressesHealthCheckers:    healthCheckerAddresses,
 		ServiceName:                serviceName,
+		TotalEofNodes:              TotalEofNodes,
 	}, nil
 }

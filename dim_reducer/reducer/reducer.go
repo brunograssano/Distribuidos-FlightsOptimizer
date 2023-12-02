@@ -1,6 +1,8 @@
 package reducer
 
 import (
+	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
@@ -8,11 +10,12 @@ import (
 
 // Reducer Structure that reduces the dimensions of a row by removing columns
 type Reducer struct {
-	reducerId  int
-	c          *Config
-	consumer   queueProtocol.ConsumerProtocolInterface
-	producer   queueProtocol.ProducerProtocolInterface
-	prodToCons queueProtocol.ProducerProtocolInterface
+	reducerId    int
+	c            *Config
+	consumer     queueProtocol.ConsumerProtocolInterface
+	producer     queueProtocol.ProducerProtocolInterface
+	prodToCons   queueProtocol.ProducerProtocolInterface
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
 // NewReducer Creates a new reducer
@@ -22,13 +25,16 @@ func NewReducer(
 	producer queueProtocol.ProducerProtocolInterface,
 	prodToCons queueProtocol.ProducerProtocolInterface,
 	c *Config,
+	chkHandler *checkpointer.CheckpointerHandler,
 ) *Reducer {
+	chkHandler.AddCheckpointable(consumer, reducerId)
 	return &Reducer{
-		reducerId:  reducerId,
-		c:          c,
-		consumer:   consumer,
-		producer:   producer,
-		prodToCons: prodToCons,
+		reducerId:    reducerId,
+		c:            c,
+		consumer:     consumer,
+		producer:     producer,
+		prodToCons:   prodToCons,
+		checkpointer: chkHandler,
 	}
 }
 
@@ -44,7 +50,13 @@ func (r *Reducer) ReduceDims() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DimReducer %v | Received EOF. Now handling...", r.reducerId)
-			err := queueProtocol.HandleEOF(msg, r.consumer, r.prodToCons, []queueProtocol.ProducerProtocolInterface{r.producer})
+			err := queueProtocol.HandleEOF(
+				msg,
+				r.prodToCons,
+				[]queueProtocol.ProducerProtocolInterface{r.producer},
+				fmt.Sprintf("%v-%v", r.c.ID, r.reducerId),
+				r.c.TotalEofNodes,
+			)
 			if err != nil {
 				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}
@@ -53,6 +65,10 @@ func (r *Reducer) ReduceDims() {
 			r.handleFlightRows(msg)
 		} else {
 			log.Warnf("DimReducer %v | Received unknown type message. Skipping it...", r.reducerId)
+		}
+		err := r.checkpointer.DoCheckpoint(r.reducerId)
+		if err != nil {
+			log.Errorf("DimReducer #%v | Error on checkpointing | %v", r.reducerId, err)
 		}
 	}
 }

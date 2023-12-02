@@ -162,9 +162,7 @@ func (ch *ClientHandler) handleFlightRowMessage(message *dataStructures.Message)
 
 func (ch *ClientHandler) handleEOFFlightRows(message *dataStructures.Message) error {
 	dynMap := dataStructures.NewDynamicMap(make(map[string][]byte))
-	dynMap.AddColumn(utils.PrevSent, serializer.SerializeUint(uint32(ch.rowsSent)))
-	dynMap.AddColumn(utils.LocalSent, serializer.SerializeUint(uint32(0)))
-	dynMap.AddColumn(utils.LocalReceived, serializer.SerializeUint(uint32(0)))
+	dynMap.AddColumn(utils.NodesVisited, serializer.SerializeString(""))
 	message.DynMaps = append(message.DynMaps, dynMap)
 	log.Infof("ClientHandler | Sending EOF | Batches sent: %v", ch.rowsSent)
 	return ch.outQueueFlightRows.Send(message)

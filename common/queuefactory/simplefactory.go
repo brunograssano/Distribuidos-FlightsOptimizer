@@ -21,5 +21,5 @@ func (s *SimpleQueueFactory) CreateProducer(queueName string) queues.ProducerPro
 
 func (s *SimpleQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
 	consumer := s.qMiddleware.CreateConsumer(queueName, true)
-	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler(consumer.GetName()))
 }

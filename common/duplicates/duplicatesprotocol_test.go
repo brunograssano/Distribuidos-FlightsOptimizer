@@ -7,7 +7,7 @@ import (
 )
 
 func TestOnArrivalOfNewClientIdItCreatesItsRegistry(t *testing.T) {
-	duplicateDetector := NewDuplicatesHandler()
+	duplicateDetector := NewDuplicatesHandler("cola")
 	assert.NotNil(t, duplicateDetector.lastMessagesSeen, "The map exists")
 
 	duplicateDetector.SaveMessageSeen(
@@ -27,7 +27,7 @@ func TestOnArrivalOfNewClientIdItCreatesItsRegistry(t *testing.T) {
 }
 
 func TestShouldDeleteTheShortestKeyWhenCheckingNewDuplicateAfterReachingMaxMessages(t *testing.T) {
-	duplicateDetector := NewDuplicatesHandler()
+	duplicateDetector := NewDuplicatesHandler("cola")
 	for i := uint(0); i < maxMessagesPerClient; i++ {
 		duplicateDetector.SaveMessageSeen(
 			&dataStructures.Message{
@@ -65,7 +65,7 @@ func TestShouldDeleteTheShortestKeyWhenCheckingNewDuplicateAfterReachingMaxMessa
 }
 
 func TestShouldReturnIsDuplicatedWhenTheClientMessageAndRowDoAlreadyExist(t *testing.T) {
-	duplicateDetector := NewDuplicatesHandler()
+	duplicateDetector := NewDuplicatesHandler("cola")
 	assert.NotNil(t, duplicateDetector.lastMessagesSeen, "The map exists")
 
 	duplicateDetector.SaveMessageSeen(
@@ -102,7 +102,7 @@ func TestShouldReturnIsDuplicatedWhenTheClientMessageAndRowDoAlreadyExist(t *tes
 }
 
 func TestShouldThrowDuplicateWhenMessageIdIsLessThanLeastKeyAndMapIsFull(t *testing.T) {
-	duplicateDetector := NewDuplicatesHandler()
+	duplicateDetector := NewDuplicatesHandler("cola")
 	for i := uint(100); i < 100+maxMessagesPerClient; i++ {
 		duplicateDetector.SaveMessageSeen(
 			&dataStructures.Message{

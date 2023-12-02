@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -25,7 +26,10 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
-	simpleSaver := saver.NewSimpleSaver(qFactory, config)
+	checkpointerHandler := checkpointer.NewCheckpointerHandler()
+	simpleSaver := saver.NewSimpleSaver(qFactory, config, checkpointerHandler)
+	checkpointerHandler.RestoreCheckpoint()
+	
 	go simpleSaver.SaveData()
 
 	getterConf := getters.NewGetterConfig(config.ID, []string{config.OutputFileName}, config.GetterAddress, config.GetterBatchLines)

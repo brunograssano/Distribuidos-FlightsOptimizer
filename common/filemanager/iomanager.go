@@ -6,6 +6,7 @@ type InputManagerInterface interface {
 	io.Closer
 	CanRead() bool
 	ReadLine() string
+	ReadLineAsBytes() []byte
 	Err() error
 }
 

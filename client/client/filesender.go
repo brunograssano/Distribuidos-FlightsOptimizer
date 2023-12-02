@@ -10,13 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// skipHeader Reads a line to skip the header
-func skipHeader(reader *filemanager.FileReader) {
-	if reader.CanRead() {
-		_ = reader.ReadLine()
-	}
-}
-
 func resendMessageAndPreviousOne(previousMessage *dataStructures.Message, msg *dataStructures.Message, conn *socketsProtocol.SocketProtocolHandler) error {
 	if previousMessage != nil {
 		err := conn.Write(previousMessage)
@@ -39,8 +32,9 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 	addedToMsg := uint(0)
 
 	messageId := uint(0)
-	skipHeader(reader)
+  
 	var previousMessage *dataStructures.Message
+	filemanager.SkipHeader(reader)
 	for reader.CanRead() {
 		line := reader.ReadLine()
 		if addedToMsg >= conf.Batch {

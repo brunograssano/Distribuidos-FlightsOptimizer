@@ -2,6 +2,7 @@ package main
 
 import (
 	"data_processor/processor"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -24,9 +25,18 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+
+	var dataProcs []*processor.DataProcessor
 	for i := 0; i < config.GoroutinesCount; i++ {
-		r := processor.NewDataProcessor(i, qFactory, config)
-		go r.ProcessData()
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
+		r := processor.NewDataProcessor(i, qFactory, config, checkpointerHandler)
+		dataProcs = append(dataProcs, r)
+		checkpointerHandler.RestoreCheckpoint()
+	}
+
+	for i := 0; i < len(dataProcs); i++ {
+		log.Infof("Main Data Processor | Spawning GoRoutine - Processor #%v", i)
+		go dataProcs[i].ProcessData()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs

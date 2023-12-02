@@ -2,6 +2,7 @@ package main
 
 import (
 	"filters_config"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -22,10 +23,16 @@ func main() {
 
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
+	var services []*FilterDistances
 	for i := 0; i < config.GoroutinesCount; i++ {
-		fd := NewFilterDistances(i, qFactory, config)
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
+		fd := NewFilterDistances(i, qFactory, config, checkpointerHandler)
+		services = append(services, fd)
+		checkpointerHandler.RestoreCheckpoint()
+	}
+	for i := 0; i < config.GoroutinesCount; i++ {
 		log.Infof("Main - Filter Distances | Spawning GoRoutine - Filter #%v", i)
-		go fd.FilterDistances()
+		go services[i].FilterDistances()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs

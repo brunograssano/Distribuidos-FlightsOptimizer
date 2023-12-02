@@ -20,6 +20,7 @@ type DispatcherEx4Config struct {
 	DispatchersCount        uint
 	ServiceName             string
 	AddressesHealthCheckers []string
+	TotalEofNodes           uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -40,6 +41,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("internal", "dispatcher", "count")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
+	_ = v.BindEnv("total", "nodes", "for", "eof")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -91,6 +93,11 @@ func GetConfig(env *viper.Viper) (*DispatcherEx4Config, error) {
 	}
 	healthCheckerAddresses := strings.Split(healthCheckerAddressesString, utils.CommaSeparator)
 
+	TotalEofNodes := env.GetUint("total.nodes.for.eof")
+	if TotalEofNodes == 0 {
+		return nil, errors.New("missing total nodes for eof")
+	}
+
 	internalDispatcherCount := env.GetUint("internal.dispatcher.count")
 	if internalDispatcherCount <= 0 || internalDispatcherCount > utils.MaxGoroutines {
 		log.Warnf("DispatcherEx4Config | Not a valid value '%v' for internal dispatchers count, using default", internalDispatcherCount)
@@ -117,5 +124,6 @@ func GetConfig(env *viper.Viper) (*DispatcherEx4Config, error) {
 		DispatchersCount:        internalDispatcherCount,
 		AddressesHealthCheckers: healthCheckerAddresses,
 		ServiceName:             serviceName,
+		TotalEofNodes:           TotalEofNodes,
 	}, nil
 }

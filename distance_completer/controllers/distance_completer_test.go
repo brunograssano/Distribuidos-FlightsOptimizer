@@ -16,6 +16,51 @@ type (
 	}
 )
 
+func (m mockConsumer) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) ClearData(s string) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) Pop() (*dataStructures.Message, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) GetReceivedMessages(s string) int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) SetStatusOfLastMessage(b bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m *mockConsumer) ClearData(s string) {}
 
 func (m *mockConsumer) GetReceivedMessages(s string) int {
