@@ -1,6 +1,7 @@
 package reducer
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -27,7 +28,6 @@ func NewReducer(
 	chkHandler *checkpointer.CheckpointerHandler,
 ) *Reducer {
 	chkHandler.AddCheckpointable(consumer, reducerId)
-	chkHandler.AddCheckpointable(producer, reducerId)
 	return &Reducer{
 		reducerId:    reducerId,
 		c:            c,
@@ -50,7 +50,13 @@ func (r *Reducer) ReduceDims() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DimReducer %v | Received EOF. Now handling...", r.reducerId)
-			err := queueProtocol.HandleEOF(msg, r.consumer, r.prodToCons, []queueProtocol.ProducerProtocolInterface{r.producer})
+			err := queueProtocol.HandleEOF(
+				msg,
+				r.prodToCons,
+				[]queueProtocol.ProducerProtocolInterface{r.producer},
+				fmt.Sprintf("%v-%v", r.c.ID, r.reducerId),
+				r.c.TotalEofNodes,
+			)
 			if err != nil {
 				log.Errorf("DimReducer %v | Error handling EOF: %v", r.reducerId, err)
 			}

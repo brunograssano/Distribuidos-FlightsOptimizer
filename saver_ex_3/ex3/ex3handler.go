@@ -53,7 +53,7 @@ func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtoco
 		// We create the input queue to the EX3 service
 		inputQueue := dispatchersQFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 		prodToInput := dispatchersQFactory.CreateProducer(c.ID)
-		tmpDispatcher := dispatcher.NewJourneyDispatcher(i, inputQueue, prodToInput, toInternalSavers, checkpointerHandler)
+		tmpDispatcher := dispatcher.NewJourneyDispatcher(i, inputQueue, prodToInput, toInternalSavers, checkpointerHandler, c.TotalEofNodes, fmt.Sprintf("%v", i))
 		jds = append(jds, tmpDispatcher)
 		checkpointerHandler.RestoreCheckpoint()
 	}

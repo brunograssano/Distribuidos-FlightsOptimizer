@@ -1,8 +1,5 @@
-
 log:
   level: "debug"
-reducer:
-  goroutines: 4
 rabbitmq:
   address: "amqp://guest:guest@rabbitmq:5672/"
 heartbeat:

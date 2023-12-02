@@ -35,7 +35,6 @@ func NewDistanceCompleter(
 	producer := qFactory.CreateProducer(c.OutputQueueName)
 	producerForCons := qFactory.CreateProducer(c.InputQueueFlightsName)
 	chkHandler.AddCheckpointable(consumer, id)
-	chkHandler.AddCheckpointable(producer, id)
 	return &DistanceCompleter{
 		completerId:  id,
 		airportsMaps: make(map[string]map[string][2]float32),
@@ -152,7 +151,7 @@ func (dc *DistanceCompleter) CompleteDistances() {
 		log.Debugf("DistanceCompleter %v | Received Message | {type: %v, rowCount:%v}", dc.completerId, msg.TypeMessage, len(msg.DynMaps))
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DistanceCompleter %v | Received EOF. Handling...", dc.completerId)
-			err := queueProtocol.HandleEOF(msg, dc.consumer, dc.prodForCons, []queueProtocol.ProducerProtocolInterface{dc.producer})
+			err := queueProtocol.HandleEOF(msg, dc.prodForCons, []queueProtocol.ProducerProtocolInterface{dc.producer}, fmt.Sprintf("%v-%v", dc.c.ID, dc.completerId), dc.c.TotalEofNodes)
 			if err != nil {
 				log.Errorf("DistanceCompleter %v | Error handling EOF | %v", dc.completerId, err)
 			}

@@ -7,10 +7,7 @@ import (
 )
 
 type ProducerProtocolInterface interface {
-	checkpointer.Checkpointable
-	protocol.DataCleaner
 	Send(msg *dataStructures.Message) error
-	GetSentMessages(string) int
 }
 
 type ConsumerProtocolInterface interface {

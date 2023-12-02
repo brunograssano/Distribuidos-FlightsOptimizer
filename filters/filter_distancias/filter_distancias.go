@@ -2,6 +2,7 @@ package main
 
 import (
 	"filters_config"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
@@ -32,7 +33,6 @@ func NewFilterDistances(
 	outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = qFactory.CreateProducer(conf.OutputQueueNames[i])
-		chkHandler.AddCheckpointable(outputQueues[i], filterId)
 	}
 	chkHandler.AddCheckpointable(inputQueue, filterId)
 
@@ -57,7 +57,7 @@ func (fd *FilterDistances) FilterDistances() {
 		}
 		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("FilterDistances %v | Received EOF. Handling...", fd.filterId)
-			err := queueProtocol.HandleEOF(msgStruct, fd.consumer, fd.prodToCons, fd.producers)
+			err := queueProtocol.HandleEOF(msgStruct, fd.prodToCons, fd.producers, fmt.Sprintf("%v-%v", fd.config.ID, fd.filterId), fd.config.TotalEofNodes)
 			if err != nil {
 				log.Errorf("FilterDistances %v | Error handling EOF | %v", fd.filterId, err)
 			}

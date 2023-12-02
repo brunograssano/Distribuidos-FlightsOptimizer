@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -31,7 +32,15 @@ func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 			outputQueue := exchangeFactory.CreateProducer(dispatcherConfig.OutputExchangeName)
 			outputQueues = append(outputQueues, outputQueue)
 		}
-		tmpDispatcher := dispatcher.NewJourneyDispatcher(idx, inputQueue, prodToInput, outputQueues, checkpointerHandler)
+		tmpDispatcher := dispatcher.NewJourneyDispatcher(
+			idx,
+			inputQueue,
+			prodToInput,
+			outputQueues,
+			checkpointerHandler,
+			dispatcherConfig.TotalEofNodes,
+			fmt.Sprintf("%v-%v", dispatcherConfig.ID, idx),
+		)
 		dispatchers = append(dispatchers, tmpDispatcher)
 		checkpointerHandler.RestoreCheckpoint()
 	}

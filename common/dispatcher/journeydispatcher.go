@@ -11,11 +11,13 @@ import (
 
 // JourneyDispatcher Struct that dispatches journey messages
 type JourneyDispatcher struct {
-	id           int
-	channels     []queueProtocol.ProducerProtocolInterface
-	input        queueProtocol.ConsumerProtocolInterface
-	prodToInput  queueProtocol.ProducerProtocolInterface
-	checkpointer *checkpointer.CheckpointerHandler
+	id            int
+	channels      []queueProtocol.ProducerProtocolInterface
+	input         queueProtocol.ConsumerProtocolInterface
+	prodToInput   queueProtocol.ProducerProtocolInterface
+	checkpointer  *checkpointer.CheckpointerHandler
+	totalEofNodes uint
+	eofId         string
 }
 
 // NewJourneyDispatcher Creates a new dispatcher
@@ -25,14 +27,18 @@ func NewJourneyDispatcher(
 	prodToInput queueProtocol.ProducerProtocolInterface,
 	outputChannels []queueProtocol.ProducerProtocolInterface,
 	chkHandler *checkpointer.CheckpointerHandler,
+	totalEofNodes uint,
+	eofId string,
 ) *JourneyDispatcher {
 	chkHandler.AddCheckpointable(input, int(id))
 	return &JourneyDispatcher{
-		id:           int(id),
-		input:        input,
-		channels:     outputChannels,
-		prodToInput:  prodToInput,
-		checkpointer: chkHandler,
+		id:            int(id),
+		input:         input,
+		channels:      outputChannels,
+		prodToInput:   prodToInput,
+		checkpointer:  chkHandler,
+		totalEofNodes: totalEofNodes,
+		eofId:         eofId,
 	}
 }
 
@@ -54,7 +60,7 @@ func (jd *JourneyDispatcher) DispatchLoop() {
 // on the starting airport and destination airport on each row of the message
 func (jd *JourneyDispatcher) dispatch(message *dataStructures.Message) {
 	if message.TypeMessage == dataStructures.EOFFlightRows {
-		err := queueProtocol.HandleEOF(message, jd.input, jd.prodToInput, jd.channels)
+		err := queueProtocol.HandleEOF(message, jd.prodToInput, jd.channels, jd.eofId, jd.totalEofNodes)
 		if err != nil {
 			log.Errorf("JourneyDispatcher | Error handling EOF | %v", err)
 		}

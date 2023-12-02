@@ -2,6 +2,7 @@ package main
 
 import (
 	"filters_config"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
@@ -32,9 +33,6 @@ func NewFilterStopovers(
 ) *FilterStopovers {
 	filter := filters.NewFilter()
 	chkHandler.AddCheckpointable(consumer, filterId)
-	for _, producer := range producers {
-		chkHandler.AddCheckpointable(producer, filterId)
-	}
 	return &FilterStopovers{
 		filterId:     filterId,
 		config:       conf,
@@ -55,7 +53,7 @@ func (fe *FilterStopovers) FilterStopovers() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("FilterStopovers %v | Received EOF. Now handling...", fe.filterId)
-			err := queueProtocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
+			err := queueProtocol.HandleEOF(msg, fe.prodToCons, fe.producers, fmt.Sprintf("%v-%v", fe.config.ID, fe.filterId), fe.config.TotalEofNodes)
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error handling EOF | %v", fe.filterId, err)
 			}

@@ -7,11 +7,3 @@ type Checkpointable interface {
 	Commit(int, chan error)
 	Abort(int, chan error)
 }
-
-type CheckpointType uint8
-
-const (
-	Tmp CheckpointType = iota
-	Curr
-	Old
-)

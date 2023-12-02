@@ -47,6 +47,7 @@ const DirectDistance = "directDistance"
 const TotalStopovers = "totalStopovers"
 const SegmentsArrivalAirportCode = "segmentsArrivalAirportCode"
 const SegmentsAirlineName = "segmentsAirlineName"
+const NodesVisited = "nodesVisited"
 
 const LocalPrice = "localPrice"
 const LocalQuantity = "localQuantity"

@@ -2,7 +2,6 @@
 log:
   level: "info"
 completer:
-  goroutines: 4
   filename: airports.csv
 rabbitmq:
   address: "amqp://guest:guest@rabbitmq:5672/"

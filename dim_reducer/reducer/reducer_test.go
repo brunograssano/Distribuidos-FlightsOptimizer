@@ -1,6 +1,7 @@
 package reducer
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -13,6 +14,31 @@ type (
 		ok           bool
 	}
 )
+
+func (m *mockConsumerQueueProtocolHandler) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumerQueueProtocolHandler) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumerQueueProtocolHandler) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumerQueueProtocolHandler) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumerQueueProtocolHandler) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (m *mockConsumerQueueProtocolHandler) SetStatusOfLastMessage(b bool) {}
 
@@ -65,10 +91,11 @@ func TestShouldGetAMessageReduceItAndSendIt(t *testing.T) {
 	}
 
 	reducer := &Reducer{
-		reducerId: 0,
-		c:         reducerConfig,
-		consumer:  mConsumer,
-		producer:  mProducer,
+		reducerId:    0,
+		c:            reducerConfig,
+		consumer:     mConsumer,
+		producer:     mProducer,
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 
 	dynMap := make(map[string][]byte)
