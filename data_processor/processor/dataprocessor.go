@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -30,7 +31,7 @@ type DataProcessor struct {
 
 // NewDataProcessor Creates a new DataProcessor structure
 func NewDataProcessor(id int, qFactory queuefactory.QueueProtocolFactory, c *Config, chkHandler *checkpointer.CheckpointerHandler) *DataProcessor {
-	consumer := qFactory.CreateConsumer(c.InputQueueName)
+	consumer := qFactory.CreateConsumer(c.InputQueueName, fmt.Sprintf("%v-%v-%v", c.ID, id, c.InputQueueName))
 	var producersEx123 []queueProtocol.ProducerProtocolInterface
 	for _, queueName := range c.OutputQueueNameEx123 {
 		prod := qFactory.CreateProducer(queueName)

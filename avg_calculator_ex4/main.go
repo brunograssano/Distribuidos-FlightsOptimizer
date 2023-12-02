@@ -25,7 +25,8 @@ func main() {
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	qFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
-	inputQueue := qFanoutFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
+	iQueueName := fmt.Sprintf("%v-%v", config.InputQueueName, config.ID)
+	inputQueue := qFanoutFactory.CreateConsumer(iQueueName, iQueueName)
 
 	for i := uint(0); i < config.SaversCount; i++ {
 		producer := qFactory.CreateProducer(config.OutputQueueName)

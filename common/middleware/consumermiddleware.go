@@ -10,12 +10,14 @@ type Consumer struct {
 	ConsumerInterface
 	rabbitMQChannel     *amqp.Channel
 	messageChannel      <-chan amqp.Delivery
+	dlqMessageChannel   <-chan amqp.Delivery
 	queue               amqp.Queue
 	lastMessageConsumed *amqp.Delivery
 }
 
-func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
+func NewConsumer(channel *amqp.Channel, name string, durable bool, idDeadLetterQueue string) *Consumer {
 	queue := CreateQueue(channel, name, durable)
+	queueDeadLetter := CreateDeadLetterQueue(channel, idDeadLetterQueue)
 	messages, err := channel.Consume(
 		queue.Name, // queue
 		"",         // consumer
@@ -23,21 +25,37 @@ func NewConsumer(channel *amqp.Channel, name string, durable bool) *Consumer {
 		false,      // exclusive
 		false,      // no-local
 		false,      // no-wait
-		nil,        // args
+		map[string]interface{}{"x-dead-letter-exchange": "dead_letter_exchange"}, // Argumento para Dead Letter Exchange
 	)
+	messagesDLQ, err := channel.Consume(
+		queueDeadLetter.Name, // queue
+		"",                   // consumer
+		false,                // auto-ack
+		false,                // exclusive
+		false,                // no-local
+		false,                // no-wait
+		nil,                  // args
+	)
+	//channel.
 	FailOnError(err, "Failed to consume and create bytes channel in the RabbitMQ Queue.")
 	return &Consumer{
 		rabbitMQChannel:     channel,
 		queue:               queue,
 		messageChannel:      messages,
+		dlqMessageChannel:   messagesDLQ,
 		lastMessageConsumed: nil,
 	}
 }
 
 func (queue *Consumer) Pop() ([]byte, bool) {
-	msg, ok := <-queue.messageChannel
-	queue.lastMessageConsumed = &msg
-	return msg.Body, ok
+	select {
+	case msg, ok := <-queue.messageChannel:
+		queue.lastMessageConsumed = &msg
+		return msg.Body, ok
+	case msg, ok := <-queue.messageChannel:
+		queue.lastMessageConsumed = &msg
+		return msg.Body, ok
+	}
 }
 
 func (queue *Consumer) BindTo(nameExchange string, routingKey string, kind string) error {

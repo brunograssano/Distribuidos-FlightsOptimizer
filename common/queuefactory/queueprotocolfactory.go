@@ -6,5 +6,5 @@ import (
 
 type QueueProtocolFactory interface {
 	CreateProducer(string) queues.ProducerProtocolInterface
-	CreateConsumer(string) queues.ConsumerProtocolInterface
+	CreateConsumer(string, string) queues.ConsumerProtocolInterface
 }

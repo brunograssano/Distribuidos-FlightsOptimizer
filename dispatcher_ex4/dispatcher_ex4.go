@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -24,7 +25,7 @@ func NewDispatcherEx4(dispatcherConfig *DispatcherEx4Config) *DispatcherEx4 {
 	for idx := uint(0); idx < dispatcherConfig.DispatchersCount; idx++ {
 		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		exchangeFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
-		inputQueue := simpleFactory.CreateConsumer(dispatcherConfig.InputQueueName)
+		inputQueue := simpleFactory.CreateConsumer(dispatcherConfig.InputQueueName, fmt.Sprintf("%v-%v-%v", dispatcherConfig.ID, idx, dispatcherConfig.InputQueueName))
 		prodToInput := simpleFactory.CreateProducer(dispatcherConfig.InputQueueName)
 		var outputQueues []queueProtocol.ProducerProtocolInterface
 		for i := uint(0); i < dispatcherConfig.SaversCount; i++ {

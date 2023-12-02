@@ -23,9 +23,9 @@ func (d *DirectExchangeConsumerSimpleProdQueueFactory) CreateProducer(queueName 
 	return queues.NewProducerQueueProtocolHandler(p)
 }
 
-func (d *DirectExchangeConsumerSimpleProdQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
+func (d *DirectExchangeConsumerSimpleProdQueueFactory) CreateConsumer(queueName string, idDLQ string) queues.ConsumerProtocolInterface {
 	routingKey := d.routingKey + d.counter
-	consumerQueue := d.qMiddleware.CreateConsumer(fmt.Sprintf("%v-%v", queueName, routingKey), true)
+	consumerQueue := d.qMiddleware.CreateConsumer(fmt.Sprintf("%v-%v", queueName, routingKey), true, idDLQ)
 	err := consumerQueue.BindTo(queueName, fmt.Sprintf("%v", routingKey), "direct")
 	if err != nil {
 		log.Fatalf("DirectExchangeConsumerSimpleProdQueueFactory | Error creating consumer: %v", err)

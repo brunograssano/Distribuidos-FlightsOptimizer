@@ -22,8 +22,8 @@ func (t *TopicFactory) CreateProducer(routingKey string) queues.ProducerProtocol
 	return queues.NewProducerQueueProtocolHandler(producer)
 }
 
-func (t *TopicFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
-	consumer := t.qMiddleware.CreateConsumer(queueName, true)
+func (t *TopicFactory) CreateConsumer(queueName string, idDLQ string) queues.ConsumerProtocolInterface {
+	consumer := t.qMiddleware.CreateConsumer(queueName, true, idDLQ)
 	for _, rk := range t.routingKeys {
 		err := consumer.BindTo(t.exchangeName, rk, "topic")
 		if err != nil {

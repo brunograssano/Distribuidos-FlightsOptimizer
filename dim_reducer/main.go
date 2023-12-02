@@ -2,6 +2,7 @@ package main
 
 import (
 	"dim_reducer/reducer"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -29,7 +30,7 @@ func main() {
 	var services []*reducer.Reducer
 	for i := 0; i < config.GoroutinesCount; i++ {
 		checkpointerHandler := checkpointer.NewCheckpointerHandler()
-		consumer := simpleFactory.CreateConsumer(config.InputQueueName)
+		consumer := simpleFactory.CreateConsumer(config.InputQueueName, fmt.Sprintf("%v-%v-%v", config.ID, i, config.InputQueueName))
 		producer := fanoutFactory.CreateProducer(config.OutputQueueName)
 		prodToCons := simpleFactory.CreateProducer(config.InputQueueName)
 		r := reducer.NewReducer(i, consumer, producer, prodToCons, config, checkpointerHandler)

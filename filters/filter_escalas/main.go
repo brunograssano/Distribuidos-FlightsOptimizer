@@ -2,6 +2,7 @@ package main
 
 import (
 	"filters_config"
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	middleware "github.com/brunograssano/Distribuidos-TP1/common/middleware"
@@ -27,7 +28,7 @@ func main() {
 	var services []*FilterStopovers
 	for i := 0; i < config.GoroutinesCount; i++ {
 		checkpointerHandler := checkpointer.NewCheckpointerHandler()
-		inputQueue := qFactory.CreateConsumer(config.InputQueueName)
+		inputQueue := qFactory.CreateConsumer(config.InputQueueName, fmt.Sprintf("%v-%v-%v", config.ID, config.InputQueueName, i))
 		prodToCons := qFactory.CreateProducer(config.InputQueueName)
 		outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(config.OutputQueueNames)+len(config.OutputExchangeNames))
 		for i := 0; i < len(config.OutputQueueNames); i++ {
