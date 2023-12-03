@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"filters_config"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -16,6 +17,31 @@ type (
 		ok           bool
 	}
 )
+
+func (m *mockConsumer) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (m *mockConsumer) SetStatusOfLastMessage(b bool) {
 	//TODO implement me
@@ -74,11 +100,12 @@ func TestGettingARowWithTotalStopoversLessThanThreeShouldNotSendIt(t *testing.T)
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -110,11 +137,12 @@ func TestGettingARowWithTotalStopoversEqualToThreeShouldSendIt(t *testing.T) {
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -154,11 +182,12 @@ func TestGettingARowWithTotalStopoversGreaterThanThreeShouldSendIt(t *testing.T)
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterEscalas.FilterStopovers()
 
@@ -197,11 +226,12 @@ func TestWithLessEqualAndGreaterCasesTogetherShouldSendTwoOutOfThree(t *testing.
 		outputChannel: output,
 	}
 	filterEscalas := &FilterStopovers{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterEscalas.FilterStopovers()
 

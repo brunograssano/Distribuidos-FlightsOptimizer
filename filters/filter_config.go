@@ -19,6 +19,7 @@ type FilterConfig struct {
 	RabbitAddress           string
 	AddressesHealthCheckers []string
 	ServiceName             string
+	TotalEofNodes           uint
 }
 
 func InitEnv() (*viper.Viper, error) {
@@ -36,6 +37,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("filter", "goroutines")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
+	_ = v.BindEnv("total", "nodes", "for", "eof")
 
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
@@ -80,6 +82,11 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 		return nil, errors.New("missing rabbitmq address")
 	}
 
+	TotalEofNodes := env.GetUint("total.nodes.for.eof")
+	if TotalEofNodes == 0 {
+		return nil, errors.New("missing total nodes for eof")
+	}
+
 	goroutinesCount := env.GetInt("filter.goroutines")
 	if goroutinesCount <= 0 || goroutinesCount > utils.MaxGoroutines {
 		log.Warnf("FilterConfig | Warn Message | Not a valid value '%v' for goroutines count, using default", goroutinesCount)
@@ -115,5 +122,6 @@ func GetConfigFilters(env *viper.Viper) (*FilterConfig, error) {
 		RabbitAddress:           rabbitAddress,
 		AddressesHealthCheckers: healthCheckerAddresses,
 		ServiceName:             serviceName,
+		TotalEofNodes:           TotalEofNodes,
 	}, nil
 }

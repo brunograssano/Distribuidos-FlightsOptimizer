@@ -2,6 +2,7 @@ package ex3
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/dispatcher"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	"github.com/brunograssano/Distribuidos-TP1/common/getters"
@@ -30,14 +31,17 @@ func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtoco
 	var toInternalSavers []queueProtocol.ProducerProtocolInterface
 	log.Infof("Ex3Handler | Creating %v savers...", int(c.InternalSaversCount))
 	for i := 0; i < int(c.InternalSaversCount); i++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		internalSaversConsumers = append(internalSaversConsumers, NewSaverForEx3(
 			internalQFactory.CreateConsumer(fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)),
 			c,
 			finishSignal,
 			i,
+			checkpointerHandler,
 		))
 		outputFileNames = append(outputFileNames, fmt.Sprintf("%v_%v", c.OutputFilePrefix, i))
 		toInternalSavers = append(toInternalSavers, internalQFactory.CreateProducer(fmt.Sprintf("saver3-internal-%v-%v", c.ID, i)))
+		checkpointerHandler.RestoreCheckpoint()
 		log.Infof("Ex3Handler | Created Saver #%v correctly...", i)
 	}
 
@@ -45,10 +49,13 @@ func NewEx3Handler(c *SaverConfig, dispatchersQFactory queuefactory.QueueProtoco
 	log.Infof("Ex3Handler | Creating dispatchers...")
 	var jds []*dispatcher.JourneyDispatcher
 	for i := uint(0); i < c.DispatchersCount; i++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		// We create the input queue to the EX3 service
 		inputQueue := dispatchersQFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
 		prodToInput := dispatchersQFactory.CreateProducer(c.ID)
-		jds = append(jds, dispatcher.NewJourneyDispatcher(inputQueue, prodToInput, toInternalSavers))
+		tmpDispatcher := dispatcher.NewJourneyDispatcher(i, inputQueue, prodToInput, toInternalSavers, checkpointerHandler, c.TotalEofNodes, fmt.Sprintf("%v", i))
+		jds = append(jds, tmpDispatcher)
+		checkpointerHandler.RestoreCheckpoint()
 	}
 
 	getterConf := getters.NewGetterConfig(c.ID, outputFileNames, c.GetterAddress, c.GetterBatchLines)

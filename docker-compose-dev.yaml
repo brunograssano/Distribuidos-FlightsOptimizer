@@ -1,6 +1,6 @@
 
 version: '3.9'
-name: tp1
+name: tp2
 services:
   rabbitmq:
     container_name: rabbitmq
@@ -29,7 +29,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
       - CLI_REDUCER_COLUMNS=legId,route,totalFare
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_REDUCER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -48,7 +50,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver1_queue
       - CLI_REDUCER_COLUMNS=legId,route,totalFare
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_REDUCER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -69,7 +73,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_REDUCER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -88,7 +94,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=dim_reducer_saver_2
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver2_queue
       - CLI_REDUCER_COLUMNS=legId,route
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_REDUCER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -110,7 +118,9 @@ services:
       - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_EXCHANGE_OUTPUTS=saver_3
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_FILTER_GOROUTINES=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -129,7 +139,9 @@ services:
       - CLI_RABBITMQ_QUEUES_INPUT=filters_stopovers
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_1
       - CLI_RABBITMQ_EXCHANGE_OUTPUTS=saver_3
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_FILTER_GOROUTINES=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -150,7 +162,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_PROCESSOR_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -169,7 +183,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=flight_row_processor
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX123=filters_stopovers,distance_calculator
       - CLI_RABBITMQ_QUEUE_OUTPUT_EX4=ex4_solver
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_PROCESSOR_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
@@ -189,7 +205,9 @@ services:
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_FILTER_GOROUTINES=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -207,7 +225,9 @@ services:
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUES_INPUT=filters_distances
       - CLI_RABBITMQ_QUEUES_OUTPUT=dim_reducer_saver_2
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_FILTER_GOROUTINES=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -232,14 +252,16 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
       - CLI_COMPLETER_FILENAME=flightrows
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_COMPLETER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
       - ./distance_completer/config.yaml:/config.yaml
     depends_on:
-        rabbitmq:
-          condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   distance_completer-2:
     container_name: distance_completer-2
@@ -255,14 +277,16 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTEXCHANGE=AirportsExchange
       - CLI_RABBITMQ_QUEUE_INPUT_AIRPORTROUTINGKEY=airports
       - CLI_COMPLETER_FILENAME=flightrows
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_COMPLETER_GOROUTINES=4
+      - CLI_TOTAL_NODES_FOR_EOF=8
     networks:
       - testing_net
     volumes:
       - ./distance_completer/config.yaml:/config.yaml
     depends_on:
-        rabbitmq:
-          condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 
 
@@ -279,7 +303,7 @@ services:
       - CLI_INTERNAL_SAVERS_COUNT=6
       - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=0
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -301,7 +325,7 @@ services:
       - CLI_INTERNAL_SAVERS_COUNT=6
       - CLI_TOTAL_SAVERS_COUNT=12
       - CLI_RABBITMQ_RK_INPUT=6
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -322,7 +346,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_INTERNAL_DISPATCHER_COUNT=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -348,7 +374,9 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_INTERNAL_DISPATCHER_COUNT=6
+      - CLI_TOTAL_NODES_FOR_EOF=12
     networks:
       - testing_net
     volumes:
@@ -376,7 +404,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -395,7 +423,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=journey_savers_ex4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -416,7 +444,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -435,7 +463,7 @@ services:
       - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUT=saver4_queue
       - CLI_SAVERS_COUNT=12
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -457,7 +485,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex1
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex1-1:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -477,7 +505,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex1
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex1-2:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -499,7 +527,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex2
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex2-1:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -519,7 +547,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex2
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex2-2:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -541,7 +569,9 @@ services:
       - CLI_SAVER_OUTPUT=results_ex3
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex3-1:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_DISPATCHERS_COUNT=2
+      - CLI_TOTAL_NODES_FOR_EOF=2
     networks:
       - testing_net
     volumes:
@@ -561,7 +591,9 @@ services:
       - CLI_SAVER_OUTPUT=results_ex3
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex3-2:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
+      - CLI_DISPATCHERS_COUNT=2
+      - CLI_TOTAL_NODES_FOR_EOF=2
     networks:
       - testing_net
     volumes:
@@ -583,7 +615,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex4
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex4-1:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -603,7 +635,7 @@ services:
       - CLI_SAVER_OUTPUT=results_ex4
       - CLI_GETTER_BATCH_LINES=100
       - CLI_GETTER_ADDRESS=saver-ex4-2:8080
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -628,7 +660,7 @@ services:
       - CLI_QUEUES_AIRPORTS_EXCHANGE_NAME=AirportsExchange
       - CLI_QUEUES_AIRPORTS_EXCHANGE_ROUTINGKEY=airports
       - CLI_QUEUES_FLIGHTROWS=flight_row_processor
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080
     networks:
       - testing_net
     volumes:
@@ -636,7 +668,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-    
+
       saver-ex1-1:
         condition: service_started
       saver-ex2-1:
@@ -645,7 +677,7 @@ services:
         condition: service_started
       saver-ex4-1:
         condition: service_started
-    
+
       saver-ex1-2:
         condition: service_started
       saver-ex2-2:
@@ -654,23 +686,23 @@ services:
         condition: service_started
       saver-ex4-2:
         condition: service_started
-    
-    
+
+
       distance_completer-1:
         condition: service_started
-    
+
       distance_completer-2:
         condition: service_started
-    
+
   client:
     container_name: client
     image: client:latest
     environment:
       - CLI_ID=30
       - CLI_LOG_LEVEL=INFO
-      - CLI_INPUT_BATCH=100
+      - CLI_INPUT_BATCH=50
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
-      - CLI_INPUT_FILE=/data/flightrows.csv # configurar localmente
+      - CLI_INPUT_FILE=/data/flightrows5000.csv # configurar localmente
     networks:
       - testing_net
     volumes:
@@ -689,51 +721,19 @@ services:
       - CLI_LOG_LEVEL=INFO
       - CLI_NAME=healthchecker-1
       - CLI_HEALTHCHECKER_ADDRESS=healthchecker-1:8080
-      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=2:healthchecker-2:8081,3:healthchecker-3:8081
+      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=
       - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-1:8081
       - CLI_HEALTHCHECKER_ELECTION_ID=1
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-2:8080,healthchecker-3:8080
+      - CLI_HEALTHCHECKER_ADDRESSES=
+      - CLI_HEALTHCHECKER_CONTAINERS=dim_reducer_reducer-ex1-1,dim_reducer_reducer-ex1-2,dim_reducer_reducer-ex2-1,dim_reducer_reducer-ex2-2,filter_stopovers-1,filter_stopovers-2,data_processor-1,data_processor-2,filter_distances-1,filter_distances-2,distance_completer-1,distance_completer-2,ex4_saver-1,ex4_saver-2,ex4_dispatcher-1,ex4_dispatcher-2,avg_calculator_ex4-1,avg_calculator_ex4-2,ex4_sink-1,ex4_sink-2,saver-ex1-1,saver-ex2-1,saver-ex3-1,saver-ex4-1,saver-ex1-2,saver-ex2-2,saver-ex3-2,saver-ex4-2,server,
     networks:
       - testing_net
     volumes:
       - ./healthchecker/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
-
-  healthchecker-2:
-    container_name: healthchecker-2
-    image: healthchecker:latest
-    environment:
-      - CLI_ID=32
-      - CLI_LOG_LEVEL=INFO
-      - CLI_NAME=healthchecker-2
-      - CLI_HEALTHCHECKER_ADDRESS=healthchecker-2:8080
-      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=1:healthchecker-1:8081,3:healthchecker-3:8081
-      - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-2:8081
-      - CLI_HEALTHCHECKER_ELECTION_ID=2
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-3:8080
-    networks:
-      - testing_net
-    volumes:
-      - ./healthchecker/config.yaml:/config.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  healthchecker-3:
-    container_name: healthchecker-3
-    image: healthchecker:latest
-    environment:
-      - CLI_ID=33
-      - CLI_LOG_LEVEL=INFO
-      - CLI_NAME=healthchecker-3
-      - CLI_HEALTHCHECKER_ADDRESS=healthchecker-3:8080
-      - CLI_HEALTHCHECKER_ELECTION_ID_ADDRESSES=1:healthchecker-1:8081,2:healthchecker-2:8081
-      - CLI_HEALTHCHECKER_ELECTION_UDP_ADDRESS=healthchecker-3:8081
-      - CLI_HEALTHCHECKER_ELECTION_ID=3
-      - CLI_HEALTHCHECKER_ADDRESSES=healthchecker-1:8080,healthchecker-2:8080
-    networks:
-      - testing_net
-    volumes:
-      - ./healthchecker/config.yaml:/config.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 
 networks:
@@ -741,3 +741,4 @@ networks:
     ipam:
       driver: default
       config:
+        - subnet: 172.25.125.0/24

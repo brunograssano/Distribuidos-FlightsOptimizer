@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -26,12 +27,13 @@ func main() {
 	qFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
 	inputQueue := qFanoutFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
-
+	chkHandler := checkpointer.NewCheckpointerHandler()
 	for i := uint(0); i < config.SaversCount; i++ {
 		producer := qFactory.CreateProducer(config.OutputQueueName)
 		toJourneySavers = append(toJourneySavers, producer)
 	}
-	avgCalculator := NewAvgCalculator(toJourneySavers, inputQueue, config)
+	avgCalculator := NewAvgCalculator(toJourneySavers, inputQueue, config, chkHandler)
+	chkHandler.RestoreCheckpoint()
 	go avgCalculator.CalculateAvgLoop()
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs

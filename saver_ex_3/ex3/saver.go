@@ -2,6 +2,7 @@ package ex3
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -18,6 +19,7 @@ type SaverForEx3 struct {
 	finishSig             chan string
 	regsToPersistByClient map[string]map[string][2]*dataStructures.DynamicMap
 	id                    int
+	checkpointer          *checkpointer.CheckpointerHandler
 }
 
 // NewSaverForEx3 Creates a new saver for the results
@@ -26,14 +28,19 @@ func NewSaverForEx3(
 	c *SaverConfig,
 	finishSig chan string,
 	id int,
+	chkHandler *checkpointer.CheckpointerHandler,
 ) *SaverForEx3 {
-	return &SaverForEx3{
+	chkHandler.AddCheckpointable(consumer, id)
+	saver := &SaverForEx3{
 		c:                     c,
 		consumer:              consumer,
 		finishSig:             finishSig,
 		id:                    id,
 		regsToPersistByClient: make(map[string]map[string][2]*dataStructures.DynamicMap),
+		checkpointer:          chkHandler,
 	}
+	chkHandler.AddCheckpointable(saver, id)
+	return saver
 }
 
 // SaveData Saves the results from the queue in a file
@@ -52,7 +59,10 @@ func (s *SaverForEx3) SaveData() {
 		} else if msg.TypeMessage == dataStructures.FlightRows {
 			s.handleFlightRow(msg.DynMaps[0], msg.ClientId)
 		}
-
+		err := s.checkpointer.DoCheckpoint(s.id)
+		if err != nil {
+			log.Errorf("Saver %v | Error on checkpointing | %v", s.id, err)
+		}
 	}
 }
 

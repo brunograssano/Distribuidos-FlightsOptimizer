@@ -44,7 +44,19 @@ func (q *ConsumerQueueProtocolHandler) Pop() (*dataStructures.Message, bool) {
 			log.Warnf("ConsumerQueueProtocolhandler | Got Duplicated Message: %v-%v-%v| Discarding it...", msg.ClientId, msg.MessageId, msg.RowId)
 		}
 	}
+	q.sumToConsumedByClient(msg)
+	q.duplicatesHandler.SaveMessageSeen(msg)
 	return msg, true
+}
+
+func (q *ConsumerQueueProtocolHandler) sumToConsumedByClient(msg *dataStructures.Message) {
+	if msg.TypeMessage == dataStructures.FlightRows {
+		_, exists := q.consumedByClients[msg.ClientId]
+		if !exists {
+			q.consumedByClients[q.lastMsg.ClientId] = 0
+		}
+		q.consumedByClients[q.lastMsg.ClientId] += len(q.lastMsg.DynMaps)
+	}
 }
 
 func (q *ConsumerQueueProtocolHandler) GetReceivedMessages(clientId string) int {
@@ -65,20 +77,14 @@ func (q *ConsumerQueueProtocolHandler) SetStatusOfLastMessage(status bool) {
 }
 
 func (q *ConsumerQueueProtocolHandler) notifyStatusOfLastMessage() error {
-	if q.status && q.lastMsg != nil {
-		q.duplicatesHandler.SaveMessageSeen(q.lastMsg)
-	}
 	err := q.consumer.SignalFinishedMessage(q.status)
 	if err != nil {
 		log.Errorf("ConsumerProtocolHandler | Error trying to notify status of last message | %v", err)
 		return err
 	}
-	if q.lastMsg != nil && q.lastMsg.TypeMessage == dataStructures.FlightRows && q.status {
-		_, exists := q.consumedByClients[q.lastMsg.ClientId]
-		if !exists {
-			q.consumedByClients[q.lastMsg.ClientId] = 0
-		}
-		q.consumedByClients[q.lastMsg.ClientId] += len(q.lastMsg.DynMaps)
+	// Caso de NACK
+	if q.lastMsg != nil && q.lastMsg.TypeMessage == dataStructures.FlightRows && !q.status {
+		q.consumedByClients[q.lastMsg.ClientId] -= len(q.lastMsg.DynMaps)
 	}
 	q.status = true
 	return nil

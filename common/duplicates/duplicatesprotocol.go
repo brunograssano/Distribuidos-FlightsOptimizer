@@ -1,10 +1,14 @@
 package duplicates
 
-import dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
+	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
+)
 
 const maxMessagesPerClient = 200
 
 type DuplicateDetector interface {
+	checkpointer.Checkpointable
 	IsDuplicate(message *dataStructures.Message) bool
 	SaveMessageSeen(message *dataStructures.Message)
 }
@@ -12,10 +16,14 @@ type DuplicateDetector interface {
 type DuplicatesHandler struct {
 	//Structure ClientID -> MessageID -> RowID
 	lastMessagesSeen map[string]map[uint]uint16
+	queueName        string
 }
 
-func NewDuplicatesHandler() *DuplicatesHandler {
-	return &DuplicatesHandler{lastMessagesSeen: make(map[string]map[uint]uint16)}
+func NewDuplicatesHandler(queueName string) *DuplicatesHandler {
+	return &DuplicatesHandler{
+		lastMessagesSeen: make(map[string]map[uint]uint16),
+		queueName:        queueName,
+	}
 }
 
 func (dh *DuplicatesHandler) getLengthAndShortestKey(clientId string) (int, int) {

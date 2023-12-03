@@ -2,6 +2,8 @@ package main
 
 import (
 	"filters_config"
+	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -10,12 +12,13 @@ import (
 )
 
 type FilterStopovers struct {
-	filterId   int
-	config     *filters_config.FilterConfig
-	consumer   queueProtocol.ConsumerProtocolInterface
-	producers  []queueProtocol.ProducerProtocolInterface
-	prodToCons queueProtocol.ProducerProtocolInterface
-	filter     *filters.Filter
+	filterId     int
+	config       *filters_config.FilterConfig
+	consumer     queueProtocol.ConsumerProtocolInterface
+	producers    []queueProtocol.ProducerProtocolInterface
+	prodToCons   queueProtocol.ProducerProtocolInterface
+	filter       *filters.Filter
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
 const MinStopovers = 3
@@ -26,16 +29,18 @@ func NewFilterStopovers(
 	producers []queueProtocol.ProducerProtocolInterface,
 	prodToCons queueProtocol.ProducerProtocolInterface,
 	conf *filters_config.FilterConfig,
+	chkHandler *checkpointer.CheckpointerHandler,
 ) *FilterStopovers {
-
 	filter := filters.NewFilter()
+	chkHandler.AddCheckpointable(consumer, filterId)
 	return &FilterStopovers{
-		filterId:   filterId,
-		config:     conf,
-		consumer:   consumer,
-		producers:  producers,
-		prodToCons: prodToCons,
-		filter:     filter,
+		filterId:     filterId,
+		config:       conf,
+		consumer:     consumer,
+		producers:    producers,
+		prodToCons:   prodToCons,
+		filter:       filter,
+		checkpointer: chkHandler,
 	}
 }
 
@@ -48,7 +53,7 @@ func (fe *FilterStopovers) FilterStopovers() {
 		}
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("FilterStopovers %v | Received EOF. Now handling...", fe.filterId)
-			err := queueProtocol.HandleEOF(msg, fe.consumer, fe.prodToCons, fe.producers)
+			err := queueProtocol.HandleEOF(msg, fe.prodToCons, fe.producers, fmt.Sprintf("%v-%v", fe.config.ID, fe.filterId), fe.config.TotalEofNodes)
 			if err != nil {
 				log.Errorf("FilterStopovers %v | Error handling EOF | %v", fe.filterId, err)
 			}
@@ -57,6 +62,10 @@ func (fe *FilterStopovers) FilterStopovers() {
 			fe.handleFlightRows(msg)
 		} else {
 			log.Warnf("FilterStopovers %v | Warn Message | Unknonw message type received. Skipping it...", fe.filterId)
+		}
+		err := fe.checkpointer.DoCheckpoint(fe.filterId)
+		if err != nil {
+			log.Errorf("FilterStopovers #%v | Error on checkpointing | %v", fe.filterId, err)
 		}
 	}
 }
