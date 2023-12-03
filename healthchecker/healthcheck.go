@@ -9,12 +9,14 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
+	"sync"
 	"time"
 )
 
 type HealthChecker struct {
 	server             *communication.PassiveTCPSocket
 	timesLastHeartbeat map[string]time.Time
+	mutexTimesLastHB   sync.Mutex
 	config             *Config
 	endSignal          chan bool
 	election           leader.ElectionService
@@ -35,6 +37,7 @@ func NewHealthChecker(healthCheckerConfig *Config, election leader.ElectionServi
 		config:             healthCheckerConfig,
 		endSignal:          make(chan bool, 1),
 		election:           election,
+		mutexTimesLastHB:   sync.Mutex{},
 	}
 }
 
@@ -57,6 +60,7 @@ func (h *HealthChecker) HandleHeartBeats() {
 func (h *HealthChecker) checkRestarts() {
 	timeToCheckWith := time.Now()
 	restartTimeParsed := time.Duration(h.config.RestartTime) * time.Second
+	h.mutexTimesLastHB.Lock()
 	for serviceName, timestamp := range h.timesLastHeartbeat {
 		timeDiff := timeToCheckWith.Sub(timestamp)
 		if timeDiff > restartTimeParsed {
@@ -64,6 +68,7 @@ func (h *HealthChecker) checkRestarts() {
 			go h.restart(serviceName)
 		}
 	}
+	h.mutexTimesLastHB.Unlock()
 }
 
 func (h *HealthChecker) restart(name string) {
@@ -75,7 +80,9 @@ func (h *HealthChecker) restart(name string) {
 	if err != nil {
 		log.Errorf("HealthChecker | Error running docker start %v | %v", name, err)
 	} else {
+		h.mutexTimesLastHB.Lock()
 		h.timesLastHeartbeat[name] = time.Now()
+		h.mutexTimesLastHB.Unlock()
 	}
 	log.Debugf("HealthChecker | out: %v | err: %v", outCommand.String(), errCommand.String())
 }
@@ -108,7 +115,9 @@ func (h *HealthChecker) handleAcceptedConnection(conn *communication.TCPSocket) 
 		log.Errorf("Healthchecker | Missing name for service | Err: %v", err)
 		return
 	}
+	h.mutexTimesLastHB.Lock()
 	h.timesLastHeartbeat[serviceName] = time.Now()
+	h.mutexTimesLastHB.Unlock()
 }
 
 func (h *HealthChecker) Close() {

@@ -1,32 +1,43 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
+
+const sinkId = 0
 
 type JourneySink struct {
 	inputQueue                    queueProtocol.ConsumerProtocolInterface
 	toSaver4Producer              queueProtocol.ProducerProtocolInterface
 	totalJourneySavers            uint
 	journeySaversReceivedByClient map[string]uint
+	checkpointer                  *checkpointer.CheckpointerHandler
 }
 
 func NewJourneySink(
 	inputQueue queueProtocol.ConsumerProtocolInterface,
 	toSaver4Producer queueProtocol.ProducerProtocolInterface,
 	totalJourneySavers uint,
+	checkpointer *checkpointer.CheckpointerHandler,
 ) *JourneySink {
-	return &JourneySink{
+	js := &JourneySink{
 		inputQueue:                    inputQueue,
 		toSaver4Producer:              toSaver4Producer,
 		totalJourneySavers:            totalJourneySavers,
 		journeySaversReceivedByClient: make(map[string]uint),
+		checkpointer:                  checkpointer,
 	}
+	checkpointer.AddCheckpointable(inputQueue, sinkId)
+	checkpointer.AddCheckpointable(js, sinkId)
+	return js
 }
 
 func (j *JourneySink) HandleJourneys() {
+	counter := 0
 	for {
 		msg, ok := j.inputQueue.Pop()
 		if !ok {
@@ -39,6 +50,14 @@ func (j *JourneySink) HandleJourneys() {
 			j.handleEofMsg(msg)
 		} else {
 			log.Warnf("JourneySink | Received unexpected message type %v", msg.TypeMessage)
+		}
+		if counter > 2 {
+			os.Exit(137)
+		}
+		counter++
+		err := j.checkpointer.DoCheckpoint(sinkId)
+		if err != nil {
+			log.Errorf("JourneySink | Error on checkpointing | %v", err)
 		}
 	}
 }

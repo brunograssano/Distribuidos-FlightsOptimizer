@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -24,8 +25,9 @@ func main() {
 	qFanoutOutputFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueName, "")
 	inputQueue := qFanoutInputFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
 	toSaver4 := qFanoutOutputFactory.CreateProducer(config.OutputQueueName)
-
-	sink := NewJourneySink(inputQueue, toSaver4, config.SaversCount)
+	chkHandler := checkpointer.NewCheckpointerHandler()
+	sink := NewJourneySink(inputQueue, toSaver4, config.SaversCount, chkHandler)
+	chkHandler.RestoreCheckpoint()
 	go sink.HandleJourneys()
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
