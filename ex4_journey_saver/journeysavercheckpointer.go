@@ -38,7 +38,7 @@ func (j *JourneySaver) GetCheckpointVersions(id int) [2]int {
 }
 
 func (j *JourneySaver) Commit(id int, responses chan error) {
-	log.Debugf("JourneySaver %v | Commiting checkpoint for id: %v", j.id id)
+	log.Debugf("JourneySaver %v | Commiting checkpoint for id: %v", j.id, id)
 	checkpointer.HandleOldFile(id, "", oldFileJs)
 	checkpointer.HandleCurrFile(id, "", currFileJs, oldFileJs)
 	checkpointer.HandleTmpFile(id, "", tmpFileJs, currFileJs)

@@ -241,7 +241,7 @@ func (js *JourneySaver) SavePricesForJourneys() {
 				log.Errorf("JourneySaver %v | Could not send to General Accumulator. Ending execution...", js.id)
 				return
 			}
-			log.Debugf("JourneySaver %v | Sent correctly!")
+			log.Debugf("JourneySaver %v | Sent correctly!", js.id)
 		} else if msg.TypeMessage == dataStructure.FlightRows {
 			log.Debugf("JourneySaver %v | Received flight row. Now saving...", js.id)
 			js.saveRowsInFiles(msg.DynMaps, msg.ClientId)

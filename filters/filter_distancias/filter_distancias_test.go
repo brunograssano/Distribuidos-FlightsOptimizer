@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"filters_config"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -17,6 +18,31 @@ type (
 		ok           bool
 	}
 )
+
+func (m *mockConsumer) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (m *mockConsumer) SetStatusOfLastMessage(b bool) {
 	//TODO implement me
@@ -75,11 +101,12 @@ func TestGettingARowWithTotalDistanceGreaterThanFourTimesOfDirectDistancePassesF
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -118,11 +145,12 @@ func TestGettingARowWithTotalDistanceEqualToFourTimesDirectDistanceShallNotPass(
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -155,11 +183,12 @@ func TestGettingARowWithTotalDistanceLessThanFourTimesDirectDistanceShallNotPass
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterDistancias.FilterDistances()
 
@@ -192,11 +221,12 @@ func TestWithLessEqualAndGreaterForDistances(t *testing.T) {
 		outputChannel: output,
 	}
 	filterDistancias := &FilterDistances{
-		filterId:  0,
-		config:    &filters_config.FilterConfig{},
-		consumer:  mockCons,
-		producers: arrayProducers,
-		filter:    filters.NewFilter(),
+		filterId:     0,
+		config:       &filters_config.FilterConfig{},
+		consumer:     mockCons,
+		producers:    arrayProducers,
+		filter:       filters.NewFilter(),
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go filterDistancias.FilterDistances()
 

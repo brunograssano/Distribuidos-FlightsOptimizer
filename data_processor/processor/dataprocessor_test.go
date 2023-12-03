@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -106,6 +107,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		producersEx4:   mProducer4,
 		ex123Columns:   []string{utils.StartingAirport, utils.SegmentsArrivalAirportCode, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.Route},
+		checkpointer:   checkpointer.NewCheckpointerHandler(),
 	}
 
 	dynMap := make(map[string][]byte)
