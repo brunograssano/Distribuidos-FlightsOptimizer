@@ -8,7 +8,12 @@ import (
 	socketsProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/sockets"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
+
+const minimumSleepExpBackoff = 2
+const backoffPower = 2
+const maximumSleepExpBackoff = 16
 
 func resendMessageAndPreviousOne(previousMessage *dataStructures.Message, msg *dataStructures.Message, conn *socketsProtocol.SocketProtocolHandler) error {
 	if previousMessage != nil {
@@ -32,7 +37,7 @@ func SendFile(FileName string, conf *ClientConfig, conn *socketsProtocol.SocketP
 	addedToMsg := uint(0)
 
 	messageId := uint(0)
-  
+
 	var previousMessage *dataStructures.Message
 	filemanager.SkipHeader(reader)
 	for reader.CanRead() {
@@ -93,6 +98,7 @@ func sendWithReconnection(conn *socketsProtocol.SocketProtocolHandler, msg *data
 	err := conn.Write(msg)
 	if err != nil {
 		log.Errorf("FileSend | Error trying to send file | %v | Trying to reconnect...", err)
+		currSleep := minimumSleepExpBackoff
 		for {
 			err = conn.Reconnect()
 			if err == nil {
@@ -101,6 +107,11 @@ func sendWithReconnection(conn *socketsProtocol.SocketProtocolHandler, msg *data
 				if err == nil {
 					break
 				}
+			}
+			time.Sleep(time.Duration(currSleep) * time.Second)
+			currSleep = currSleep * backoffPower
+			if currSleep > maximumSleepExpBackoff {
+				currSleep = maximumSleepExpBackoff
 			}
 		}
 	}

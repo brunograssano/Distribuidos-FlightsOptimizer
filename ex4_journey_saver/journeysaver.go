@@ -9,7 +9,6 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -227,7 +226,6 @@ func (js *JourneySaver) sendAverageForJourneys(finalAvg float32, msg *dataStruct
 
 // SavePricesForJourneys JourneySaver loop that reads from the input channel, saves the journey and performs calculations
 func (js *JourneySaver) SavePricesForJourneys() {
-	counter := 0
 	for {
 		msg, ok := js.consumer.Pop()
 		if !ok {
@@ -260,10 +258,6 @@ func (js *JourneySaver) SavePricesForJourneys() {
 			}
 
 		}
-		if counter > 300 {
-			os.Exit(137)
-		}
-		counter++
 		err := js.checkpointer.DoCheckpoint(js.id)
 		if err != nil {
 			log.Errorf("JourneySaver %v | Error doing checkpointing | %v", js.id, err)
