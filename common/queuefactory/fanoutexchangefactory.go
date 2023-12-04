@@ -28,5 +28,5 @@ func (s *FanoutExchangeQueueFactory) CreateConsumer(queueName string) queues.Con
 	if err != nil {
 		log.Fatalf("FanoutExchangeQueueFactory | Error trying to bind the consumer's queue to the exchange | %v", err)
 	}
-	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler(consumer.GetName()))
 }

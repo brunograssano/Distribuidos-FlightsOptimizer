@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructure "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/serializer"
@@ -8,20 +9,30 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const accumCheckpointId = 0
+
 type AvgCalculator struct {
 	toJourneySavers        []queueProtocol.ProducerProtocolInterface
 	pricesConsumer         queueProtocol.ConsumerProtocolInterface
 	c                      *AvgCalculatorConfig
 	valuesReceivedByClient map[string]PartialSum
+	checkpointer           *checkpointer.CheckpointerHandler
 }
 
-func NewAvgCalculator(toJourneySavers []queueProtocol.ProducerProtocolInterface, pricesConsumer queueProtocol.ConsumerProtocolInterface, c *AvgCalculatorConfig) *AvgCalculator {
-	return &AvgCalculator{
+func NewAvgCalculator(
+	toJourneySavers []queueProtocol.ProducerProtocolInterface,
+	pricesConsumer queueProtocol.ConsumerProtocolInterface,
+	c *AvgCalculatorConfig,
+	chkHandler *checkpointer.CheckpointerHandler) *AvgCalculator {
+	avgCalculator := &AvgCalculator{
 		toJourneySavers:        toJourneySavers,
 		pricesConsumer:         pricesConsumer,
 		c:                      c,
 		valuesReceivedByClient: make(map[string]PartialSum),
+		checkpointer:           chkHandler,
 	}
+	chkHandler.AddCheckpointable(avgCalculator, accumCheckpointId)
+	return avgCalculator
 }
 
 // CalculateAvgLoop Waits for the final results from the journey savers,
@@ -42,6 +53,10 @@ func (a *AvgCalculator) CalculateAvgLoop() {
 			continue
 		}
 		a.handleEofMsg(msg)
+		err := a.checkpointer.DoCheckpoint(accumCheckpointId)
+		if err != nil {
+			log.Errorf("AvgCalculator | Error on checkpointing | %v", err)
+		}
 	}
 }
 

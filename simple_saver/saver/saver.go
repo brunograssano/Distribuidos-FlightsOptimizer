@@ -2,6 +2,7 @@ package saver
 
 import (
 	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filemanager"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -11,16 +12,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const saverId = 0
+
 // SimpleSaver Structure that handles the final results
 type SimpleSaver struct {
-	c        *Config
-	consumer queueProtocol.ConsumerProtocolInterface
+	c            *Config
+	consumer     queueProtocol.ConsumerProtocolInterface
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
 // NewSimpleSaver Creates a new saver for the results
-func NewSimpleSaver(qFactory queuefactory.QueueProtocolFactory, c *Config) *SimpleSaver {
+func NewSimpleSaver(
+	qFactory queuefactory.QueueProtocolFactory,
+	c *Config,
+	chkHandler *checkpointer.CheckpointerHandler,
+) *SimpleSaver {
 	consumer := qFactory.CreateConsumer(fmt.Sprintf("%v-%v", c.InputQueueName, c.ID))
-	return &SimpleSaver{c: c, consumer: consumer}
+	chkHandler.AddCheckpointable(consumer, saverId)
+	return &SimpleSaver{c: c, consumer: consumer, checkpointer: chkHandler}
 }
 
 // SaveData Saves the results from the queue in a file
@@ -44,6 +53,10 @@ func (s *SimpleSaver) SaveData() {
 				log.Errorf("SimpleSaver | Error handling flight rows. Closing saver...")
 				return
 			}
+		}
+		err := s.checkpointer.DoCheckpoint(saverId)
+		if err != nil {
+			log.Errorf("SimpleSaver | Error on checkpointing | %v", err)
 		}
 	}
 }

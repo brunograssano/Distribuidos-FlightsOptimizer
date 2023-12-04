@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"distance_completer/config"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,31 @@ type (
 		ok           bool
 	}
 )
+
+func (m mockConsumer) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m mockConsumer) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (m *mockConsumer) ClearData(s string) {}
 
@@ -75,6 +101,7 @@ func TestCompleteDistancesForAFlightThatHasTwoStopoversSatisfiesGeneralCondition
 		c:            &config.CompleterConfig{},
 		consumer:     mockCons,
 		producer:     mockProd,
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)
@@ -118,6 +145,7 @@ func TestDirectDistanceShouldBeSameAsTotalTravelDistance(t *testing.T) {
 		c:            &config.CompleterConfig{},
 		consumer:     mockCons,
 		producer:     mockProd,
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)
@@ -163,6 +191,7 @@ func TestTotalTravelDistanceShouldBeThreeTimesTheDirectDistance(t *testing.T) {
 		c:            &config.CompleterConfig{},
 		consumer:     mockCons,
 		producer:     mockProd,
+		checkpointer: checkpointer.NewCheckpointerHandler(),
 	}
 	go distCompleter.CompleteDistances()
 	dynMapWithRoute := make(map[string][]byte)

@@ -7,6 +7,7 @@ import (
 type TCPSocketInterface interface {
 	Read(size uint32) ([]byte, error)
 	Write(message []byte) (int, error)
+	Reconnect() error
 	Close() error
 }
 
@@ -43,4 +44,13 @@ func (tcpSocket *TCPSocket) Write(message []byte) (int, error) {
 
 func (tcpSocket *TCPSocket) Close() error {
 	return tcpSocket.connection.Close()
+}
+
+func (tcpSocket *TCPSocket) Reconnect() error {
+	connection, err := net.Dial("tcp", tcpSocket.address)
+	if err != nil {
+		return err
+	}
+	tcpSocket.connection = connection
+	return nil
 }

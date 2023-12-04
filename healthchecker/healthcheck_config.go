@@ -21,6 +21,7 @@ type Config struct {
 	ElectionId     uint8
 	HealthCheckers []string
 	Name           string
+	Containers     []string
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -125,7 +126,15 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		hcAddresses = strings.Split(hcAddressesString, ",")
 	}
 
-	log.Infof("HealthChecker Config | action: config | result: success | id: %s | log_level: %s | address: %v | restartTime: %v | checkTime: %v | election id: %v | udpAddress: %v | networkAddresses: %v | otherHealthcheckers: %v | name: %v",
+	containersString := env.GetString("healthchecker.containers")
+	var containers []string
+	if containersString == "" {
+		log.Warnf("HealthChecker Config | There are no containers using the Healthchecker initially")
+	} else {
+		containers = strings.Split(containersString, ",")
+	}
+
+	log.Infof("HealthChecker Config | action: config | result: success | id: %s | log_level: %s | address: %v | restartTime: %v | checkTime: %v | election id: %v | udpAddress: %v | networkAddresses: %v | otherHealthcheckers: %v | name: %v | containers: %v",
 		id,
 		env.GetString("log.level"),
 		address,
@@ -136,6 +145,7 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		electionParticipantsIdsAndAddresses,
 		hcAddresses,
 		name,
+		containers,
 	)
 
 	return &Config{
@@ -148,5 +158,6 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		ElectionId:     uint8(myElectionId),
 		HealthCheckers: hcAddresses,
 		Name:           name,
+		Containers:     containers,
 	}, nil
 }

@@ -2,6 +2,8 @@ package main
 
 import (
 	"filters_config"
+	"fmt"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	"github.com/brunograssano/Distribuidos-TP1/common/filters"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
@@ -11,30 +13,38 @@ import (
 )
 
 type FilterDistances struct {
-	filterId   int
-	config     *filters_config.FilterConfig
-	consumer   queueProtocol.ConsumerProtocolInterface
-	producers  []queueProtocol.ProducerProtocolInterface
-	prodToCons queueProtocol.ProducerProtocolInterface
-	filter     *filters.Filter
+	filterId     int
+	config       *filters_config.FilterConfig
+	consumer     queueProtocol.ConsumerProtocolInterface
+	producers    []queueProtocol.ProducerProtocolInterface
+	prodToCons   queueProtocol.ProducerProtocolInterface
+	filter       *filters.Filter
+	checkpointer *checkpointer.CheckpointerHandler
 }
 
-func NewFilterDistances(filterId int, qFactory queuefactory.QueueProtocolFactory, conf *filters_config.FilterConfig) *FilterDistances {
+func NewFilterDistances(
+	filterId int,
+	qFactory queuefactory.QueueProtocolFactory,
+	conf *filters_config.FilterConfig,
+	chkHandler *checkpointer.CheckpointerHandler,
+) *FilterDistances {
 	inputQueue := qFactory.CreateConsumer(conf.InputQueueName)
 	prodToCons := qFactory.CreateProducer(conf.InputQueueName)
 	outputQueues := make([]queueProtocol.ProducerProtocolInterface, len(conf.OutputQueueNames))
 	for i := 0; i < len(conf.OutputQueueNames); i++ {
 		outputQueues[i] = qFactory.CreateProducer(conf.OutputQueueNames[i])
 	}
+	chkHandler.AddCheckpointable(inputQueue, filterId)
 
 	filter := filters.NewFilter()
 	return &FilterDistances{
-		filterId:   filterId,
-		config:     conf,
-		consumer:   inputQueue,
-		prodToCons: prodToCons,
-		producers:  outputQueues,
-		filter:     filter,
+		filterId:     filterId,
+		config:       conf,
+		consumer:     inputQueue,
+		prodToCons:   prodToCons,
+		producers:    outputQueues,
+		filter:       filter,
+		checkpointer: chkHandler,
 	}
 }
 
@@ -47,7 +57,7 @@ func (fd *FilterDistances) FilterDistances() {
 		}
 		if msgStruct.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("FilterDistances %v | Received EOF. Handling...", fd.filterId)
-			err := queueProtocol.HandleEOF(msgStruct, fd.consumer, fd.prodToCons, fd.producers)
+			err := queueProtocol.HandleEOF(msgStruct, fd.prodToCons, fd.producers, fmt.Sprintf("%v-%v", fd.config.ID, fd.filterId), fd.config.TotalEofNodes)
 			if err != nil {
 				log.Errorf("FilterDistances %v | Error handling EOF | %v", fd.filterId, err)
 			}
@@ -56,6 +66,10 @@ func (fd *FilterDistances) FilterDistances() {
 			fd.handleFlightRows(msgStruct)
 		} else {
 			log.Warnf("FilterDistances %v | Received unknown message type | Skipping...", fd.filterId)
+		}
+		err := fd.checkpointer.DoCheckpoint(fd.filterId)
+		if err != nil {
+			log.Errorf("FilterDistances #%v | Error on checkpointing | %v", fd.filterId, err)
 		}
 	}
 }

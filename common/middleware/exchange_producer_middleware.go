@@ -55,3 +55,7 @@ func (exProd *ExchangeProducer) Send(data []byte) error {
 	}
 	return nil
 }
+
+func (q *ExchangeProducer) GetName() string {
+	return q.name
+}

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
@@ -15,6 +16,31 @@ type (
 		ok           bool
 	}
 )
+
+func (m *mockConsumer) DoCheckpoint(errors chan error, i int, i2 int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) RestoreCheckpoint(i int, i2 int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) GetCheckpointVersions(i int) [2]int {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Commit(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockConsumer) Abort(i int, errors chan error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (m *mockConsumer) ClearData(s string) {
 	//TODO implement me
@@ -81,6 +107,7 @@ func TestShouldGetAMessageProcessItAndSendItToAllChannels(t *testing.T) {
 		producersEx4:   mProducer4,
 		ex123Columns:   []string{utils.StartingAirport, utils.SegmentsArrivalAirportCode, utils.TotalStopovers, utils.Route},
 		ex4Columns:     []string{utils.Route},
+		checkpointer:   checkpointer.NewCheckpointerHandler(),
 	}
 
 	dynMap := make(map[string][]byte)

@@ -24,5 +24,5 @@ func (d *DirectExchangeProducerSimpleConsQueueFactory) CreateProducer(exchangeNa
 
 func (d *DirectExchangeProducerSimpleConsQueueFactory) CreateConsumer(queueName string) queues.ConsumerProtocolInterface {
 	consumer := d.qMiddleware.CreateConsumer(queueName, true)
-	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler())
+	return queues.NewConsumerQueueProtocolHandler(consumer, duplicates.NewDuplicatesHandler(consumer.GetName()))
 }

@@ -19,6 +19,7 @@ type Config struct {
 	RabbitAddress           string
 	ServiceName             string
 	AddressesHealthCheckers []string
+	TotalEofNodes           uint
 }
 
 // InitEnv Initializes the configuration properties from a config file and environment
@@ -43,6 +44,7 @@ func InitEnv() (*viper.Viper, error) {
 	_ = v.BindEnv("processor", "goroutines")
 	_ = v.BindEnv("name")
 	_ = v.BindEnv("healthchecker", "addresses")
+	_ = v.BindEnv("total", "nodes", "for", "eof")
 	// Try to read configuration from config file. If config file
 	// does not exist then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables, so we shouldn't
@@ -92,6 +94,11 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		return nil, errors.New("missing name")
 	}
 
+	TotalEofNodes := env.GetUint("total.nodes.for.eof")
+	if TotalEofNodes == 0 {
+		return nil, errors.New("missing total nodes for eof")
+	}
+
 	healthCheckerAddressesString := env.GetString("healthchecker.addresses")
 	if healthCheckerAddressesString == "" {
 		return nil, errors.New("missing healthchecker addresses")
@@ -119,5 +126,6 @@ func GetConfig(env *viper.Viper) (*Config, error) {
 		RabbitAddress:           rabbitAddress,
 		ServiceName:             serviceName,
 		AddressesHealthCheckers: healthCheckerAddresses,
+		TotalEofNodes:           TotalEofNodes,
 	}, nil
 }

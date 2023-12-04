@@ -2,6 +2,7 @@ package main
 
 import (
 	"dim_reducer/reducer"
+	"github.com/brunograssano/Distribuidos-TP1/common/checkpointer"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
@@ -25,12 +26,20 @@ func main() {
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
 	simpleFactory := queuefactory.NewSimpleQueueFactory(qMiddleware)
 	fanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueName, "")
+	var services []*reducer.Reducer
 	for i := 0; i < config.GoroutinesCount; i++ {
+		checkpointerHandler := checkpointer.NewCheckpointerHandler()
 		consumer := simpleFactory.CreateConsumer(config.InputQueueName)
 		producer := fanoutFactory.CreateProducer(config.OutputQueueName)
 		prodToCons := simpleFactory.CreateProducer(config.InputQueueName)
-		r := reducer.NewReducer(i, consumer, producer, prodToCons, config)
-		go r.ReduceDims()
+		r := reducer.NewReducer(i, consumer, producer, prodToCons, config, checkpointerHandler)
+		services = append(services, r)
+		checkpointerHandler.RestoreCheckpoint()
+
+	}
+	for i := 0; i < config.GoroutinesCount; i++ {
+		log.Infof("Main Reducer | Spawning GoRoutine - Reducer #%v", i)
+		go services[i].ReduceDims()
 	}
 	endSigHB := heartbeat.StartHeartbeat(config.AddressesHealthCheckers, config.ServiceName)
 	<-sigs
