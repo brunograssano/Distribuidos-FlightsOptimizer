@@ -161,12 +161,13 @@ services:
 {% endfor %}
 
 {% for i in range(1,ex4Savers + 1) %}
-  ex4_journey_saver-{{i}}:
-    container_name: ex4_saver-{{i}}
+{% for j in range(1,ex4SaversReplicas + 1) %}
+  ex4_journey_saver-{{i}}-{{j}}:
+    container_name: ex4_saver-{{i}}-{{j}}
     image: ex4_journey_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + i}}
-      - CLI_NAME=ex4_saver-{{i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + (i-1) * ex4SaversReplicas + j }}
+      - CLI_NAME=ex4_saver-{{i}}-{{j}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=journey_savers_ex4_queue
       - CLI_RABBITMQ_QUEUE_OUTPUTS_ACCUM=accum_ex4_queue
@@ -183,13 +184,14 @@ services:
       rabbitmq:
         condition: service_healthy
 {% endfor %}
+{% endfor %}
 
 {% for i in range(1,ex4Dispatchers + 1) %}
   ex4_dispatcher-{{i}}:
     container_name: ex4_dispatcher-{{i}}
     image: dispatcher_ex4:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + i}}
       - CLI_NAME=ex4_dispatcher-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=ex4_solver
@@ -206,8 +208,10 @@ services:
       rabbitmq:
         condition: service_healthy
 {% for j in range(1,ex4Savers + 1) %}
-      ex4_journey_saver-{{j}}:
+{% for k in range(1,ex4SaversReplicas + 1) %}
+      ex4_journey_saver-{{j}}-{{k}}:
         condition: service_started
+{% endfor %}
 {% endfor %}
 {% endfor %}
 
@@ -216,7 +220,7 @@ services:
     container_name: avg_calculator_ex4-{{i}}
     image: avg_calculator_ex4:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + i}}
       - CLI_NAME=avg_calculator_ex4-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=accum_ex4_queue
@@ -237,7 +241,7 @@ services:
     container_name: ex4_sink-{{i}}
     image: ex4_sink:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + i}}
       - CLI_NAME=ex4_sink-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=sink_ex4_queue
@@ -258,7 +262,7 @@ services:
     container_name: saver-ex1-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + i}}
       - CLI_NAME=saver-ex1-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver1_queue
@@ -280,7 +284,7 @@ services:
     container_name: saver-ex2-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + savers +i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + savers +i}}
       - CLI_NAME=saver-ex2-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver2_queue
@@ -302,7 +306,7 @@ services:
     container_name: saver-ex3-{{i}}
     image: saver_ex_3:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 2*savers + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + 2*savers + i}}
       - CLI_NAME=saver-ex3-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver_3
@@ -326,7 +330,7 @@ services:
     container_name: saver-ex4-{{i}}
     image: simple_saver:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 3*savers + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + 3*savers + i}}
       - CLI_NAME=saver-ex4-{{i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_RABBITMQ_QUEUE_INPUT=saver4_queue
@@ -347,7 +351,7 @@ services:
     container_name: server
     image: server:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 1}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + 4*savers + 1}}
       - CLI_NAME=server
       - CLI_LOG_LEVEL=INFO
       - CLI_GETTER_ADDRESSES_1={% for i in range (1, savers + 1) %}saver-ex1-{{i}}:8080{{ "," if not loop.last else "" }}{% endfor %}
@@ -384,7 +388,7 @@ services:
     container_name: client
     image: client:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 2}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + 4*savers + 2}}
       - CLI_LOG_LEVEL=INFO
       - CLI_INPUT_BATCH=100
       - CLI_INPUT_AIRPORTS=/data/airports.csv # configurar localmente
@@ -403,7 +407,7 @@ services:
     container_name: healthchecker-{{i}}
     image: healthchecker:latest
     environment:
-      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers + ex4Dispatchers + calculators + sinks + 4*savers + 2 + i}}
+      - CLI_ID={{reducers1 + reducers2 + stopovers + processors + distances + completers + ex4Savers*ex4SaversReplicas + ex4Dispatchers + calculators + sinks + 4*savers + 2 + i}}
       - CLI_LOG_LEVEL=INFO
       - CLI_NAME=healthchecker-{{i}}
       - CLI_HEALTHCHECKER_ADDRESS=healthchecker-{{i}}:8080

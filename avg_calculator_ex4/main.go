@@ -9,6 +9,7 @@ import (
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 )
 
 func main() {
@@ -24,12 +25,12 @@ func main() {
 
 	var toJourneySavers []queueProtocol.ProducerProtocolInterface
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	qFactory := queuefactory.NewDirectExchangeProducerSimpleConsQueueFactory(qMiddleware)
+	qTopicFactory := queuefactory.NewTopicFactory(qMiddleware, []string{""}, config.OutputQueueName)
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.InputQueueName, "")
 	inputQueue := qFanoutFactory.CreateConsumer(fmt.Sprintf("%v-%v", config.InputQueueName, config.ID))
 	chkHandler := checkpointer.NewCheckpointerHandler()
 	for i := uint(0); i < config.SaversCount; i++ {
-		producer := qFactory.CreateProducer(config.OutputQueueName)
+		producer := qTopicFactory.CreateProducer(strconv.Itoa(int(i)))
 		toJourneySavers = append(toJourneySavers, producer)
 	}
 	avgCalculator := NewAvgCalculator(toJourneySavers, inputQueue, config, chkHandler)
