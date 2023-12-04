@@ -14,6 +14,7 @@ def generate_compose():
     distances = ask_for_int_input("How many distance filters? ")
     completers = ask_for_int_input("How many distance completers? ")
     ex4Savers = ask_for_int_input("How many journey savers for ex4? ")
+    ex4SaversReplicas = ask_for_int_input("How many replicas for journey savers?")
     ex4Dispatchers = ask_for_int_input("How many dispatchers for ex4? ")
     healthCheckers = ask_for_int_input("How many healthCheckers? ")
     calculators = ask_for_int_input("How many Average Calculators? ")
@@ -34,6 +35,7 @@ def generate_compose():
             distances=distances,
             completers=completers,
             ex4Savers=ex4Savers,
+            ex4SaversReplicas=ex4SaversReplicas,
             ex4Dispatchers=ex4Dispatchers,
             healthcheckers=healthCheckers,
             calculators=calculators,

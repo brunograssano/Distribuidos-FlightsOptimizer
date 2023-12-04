@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/brunograssano/Distribuidos-TP1/common/heartbeat"
 	"github.com/brunograssano/Distribuidos-TP1/common/middleware"
 	"github.com/brunograssano/Distribuidos-TP1/common/queuefactory"
 	"github.com/brunograssano/Distribuidos-TP1/common/utils"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 )
 
 func main() {
@@ -19,11 +21,11 @@ func main() {
 		log.Fatalf("Main - Ex4 Journey Saver | Error initializing Config | %s", err)
 	}
 	qMiddleware := middleware.NewQueueMiddleware(config.RabbitAddress)
-	qFactory := queuefactory.NewDirectExchangeConsumerSimpleProdQueueFactory(qMiddleware, config.RoutingKeyInput)
 	qFanoutFactory := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameAccum, "")
 	qFanoutFactorySink := queuefactory.NewFanoutExchangeQueueFactory(qMiddleware, config.OutputQueueNameSaver, "")
 	for i := uint(0); i < config.InternalSaversCount; i++ {
-		inputQ := qFactory.CreateConsumer(config.InputQueueName)
+		qFactory := queuefactory.NewTopicFactory(qMiddleware, []string{"", strconv.Itoa(int(i + config.RoutingKeyInput))}, config.InputQueueName)
+		inputQ := qFactory.CreateConsumer(fmt.Sprintf("%v-%v-%v", config.InputQueueName, config.ID, i+config.RoutingKeyInput))
 		prodToAccum := qFanoutFactory.CreateProducer(config.OutputQueueNameAccum)
 		prodToSink := qFanoutFactorySink.CreateProducer(config.OutputQueueNameSaver)
 		js := NewJourneySaver(inputQ, prodToAccum, prodToSink, config.TotalSaversCount)
