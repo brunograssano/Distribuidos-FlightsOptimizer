@@ -39,7 +39,11 @@ func (c *ClientGetter) HandleClientGetter() {
 
 	c.clientId = msg.ClientId
 	if filemanager.DirectoryExists(msg.ClientId) {
-		c.sendResults()
+		rowNum, err := msg.DynMaps[0].GetAsInt(utils.NumberOfRow)
+		if err != nil {
+			log.Errorf("Client Getter | Error trying to get number of row as int from message | %v", err)
+		}
+		c.sendResults(uint(rowNum))
 	} else {
 		c.askLaterForResults()
 	}
@@ -60,10 +64,11 @@ func (c *ClientGetter) askLaterForResults() {
 }
 
 // sendResults Sends the saved results to the client
-func (c *ClientGetter) sendResults() {
+func (c *ClientGetter) sendResults(rowNum uint) {
 	log.Infof("Client Getter %v | Sending results to client", c.clientId)
 	var currBatch []*dataStructures.DynamicMap
 	curLengthOfBatch := 0
+	currRowNum := uint(0)
 	for _, filename := range c.config.FileNames {
 		reader, err := filemanager.NewFileReader(fmt.Sprintf("%v/%v_%v.csv", c.clientId, filename, c.clientId))
 		if err != nil {
@@ -76,6 +81,10 @@ func (c *ClientGetter) sendResults() {
 				log.Warnf("Client Getter %v | Received signal while sending file, stopping transfer", c.clientId)
 				return
 			default:
+			}
+			if currRowNum < rowNum {
+				currRowNum++
+				continue
 			}
 			line := reader.ReadLine()
 			currBatch = append(currBatch, serializer.DeserializeFromString(line))

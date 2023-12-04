@@ -5,7 +5,6 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 	queueProtocol "github.com/brunograssano/Distribuidos-TP1/common/protocol/queues"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 const sinkId = 0
@@ -37,7 +36,6 @@ func NewJourneySink(
 }
 
 func (j *JourneySink) HandleJourneys() {
-	counter := 0
 	for {
 		msg, ok := j.inputQueue.Pop()
 		if !ok {
@@ -51,10 +49,6 @@ func (j *JourneySink) HandleJourneys() {
 		} else {
 			log.Warnf("JourneySink | Received unexpected message type %v", msg.TypeMessage)
 		}
-		if counter > 2 {
-			os.Exit(137)
-		}
-		counter++
 		err := j.checkpointer.DoCheckpoint(sinkId)
 		if err != nil {
 			log.Errorf("JourneySink | Error on checkpointing | %v", err)
