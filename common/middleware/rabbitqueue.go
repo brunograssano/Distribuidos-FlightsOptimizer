@@ -14,5 +14,11 @@ func CreateQueue(channel *amqp.Channel, name string, durable bool) amqp.Queue {
 		nil,     // arguments
 	)
 	FailOnError(err, "Failed to declare RabbitMQ Queue.")
+	err = channel.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
+	FailOnError(err, "Failed to declare Prefetch count to 1.")
 	return queue
 }

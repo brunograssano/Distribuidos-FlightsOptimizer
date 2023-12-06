@@ -5,7 +5,7 @@ import (
 	dataStructures "github.com/brunograssano/Distribuidos-TP1/common/data_structures"
 )
 
-const maxMessagesPerClient = 200
+const maxMessagesPerClient = 1000
 
 type DuplicateDetector interface {
 	checkpointer.Checkpointable

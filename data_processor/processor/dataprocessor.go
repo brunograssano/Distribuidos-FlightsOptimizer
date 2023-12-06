@@ -86,7 +86,6 @@ func (d *DataProcessor) ProcessData() {
 		if !ok {
 			return
 		}
-		log.Infof("DP %v | mensaje %v %v-%v-%v", d.processorId, msg.TypeMessage, msg.ClientId, msg.MessageId, msg.RowId)
 		if msg.TypeMessage == dataStructures.EOFFlightRows {
 			log.Infof("DataProcessor %v | Received EOF from server. Now finishing...", d.processorId)
 			_ = queueProtocol.HandleEOF(
