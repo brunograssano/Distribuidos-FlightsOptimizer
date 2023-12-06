@@ -1,10 +1,10 @@
-# Distribuidos TP1: Flights Optimizer
+# Distribuidos TP: Flights Optimizer
 
 Flights Optimizer es un sistema distribuido preparado para realizar consultas sobre los datos que provengan de registros de vuelos
 que cumplan con ciertas condiciones. Los resultados de estas consultas son devueltas al cliente para que el mismo
 pueda tomar las decisiones que considere oportunas.
 
-El objetivo del presente trabajo práctico es realizar un sistema distribuido escalable capaz de 
+El objetivo del presente trabajo práctico es realizar un sistema distribuido escalable y tolerante a fallas capaz de 
 analizar 6 meses de registros de precios de vuelos de avión para proponer mejoras en la oferta a clientes.
 
 Este sistema debe de responder a las siguientes consultas:
